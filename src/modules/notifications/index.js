@@ -9,7 +9,7 @@ module.exports = {
     { key: 'cleanup', name: 'پاک‌سازی خودکار', description: 'حذف اعلان‌های خوانده‌شدهٔ قدیمی‌تر از ۶۰ روز' }
   ],
   menu: [
-    { title: 'اعلان‌ها', href: '/notifications', icon: 'bi-bell', roles: ['admin', 'staff', 'teacher', 'student'], badge: 'notifications' },
+    { title: 'اعلان‌ها', href: '/notifications', icon: 'bi-bell', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], badge: 'notifications' },
     { title: 'ارسال اعلان', href: '/notifications/send', icon: 'bi-megaphone', roles: ['admin'], feature: 'broadcast' }
   ],
   routes: require('./routes')

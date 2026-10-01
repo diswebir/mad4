@@ -17,7 +17,7 @@ const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const CATS = { story: 'داستان و رمان', science: 'علمی', religious: 'دینی و مذهبی', history: 'تاریخ و جغرافیا', poetry: 'شعر و ادبیات', reference: 'مرجع و کمک‌درسی', biography: 'زندگی‌نامه', art: 'هنر و سرگرمی', other: 'سایر' };
-const staffOnly = [auth.requireRole('admin', 'staff')];
+const staffOnly = [auth.requireRoleOrPermission(['admin'], 'library.manage')];
 async function recount(bookId) {
   const b = await db.findById('books', bookId); if (!b) return;
   const out = await db.table('book_loans').where({ book_id: bookId, status: 'loaned' }).count();
@@ -32,7 +32,7 @@ router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled(
   if (E('library.catalog')) { const q = db.table('books').orderBy('title'); if (req.query.q) q.search(utils.normalizePersian(req.query.q), ['title', 'author', 'publisher']); if (req.query.category) q.where('category', req.query.category); books = await q.paginate(req.query.page, 24); }
   res.render(v('my'), { title: 'کتابخانه', loans, books, CATS, today: J.todayISO(), query: req.query, f: { q: req.query.q || '', category: req.query.category || '' } });
 });
-router.get('/overdue', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('library.overdue'), async (req, res) => {
+router.get('/overdue', auth.requireRoleOrPermission(['admin', 'teacher'], 'library.manage'), modules.requireEnabled('library.overdue'), async (req, res) => {
   const rows = await loanQuery().where('l.status', 'loaned').where('l.due_at', '<', J.todayISO()).orderBy('l.due_at').all();
   res.render(v('overdue'), { title: 'امانت‌های دیرکرده', rows, today: J.todayISO() });
 });
@@ -44,7 +44,7 @@ router.post('/overdue/remind', ...staffOnly, modules.requireEnabled('library.ove
 });
 
 crud(router, {
-  path: '', table: 'books', alias: 'b', title: 'کتاب', plural: 'کتابخانه', icon: 'bi-book', feature: 'library.books', orderBy: 'title', roles: ['admin', 'staff'], viewRoles: ['admin', 'staff', 'teacher'], exportFeature: 'library.export',
+  path: '', table: 'books', alias: 'b', title: 'کتاب', plural: 'کتابخانه', icon: 'bi-book', feature: 'library.books', orderBy: 'title', roles: ['admin'], viewRoles: ['admin', 'teacher'], permission: 'library.manage', exportFeature: 'library.export',
   fields: [
     { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, search: true },
     { name: 'author', label: 'نویسنده', type: 'text', list: true, search: true },
@@ -70,7 +70,7 @@ crud(router, {
 });
 
 crud(router, {
-  path: '/loans', table: 'book_loans', alias: 'l', title: 'امانت', plural: 'امانت‌ها', icon: 'bi-arrow-left-right', feature: 'library.loans', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff'], viewRoles: ['admin', 'staff', 'teacher'], breadcrumbs: [{ title: 'کتابخانه', href: '/library' }], exportFeature: 'library.export',
+  path: '/loans', table: 'book_loans', alias: 'l', title: 'امانت', plural: 'امانت‌ها', icon: 'bi-arrow-left-right', feature: 'library.loans', orderBy: 'id', dir: 'desc', roles: ['admin'], viewRoles: ['admin', 'teacher'], permission: 'library.manage', breadcrumbs: [{ title: 'کتابخانه', href: '/library' }], exportFeature: 'library.export',
   query: (q) => q.join('books as b', 'b.id', 'l.book_id').leftJoin('students as s', 's.id', 'l.student_id').leftJoin('users as u', 'u.id', 'l.user_id').select('l.*', 'b.title as book_title', 's.first_name', 's.last_name', 'u.name as user_name'),
   filterHook: (q, req) => { if (req.query.student_id) q.where('l.student_id', req.query.student_id); },
   fields: [

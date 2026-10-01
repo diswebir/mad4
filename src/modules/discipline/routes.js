@@ -26,7 +26,7 @@ router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled(
   const sum = rows.reduce((a, r) => a + Number(r.points || 0), 0);
   res.render(v('my'), { title: 'سوابق انضباطی من', rows, sum, CATEGORIES, TYPES, s });
 });
-router.get('/report', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('discipline.report'), async (req, res) => {
+router.get('/report', auth.requireRoleOrPermission(['admin', 'teacher'], 'discipline.view', 'discipline.manage'), modules.requireEnabled('discipline.report'), async (req, res) => {
   const classes = await people.classOptions(req);
   const classId = Number(req.query.class_id) || (classes[0] && classes[0].value) || null;
   const from = req.query.from ? J.toGregorian(req.query.from) : J.addDays(J.todayISO(), -90);
@@ -46,7 +46,7 @@ router.get('/report', auth.requireRole('admin', 'staff', 'teacher'), modules.req
 
 crud(router, {
   path: '', table: 'discipline_records', alias: 'd', title: 'مورد انضباطی/تشویقی', plural: 'انضباط و تشویق', icon: 'bi-shield-check', feature: 'discipline.negative', orderBy: 'date', dir: 'desc',
-  roles: ['admin', 'staff', 'teacher'], viewRoles: ['admin', 'staff', 'teacher'],
+  roles: ['admin', 'teacher'], viewRoles: ['admin', 'teacher'], permission: 'discipline.manage', viewPermission: ['discipline.view', 'discipline.manage'],
   query: (q, req) => { q.leftJoin('students as s', 's.id', 'd.student_id').leftJoin('classes as c', 'c.id', 's.class_id').select('d.*', 'c.title as class_title', 's.first_name', 's.last_name'); if (req && req.user.role === 'teacher') q.whereRaw('s.class_id IN (SELECT class_id FROM class_subjects cs JOIN teachers t ON t.id = cs.teacher_id WHERE t.user_id = ? UNION SELECT cl.id FROM classes cl JOIN teachers t2 ON t2.id = cl.teacher_id WHERE t2.user_id = ?)', [req.user.id, req.user.id]); return q; },
   filterHook: (q, req) => { if (req.query.class_id) q.where('s.class_id', req.query.class_id); if (req.query.student_id) q.where('d.student_id', req.query.student_id); },
   fields: [

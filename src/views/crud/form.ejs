@@ -8,6 +8,7 @@
         <%- include('../partials/field', { field: field, row: row, old: old }) %>
       <% }); %>
     </div>
+    <% if (crud.formPartial) { %><%- include(crud.formPartial, { row: row, old: old, extra: (typeof extra !== 'undefined' ? extra : {}), isNew: isNew }) %><% } %>
   </div>
   <div class="card-footer bg-transparent d-flex gap-2 justify-content-end">
     <a href="<%= urlBase %>" class="btn btn-light">انصراف</a>

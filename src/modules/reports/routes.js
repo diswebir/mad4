@@ -9,7 +9,7 @@ const J = require('../../core/jalali');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
-router.use(auth.requireAuth, auth.requireRole('admin', 'staff'));
+router.use(auth.requireAuth, auth.requireRoleOrPermission(['admin'], 'reports.view'));
 const E = modules.isEnabled;
 const printOpts = (req) => { const print = req.query.print === '1' && E('reports.print'); return { print, layout: print ? 'layouts/print' : undefined }; };
 function csv(res, name, rows, cols) { res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="${name}-${J.todayISO()}.csv"`); res.send(utils.toCSV(rows, cols)); }

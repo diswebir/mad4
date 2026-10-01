@@ -18,7 +18,7 @@ router.get('/request', auth.requireRole('student', 'parent'), modules.requireEna
 });
 
 crud(router, {
-  path: '', table: 'counseling_sessions', alias: 'cs', title: 'جلسهٔ مشاوره', plural: 'مشاوره', icon: 'bi-chat-heart', feature: 'counseling.sessions', orderBy: 'date', dir: 'desc', roles: ['admin', 'staff'],
+  path: '', table: 'counseling_sessions', alias: 'cs', title: 'جلسهٔ مشاوره', plural: 'مشاوره', icon: 'bi-chat-heart', feature: 'counseling.sessions', orderBy: 'date', dir: 'desc', roles: ['admin'], permission: 'counseling.manage',
   query: (q, req) => { q.leftJoin('students as s', 's.id', 'cs.student_id').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('users as u', 'u.id', 'cs.counselor_id').select('cs.*', 'c.title as class_title', 'u.name as counselor_name'); if (req && E('counseling.confidential') && req.user.role !== 'admin') q.where((b) => b.where('cs.is_confidential', 0).orWhere('cs.counselor_id', req.user.id)); return q; },
   filterHook: (q, req) => { if (req.query.student_id) q.where('cs.student_id', req.query.student_id); },
   fields: [

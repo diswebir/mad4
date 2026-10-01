@@ -16,7 +16,8 @@ const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
-const staff = [auth.requireRole('admin', 'staff')];
+const staff = [auth.requireRoleOrPermission(['admin'], 'finance.view', 'finance.manage', 'finance.payments')];
+const canWrite = [auth.requireRoleOrPermission(['admin'], 'finance.manage', 'finance.payments')];
 const FEE_TYPES = { tuition: 'شهریه', transport: 'سرویس', books: 'کتاب و لوازم', food: 'تغذیه', trip: 'اردو', uniform: 'لباس فرم', other: 'سایر' };
 const METHODS = { cash: 'نقدی', card: 'کارت‌خوان', transfer: 'انتقال بانکی', online: 'پرداخت آنلاین', cheque: 'چک' };
 const unit = () => settings.get('currency_unit', 'تومان');
@@ -53,7 +54,7 @@ router.get('/', ...staff, async (req, res) => {
 
 // ---------- شهریه‌ها ----------
 crud(router, {
-  path: '/fees', table: 'fees', alias: 'f', title: 'شهریه/هزینه', plural: 'شهریه و هزینه‌ها', icon: 'bi-tags', feature: 'finance.fees', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }],
+  path: '/fees', table: 'fees', alias: 'f', title: 'شهریه/هزینه', plural: 'شهریه و هزینه‌ها', icon: 'bi-tags', feature: 'finance.fees', orderBy: 'id', dir: 'desc', roles: ['admin'], permission: ['finance.manage', 'finance.payments'], viewPermission: ['finance.view', 'finance.manage', 'finance.payments'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }],
   query: (q) => q.leftJoin('grade_levels as g', 'g.id', 'f.grade_level_id').leftJoin('classes as c', 'c.id', 'f.class_id').leftJoin('academic_years as y', 'y.id', 'f.academic_year_id').select('f.*', 'g.title as grade_title', 'c.title as class_title', 'y.title as year_title', '(SELECT COUNT(*) FROM invoices i WHERE i.fee_id = f.id) as invoice_count'),
   fields: [
     { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, search: true },
@@ -78,7 +79,7 @@ router.get('/fees/:id/issue', ...staff, modules.requireEnabled('finance.bulk_inv
   const existing = await db.table('invoices').where('fee_id', fee.id).pluck('student_id');
   res.render(v('issue'), { title: 'صدور گروهی', fee, classes, existingCount: existing.length, unit: unit() });
 });
-router.post('/fees/:id/issue', ...staff, modules.requireEnabled('finance.bulk_invoice'), async (req, res) => {
+router.post('/fees/:id/issue', ...canWrite, modules.requireEnabled('finance.bulk_invoice'), async (req, res) => {
   const fee = await db.findById('fees', req.params.id); if (!fee) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   let classIds = req.body.class_ids; classIds = (Array.isArray(classIds) ? classIds : [classIds]).map(Number).filter(Boolean);
   if (!classIds.length) { req.flash('danger', 'کلاسی انتخاب نشده'); return res.redirect('/finance/fees/' + fee.id + '/issue'); }
@@ -99,7 +100,7 @@ router.post('/fees/:id/issue', ...staff, modules.requireEnabled('finance.bulk_in
 
 // ---------- صورت‌حساب‌ها ----------
 crud(router, {
-  path: '/invoices', table: 'invoices', alias: 'i', title: 'صورت‌حساب', plural: 'صورت‌حساب‌ها', icon: 'bi-receipt', feature: 'finance.invoices', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }], exportFeature: 'finance.export',
+  path: '/invoices', table: 'invoices', alias: 'i', title: 'صورت‌حساب', plural: 'صورت‌حساب‌ها', icon: 'bi-receipt', feature: 'finance.invoices', orderBy: 'id', dir: 'desc', roles: ['admin'], permission: ['finance.manage', 'finance.payments'], viewPermission: ['finance.view', 'finance.manage', 'finance.payments'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }], exportFeature: 'finance.export',
   query: (q) => q.leftJoin('students as s', 's.id', 'i.student_id').leftJoin('classes as c', 'c.id', 's.class_id').select('i.*', 's.first_name', 's.last_name', 'c.title as class_title'),
   filterHook: (q, req) => { if (req.query.student_id) q.where('i.student_id', req.query.student_id); if (req.query.class_id) q.where('s.class_id', req.query.class_id); if (req.query.overdue === '1') q.whereIn('i.status', ['unpaid', 'partial']).where('i.due_date', '<', J.todayISO()); },
   fields: [
@@ -142,7 +143,7 @@ router.get('/invoices/:id', ...staff, async (req, res) => {
   const print = req.query.print === '1' && E('finance.receipt');
   res.render(v('invoice'), { title: 'صورت‌حساب ' + inv.number, layout: print ? 'layouts/print' : undefined, print, inv, payments, METHODS, FEE_TYPES, unit: unit(), remaining: Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0), canPay: E('finance.payments') && inv.status !== 'cancelled' && inv.status !== 'paid', schoolInfo: { name: settings.get('school_name'), phone: settings.get('school_phone'), address: settings.get('school_address') } });
 });
-router.post('/invoices/:id/pay', ...staff, modules.requireEnabled('finance.payments'), async (req, res) => {
+router.post('/invoices/:id/pay', ...canWrite, modules.requireEnabled('finance.payments'), async (req, res) => {
   const inv = await db.findById('invoices', req.params.id); if (!inv) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const b = utils.cleanBody(req.body, { fields: ['amount', 'method', 'reference', 'paid_at', 'note'], numbers: ['amount'], dates: ['paid_at'] });
   const remaining = Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0);
@@ -155,7 +156,7 @@ router.post('/invoices/:id/pay', ...staff, modules.requireEnabled('finance.payme
   await activity.log(req, 'create', 'payments', id, `ثبت پرداخت ${utils.money(b.amount)} برای ${inv.number}`);
   req.flash('success', 'پرداخت ثبت شد.'); res.redirect('/finance/invoices/' + inv.id + (E('finance.receipt') ? '?receipt=' + id : ''));
 });
-router.post('/invoices/:id/remind', ...staff, modules.requireEnabled('finance.overdue_notify'), async (req, res) => {
+router.post('/invoices/:id/remind', ...canWrite, modules.requireEnabled('finance.overdue_notify'), async (req, res) => {
   const inv = await db.table('invoices as i').join('students as s', 's.id', 'i.student_id').select('i.*', 's.user_id', 's.father_phone', 's.mobile', 's.first_name', 's.last_name').where('i.id', req.params.id).first();
   if (!inv) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const remaining = Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0);
@@ -164,7 +165,7 @@ router.post('/invoices/:id/remind', ...staff, modules.requireEnabled('finance.ov
   const phone = inv.father_phone || inv.mobile; if (phone) { const r = await notify.sms(phone, `${settings.get('school_name', '')}: یادآوری پرداخت ${inv.title} به مبلغ ${utils.money(remaining, unit())} (سررسید ${J.formatDate(inv.due_date)})`); if (r.ok) msg += ' پیامک ارسال شد.'; }
   req.flash('success', msg || 'کاربری برای یادآوری یافت نشد'); res.redirect('/finance/invoices/' + inv.id);
 });
-router.post('/overdue/remind-all', ...staff, modules.requireEnabled('finance.overdue_notify'), async (req, res) => {
+router.post('/overdue/remind-all', ...canWrite, modules.requireEnabled('finance.overdue_notify'), async (req, res) => {
   const rows = await db.table('invoices as i').join('students as s', 's.id', 'i.student_id').select('i.*', 's.user_id').whereIn('i.status', ['unpaid', 'partial']).where('i.due_date', '<', J.todayISO()).whereNotNull('s.user_id').all();
   for (const inv of rows) await notify.push([inv.user_id], { title: 'یادآوری پرداخت', body: `ماندهٔ ${inv.title}: ${utils.money(Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0), unit())}`, link: '/finance/my', type: 'warning' });
   req.flash('success', `برای ${J.toPersianDigits(rows.length)} صورت‌حساب معوق یادآوری ارسال شد.`); res.redirect('/finance/invoices?overdue=1');
@@ -172,7 +173,7 @@ router.post('/overdue/remind-all', ...staff, modules.requireEnabled('finance.ove
 
 // ---------- پرداخت‌ها ----------
 crud(router, {
-  path: '/payments', table: 'payments', alias: 'p', title: 'پرداخت', plural: 'پرداخت‌ها', icon: 'bi-cash', feature: 'finance.payments', orderBy: 'paid_at', dir: 'desc', roles: ['admin', 'staff'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }], canCreate: false, exportFeature: 'finance.export',
+  path: '/payments', table: 'payments', alias: 'p', title: 'پرداخت', plural: 'پرداخت‌ها', icon: 'bi-cash', feature: 'finance.payments', orderBy: 'paid_at', dir: 'desc', roles: ['admin'], permission: ['finance.manage', 'finance.payments'], viewPermission: ['finance.view', 'finance.manage', 'finance.payments'], breadcrumbs: [{ title: 'امور مالی', href: '/finance' }], canCreate: false, exportFeature: 'finance.export',
   query: (q) => q.join('students as s', 's.id', 'p.student_id').leftJoin('invoices as i', 'i.id', 'p.invoice_id').select('p.*', 's.first_name', 's.last_name', 'i.number as invoice_number', 'i.title as invoice_title'),
   filterHook: (q, req) => { if (req.query.from) q.where('p.paid_at', '>=', J.toGregorian(req.query.from)); if (req.query.to) q.where('p.paid_at', '<=', J.toGregorian(req.query.to) + ' 23:59:59'); },
   fields: [

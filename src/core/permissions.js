@@ -38,6 +38,10 @@ const DEFAULT_POSITIONS = [
   { title: 'مسئول فناوری', description: 'کاربران، تنظیمات، پشتیبان‌گیری و زمان‌بند', permissions: ['users.manage', 'system.settings', 'system.modules', 'system.backup', 'system.logs', 'system.jobs', 'notifications.send'] }
 ];
 
+/** مجوزهای پیش‌فرض کارمند بدون سمت (سازگاری با نسخهٔ قبل: دسترسی عمومی کارکنان به‌جز موارد حساس) */
+const STAFF_RESTRICTED = ['users.manage', 'positions.manage', 'teachers.manage', 'exams.lock', 'counseling.confidential', 'system.settings', 'system.modules', 'system.backup', 'system.logs', 'system.jobs'];
+const STAFF_DEFAULT = ALL.filter((k) => !STAFF_RESTRICTED.includes(k));
+
 let positionsCache = null;
 async function positions() {
   if (!positionsCache) {
@@ -54,7 +58,9 @@ async function permissionsOf(user) {
   if (!user) return new Set();
   if (user.role === 'admin') return new Set(ALL);
   const set = new Set(parseList(user.permissions));
-  if (user.position_id) { const p = (await positions()).find((x) => x.id === Number(user.position_id)); if (p) p.perms.forEach((k) => set.add(k)); }
+  const pos = user.position_id ? (await positions()).find((x) => x.id === Number(user.position_id)) : null;
+  if (pos) pos.perms.forEach((k) => set.add(k));
+  if (user.role === 'staff' && !pos && !set.size) STAFF_DEFAULT.forEach((k) => set.add(k));
   return set;
 }
 function can(user, ...keys) {
@@ -69,4 +75,4 @@ async function ensureDefaults() {
   for (const p of DEFAULT_POSITIONS) { await db.insert('positions', { title: p.title, description: p.description, permissions: JSON.stringify(p.permissions), is_system: 1, created_at: now, updated_at: now }); n++; }
   reload(); return n;
 }
-module.exports = { GROUPS, ALL, LABELS, DEFAULT_POSITIONS, positions, reload, permissionsOf, can, parseList, ensureDefaults };
+module.exports = { GROUPS, ALL, LABELS, DEFAULT_POSITIONS, STAFF_DEFAULT, STAFF_RESTRICTED, positions, reload, permissionsOf, can, parseList, ensureDefaults };

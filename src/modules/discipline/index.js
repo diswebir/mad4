@@ -11,7 +11,7 @@ module.exports = {
     { key: 'teacher_record', name: 'ثبت توسط معلم', description: 'معلمان برای دانش‌آموزان کلاس خود مورد ثبت می‌کنند' }
   ],
   menu: [
-    { title: 'انضباط و تشویق', href: '/discipline', icon: 'bi-shield-check', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'انضباط و تشویق', href: '/discipline', icon: 'bi-shield-check', roles: ['admin', 'teacher'], permission: ['discipline.view', 'discipline.manage'] },
     { title: 'سوابق انضباطی من', href: '/discipline/my', icon: 'bi-shield-check', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')

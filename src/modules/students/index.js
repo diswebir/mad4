@@ -23,7 +23,7 @@ module.exports = {
     { key: 'siblings', name: 'تشخیص خواهر/برادر', description: 'نمایش دانش‌آموزان با کد ملی پدر/مادر مشترک' }
   ],
   menu: [
-    { title: 'دانش‌آموزان', href: '/students', icon: 'bi-people', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'دانش‌آموزان', href: '/students', icon: 'bi-people', roles: ['admin', 'teacher'], permission: ['students.view', 'students.manage'] },
     { title: 'پروندهٔ من', href: '/students/me', icon: 'bi-person-vcard', roles: ['student', 'parent'], feature: 'panel' }
   ],
   routes: require('./routes')

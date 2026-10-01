@@ -12,14 +12,21 @@ const notify = require('../../core/notify');
 const utils = require('../../core/utils');
 const J = require('../../core/jalali');
 const schema = require('../../../database/schema');
-const { requireAdmin } = require('../../core/auth');
+const auth = require('../../core/auth');
 const upload = require('../../core/upload');
 const { relPath, removeFile } = upload;
 const pkg = require('../../../package.json');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
-router.use(requireAdmin);
+router.use(auth.requireRoleOrPermission(['admin'], 'system.settings', 'system.modules', 'system.backup', 'system.logs', 'system.jobs'));
+const P = (...k) => auth.requireRoleOrPermission(['admin'], ...k);
+router.use('/settings', P('system.settings'));
+router.use('/modules', P('system.modules'));
+router.use('/activity', P('system.logs'));
+router.use('/backup', P('system.backup'));
+router.use('/demo', auth.requireAdmin);
+router.use('/info', P('system.settings', 'system.logs'));
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },

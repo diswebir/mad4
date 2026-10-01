@@ -19,7 +19,7 @@ module.exports = {
     { key: 'export', name: 'خروجی CSV', description: 'دانلود فهرست تیکت‌ها' }
   ],
   menu: [
-    { title: 'تیکت‌ها', href: '/tickets', icon: 'bi-chat-left-text', roles: ['admin', 'staff', 'teacher', 'student'], badge: 'tickets' }
+    { title: 'تیکت‌ها', href: '/tickets', icon: 'bi-chat-left-text', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], badge: 'tickets' }
   ],
   routes: require('./routes')
 };

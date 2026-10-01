@@ -59,8 +59,11 @@ const mp = async (c, url, fields) => { const fd = new FormData(); fd.append('_cs
   r = await a.get('/students/1?tab=enrollments'); assert(r.status === 200 && /سوابق تحصیلی \(سال به سال\)/.test(r.text), 'profile enrollments tab');
   r = await a.get('/enrollments?export=1'); assert(r.status === 200 && /پایه/.test(r.text), 'enrollments CSV');
   // انتقال کلاس → سابقه به‌روز می‌شود
-  r = await a.post('/students/1/transfer', { class_id: '2', reason: 'تست' }); assert(r.status === 302, 'transfer student 1 to class 2');
-  r = await a.get('/enrollments?student_id=1'); const cls2 = (await a.get('/academic/classes/2')).text; assert(r.status === 200, 'enrollment reflects transfer');
+  const sid = 150; const prof = (await a.get('/students/' + sid)).text; const origClass = (prof.match(/\/academic\/classes\/(\d+)/) || [])[1];
+  r = await a.post(`/students/${sid}/transfer`, { class_id: '2', reason: 'تست' }); assert(r.status === 302, `transfer student ${sid} to class 2`);
+  r = await a.get(`/enrollments?student_id=${sid}`); assert(r.status === 200 && /در حال تحصیل/.test(r.text), 'enrollment reflects transfer');
+  if (origClass) { r = await a.post(`/students/${sid}/transfer`, { class_id: origClass, reason: 'بازگشت تست' }); assert(r.status === 302, 'transfer back to original class ' + origClass); }
+  const cls2 = '';
   // پاک‌سازی
   r = await a.post(`/parents/${pid}/delete`, {}); assert(r.status === 302, 'delete parent');
   void cls2;

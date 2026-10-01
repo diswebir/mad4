@@ -10,6 +10,6 @@ module.exports = {
     { key: 'print', name: 'نسخهٔ چاپی', description: 'چاپ تمیز گزارش‌ها بدون منو' },
     { key: 'export', name: 'خروجی CSV', description: 'دانلود جدول گزارش‌ها' }
   ],
-  menu: [{ title: 'گزارش‌ها', href: '/reports', icon: 'bi-graph-up-arrow', roles: ['admin', 'staff'] }],
+  menu: [{ title: 'گزارش‌ها', href: '/reports', icon: 'bi-graph-up-arrow', roles: ['admin'], permission: 'reports.view' }],
   routes: require('./routes')
 };

@@ -9,6 +9,6 @@ module.exports = {
     { key: 'read_receipt', name: 'رسید خواندن', description: 'نمایش زمان خوانده‌شدن پیام برای فرستنده' },
     { key: 'notify', name: 'اعلان پیام جدید', description: 'اعلان درون‌برنامه‌ای هنگام دریافت پیام' }
   ],
-  menu: [{ title: 'پیام‌ها', href: '/messages', icon: 'bi-envelope', roles: ['admin', 'staff', 'teacher', 'student'], badge: 'messages' }],
+  menu: [{ title: 'پیام‌ها', href: '/messages', icon: 'bi-envelope', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], badge: 'messages' }],
   routes: require('./routes')
 };

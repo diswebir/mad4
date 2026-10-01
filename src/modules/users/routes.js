@@ -9,10 +9,52 @@ const utils = require('../../core/utils');
 const J = require('../../core/jalali');
 const crud = require('../../core/crud');
 const DbSessionStore = require('../../core/session-store');
+const permissions = require('../../core/permissions');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
-router.use(auth.requireAdmin);
+router.use(auth.requireRoleOrPermission(['admin'], 'users.manage', 'positions.manage'));
+
+// ---------- سمت‌ها و مجوزها ----------
+const posGuard = [auth.requireRoleOrPermission(['admin'], 'positions.manage'), modules.requireEnabled('users.positions')];
+router.get('/positions', ...posGuard, async (req, res) => {
+  const rows = await permissions.positions();
+  const counts = Object.fromEntries((await db.table('users').select('position_id', 'COUNT(*) as c').whereNotNull('position_id').groupBy('position_id').all()).map((r) => [r.position_id, Number(r.c)]));
+  res.render(v('positions'), { title: 'سمت‌ها و مجوزها', rows, counts, GROUPS: permissions.GROUPS, LABELS: permissions.LABELS });
+});
+router.get('/positions/new', ...posGuard, (req, res) => res.render(v('position-form'), { title: 'سمت جدید', pos: { title: '', description: '', perms: [] }, GROUPS: permissions.GROUPS, isNew: true }));
+router.get('/positions/:id/edit', ...posGuard, async (req, res) => {
+  const pos = (await permissions.positions()).find((p) => p.id === Number(req.params.id));
+  if (!pos) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const users = await db.table('users').select('id', 'name', 'username', 'role').where('position_id', pos.id).orderBy('name').all();
+  res.render(v('position-form'), { title: 'ویرایش سمت: ' + pos.title, pos, users, GROUPS: permissions.GROUPS, isNew: false });
+});
+async function savePosition(req, res, id) {
+  const title = utils.normalizePersian(String(req.body.title || '')).trim();
+  if (!title) { req.flash('danger', 'عنوان سمت الزامی است'); return res.redirect(id ? `/users/positions/${id}/edit` : '/users/positions/new'); }
+  const perms = [].concat(req.body.perms || []).filter((k) => permissions.ALL.includes(k));
+  const data = { title, description: utils.normalizePersian(String(req.body.description || '')).trim() || null, permissions: JSON.stringify(perms), updated_at: db.now() };
+  if (id) await db.update('positions', data, { id }); else id = await db.insert('positions', Object.assign(data, { is_system: 0, created_at: db.now() }));
+  permissions.reload();
+  await activity.log(req, id ? 'update' : 'create', 'positions', id, `سمت «${title}» با ${perms.length} مجوز`);
+  req.flash('success', 'سمت ذخیره شد. مجوزها برای کاربران این سمت از درخواست بعدی اعمال می‌شود.');
+  res.redirect('/users/positions');
+}
+router.post('/positions', ...posGuard, (req, res) => savePosition(req, res, null));
+router.post('/positions/:id', ...posGuard, (req, res) => savePosition(req, res, Number(req.params.id)));
+router.post('/positions/:id/delete', ...posGuard, async (req, res) => {
+  const id = Number(req.params.id);
+  const n = await db.table('users').where('position_id', id).count();
+  if (n) { req.flash('danger', `این سمت به ${J.toPersianDigits(n)} کاربر اختصاص دارد؛ ابتدا سمت آنان را تغییر دهید.`); return res.redirect('/users/positions'); }
+  await db.remove('positions', { id }); permissions.reload();
+  await activity.log(req, 'delete', 'positions', id, 'حذف سمت');
+  req.flash('success', 'سمت حذف شد'); res.redirect('/users/positions');
+});
+router.get('/positions/matrix.csv', ...posGuard, async (req, res) => {
+  const rows = await permissions.positions();
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', 'attachment; filename="positions-matrix.csv"');
+  res.send(utils.toCSV(permissions.ALL.map((k) => ({ key: k })), [{ label: 'مجوز', value: (r) => permissions.LABELS[r.key] }, { label: 'کلید', key: 'key' }].concat(rows.map((p) => ({ label: p.title, value: (r) => (p.perms.includes(r.key) ? '✓' : '') })))));
+});
 
 crud(router, {
   path: '', table: 'users', alias: 'u', title: 'کاربر', plural: 'کاربران', icon: 'bi-person-badge', feature: 'users.manage', labelField: 'name',
@@ -26,6 +68,7 @@ crud(router, {
     { name: 'email', label: 'ایمیل', type: 'email', search: true },
     { name: 'phone', label: 'موبایل', type: 'tel', mobile: true, list: true },
     { name: 'status', label: 'وضعیت', type: 'select', options: { active: 'فعال', inactive: 'غیرفعال' }, default: 'active', list: true, filter: true, format: (v) => (v === 'active' ? '<span class="badge badge-soft-success">فعال</span>' : '<span class="badge badge-soft-danger">غیرفعال</span>') },
+    { name: 'position_id', label: 'سمت سازمانی', type: 'select', col: 6, options: async () => Object.fromEntries((await permissions.positions()).map((p) => [p.id, p.title])), placeholder: '— بدون سمت —', help: 'مجوزهای سمت به کاربران غیرمدیر (کارمند/معلم) اعمال می‌شود', list: true, filter: true, format: (v, r) => (r.position_title ? `<span class="badge badge-soft-info">${utils.escapeHtml(r.position_title)}</span>` : '') },
     { name: 'must_change_password', label: 'اجبار تغییر رمز در ورود بعدی', type: 'checkbox' },
     { name: 'last_login_at', label: 'آخرین ورود', type: 'datetime', list: true, hideInForm: true, virtual: true }
   ],
@@ -40,8 +83,13 @@ crud(router, {
     if (!isNew && row && row.id === req.user.id) { data.role = 'admin'; data.status = 'active'; }
     if (data.phone) data.phone = utils.normalizePhone(data.phone);
     data.username = String(data.username).toLowerCase();
+    data.position_id = Number(data.position_id) || null;
+    if (modules.isEnabled('users.permissions') && req.user.role === 'admin') { const perms = [].concat(req.body.perms || []).filter((k) => permissions.ALL.includes(k)); data.permissions = perms.length ? JSON.stringify(perms) : null; }
     return data;
   },
+  formPartial: '../modules/users/views/permissions-form',
+  formData: async (req, row) => ({ GROUPS: permissions.GROUPS, perms: permissions.parseList(row && row.permissions), positions: await permissions.positions(), canEditPerms: req.user.role === 'admin' && modules.isEnabled('users.permissions') }),
+  query: (q) => q.leftJoin('positions as p', 'p.id', 'u.position_id').select('u.*', 'p.title as position_title'),
   afterSave: async (id, data, req, isNew, row) => {
     if (!isNew && data.status === 'inactive') await DbSessionStore.destroyUser(id);
   },

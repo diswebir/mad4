@@ -8,7 +8,7 @@ module.exports = {
     { key: 'referral', name: 'ارجاع به مراکز درمانی', description: 'علامت‌گذاری موارد ارجاع‌شده و پیگیری' }
   ],
   menu: [
-    { title: 'سلامت', href: '/health', icon: 'bi-heart-pulse', roles: ['admin', 'staff'] },
+    { title: 'سلامت', href: '/health', icon: 'bi-heart-pulse', roles: ['admin'], permission: 'health.manage' },
     { title: 'هشدارهای سلامت کلاس', href: '/health/alerts', icon: 'bi-heart-pulse', roles: ['teacher'], feature: 'alerts' },
     { title: 'سوابق سلامت من', href: '/health/my', icon: 'bi-heart-pulse', roles: ['student', 'parent'], feature: 'student_view' }
   ],

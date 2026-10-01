@@ -132,7 +132,7 @@ function crud(router, cfg) {
     if (cfg.canCreate === false) return res.redirect(urlBase(req));
     await optionMaps(req);
     const defaults = Object.assign({}, cfg.defaults ? (typeof cfg.defaults === 'function' ? await cfg.defaults(req) : cfg.defaults) : {}, req.query);
-    res.render('crud/form', { title: 'افزودن ' + cfg.title, crud: cfg, fields, row: defaults, isNew: true, urlBase: urlBase(req), action: urlBase(req) });
+    res.render('crud/form', { title: 'افزودن ' + cfg.title, crud: cfg, fields, row: defaults, isNew: true, urlBase: urlBase(req), action: urlBase(req), extra: cfg.formData ? await cfg.formData(req, null) : {} });
   });
 
   function collect(req, row) {
@@ -185,7 +185,7 @@ function crud(router, cfg) {
     const row = await baseQuery(req).where((cfg.alias ? cfg.alias + '.' : '') + 'id', req.params.id).first();
     if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
     await optionMaps(req, row);
-    res.render('crud/form', { title: 'ویرایش ' + cfg.title, crud: cfg, fields, row, isNew: false, urlBase: urlBase(req), action: urlBase(req) + '/' + row.id });
+    res.render('crud/form', { title: 'ویرایش ' + cfg.title, crud: cfg, fields, row, isNew: false, urlBase: urlBase(req), action: urlBase(req) + '/' + row.id, extra: cfg.formData ? await cfg.formData(req, row) : {} });
   });
 
   router.post(base + '/:id', numericId, ...postGuards, async (req, res) => {

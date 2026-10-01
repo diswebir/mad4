@@ -11,7 +11,7 @@ module.exports = {
     { key: 'directory', name: 'دفترچهٔ تماس همکاران', description: 'نمایش شمارهٔ همکاران به معلمان' }
   ],
   menu: [
-    { title: 'معلمان', href: '/teachers', icon: 'bi-person-video3', roles: ['admin', 'staff'] },
+    { title: 'معلمان', href: '/teachers', icon: 'bi-person-video3', roles: ['admin'], permission: ['teachers.view', 'teachers.manage'] },
     { title: 'کلاس‌های من', href: '/teachers/my-classes', icon: 'bi-easel', roles: ['teacher'], feature: 'my_classes' },
     { title: 'همکاران', href: '/teachers/directory', icon: 'bi-people', roles: ['teacher'], feature: 'directory' }
   ],

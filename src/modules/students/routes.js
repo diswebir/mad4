@@ -21,7 +21,7 @@ const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 
 const E = modules.isEnabled;
-const canManage = (req) => req.user.role === 'admin';
+const canManage = (req) => req.user.role === 'admin' || req.can('students.manage');
 const PER_PAGE = 25;
 
 // ---------- کمکی ----------
@@ -35,7 +35,7 @@ async function teacherScope(req) {
   return [...ids];
 }
 async function canView(req, student) {
-  if (['admin', 'staff'].includes(req.user.role)) return true;
+  if (req.user.role === 'admin' || req.can('students.view', 'students.manage')) return true;
   if (req.user.role === 'student') return student.user_id === req.user.id && E('students.panel');
   if (req.user.role === 'parent') return E('students.panel') && (await parentsSvc.childrenOf(req.user.id)).some((k) => k.id === student.id);
   const scope = await teacherScope(req);
@@ -86,7 +86,7 @@ router.get('/me', auth.requireRole('student', 'parent'), modules.requireEnabled(
   res.redirect(s ? '/students/' + s.id : '/dashboard');
 });
 
-router.get('/', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('students.manage'), async (req, res) => {
+router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
   const q = baseQuery();
   const scope = await teacherScope(req);
   if (scope) q.whereIn('s.class_id', scope);
@@ -117,13 +117,13 @@ router.get('/', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEn
   res.render(v('index'), { title: 'دانش‌آموزان', result, classes, grades, f, search, sort, dir: req.query.dir || 'asc', canManage: canManage(req), query: req.query });
 });
 
-router.get('/new', auth.requireAdmin, modules.requireEnabled('students.manage'), async (req, res) => {
+router.get('/new', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
   const row = Object.assign({ enrollment_date: J.todayISO(), status: 'active', nationality: 'ایرانی', guardian_type: 'father' }, req.query);
   if (E('students.auto_number')) row.student_number = await nextStudentNumber();
   res.render(v('form'), { title: 'ثبت‌نام دانش‌آموز جدید', row, isNew: true, sections: await fields.sections(), action: '/students' });
 });
 
-router.post('/', auth.requireAdmin, modules.requireEnabled('students.manage'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
+router.post('/', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
   if (req.uploadError) { req.flash('danger', req.uploadError); req.keepInput(); return res.redirect('/students/new'); }
   const data = collect(req);
   const val = validateStudent(data, true);
@@ -149,17 +149,17 @@ router.post('/', auth.requireAdmin, modules.requireEnabled('students.manage'), .
 });
 
 // ---------- ورود گروهی ----------
-router.get('/import', auth.requireAdmin, modules.requireEnabled('students.import'), async (req, res) => {
+router.get('/import', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), async (req, res) => {
   const classes = await db.table('classes').where('is_active', 1).orderBy('title').all();
   res.render(v('import'), { title: 'ورود گروهی دانش‌آموزان', classes, columns: fields.importColumns() });
 });
-router.get('/import/template', auth.requireAdmin, modules.requireEnabled('students.import'), (req, res) => {
+router.get('/import/template', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), (req, res) => {
   const cols = fields.importColumns();
   const sample = [{ first_name: 'علی', last_name: 'محمدی', gender: 'male', national_id: '0012345678', birth_date: '1391/04/15', father_name: 'رضا', father_phone: '09121234567', mother_name: 'مریم', mother_phone: '09123456789', address: 'تهران، خیابان آزادی' }];
   res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', 'attachment; filename="students-template.csv"');
   res.send(utils.toCSV(sample, cols.map((c) => ({ label: c.key, value: (r) => r[c.key] || '' }))));
 });
-router.post('/import', auth.requireAdmin, modules.requireEnabled('students.import'), ...upload.form('imports', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/import', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), ...upload.form('imports', 'single', 'file', { maxMb: 10 }), async (req, res) => {
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده'); return res.redirect('/students/import'); }
   const fs = require('fs');
   let text = fs.readFileSync(req.file.path, 'utf8'); upload.removeFile(upload.relPath(req.file));
@@ -253,18 +253,18 @@ router.get('/:id/card', modules.requireEnabled('students.id_card'), async (req, 
   const year = await db.table('academic_years').where('is_current', 1).first();
   res.render(v('card'), { title: 'کارت دانش‌آموزی', layout: 'layouts/print', students: [s], year });
 });
-router.get('/cards/class/:classId', auth.requireRole('admin', 'staff'), modules.requireEnabled('students.id_card'), async (req, res) => {
+router.get('/cards/class/:classId', auth.requireRoleOrPermission(['admin'], 'students.view'), modules.requireEnabled('students.id_card'), async (req, res) => {
   const students = await baseQuery().where('s.class_id', req.params.classId).where('s.status', 'active').orderBy('s.last_name').all();
   const year = await db.table('academic_years').where('is_current', 1).first();
   res.render(v('card'), { title: 'کارت‌های دانش‌آموزی کلاس', layout: 'layouts/print', students, year });
 });
 
-router.get('/:id/edit', auth.requireAdmin, modules.requireEnabled('students.manage'), async (req, res) => {
+router.get('/:id/edit', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   res.render(v('form'), { title: 'ویرایش پرونده', row, isNew: false, sections: await fields.sections(), action: '/students/' + row.id });
 });
-router.post('/:id', auth.requireAdmin, modules.requireEnabled('students.manage'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
+router.post('/:id', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect(`/students/${row.id}/edit`); }
@@ -291,7 +291,7 @@ router.post('/:id', auth.requireAdmin, modules.requireEnabled('students.manage')
     res.redirect('/students/' + row.id);
   } catch (e) { req.flash('danger', e.message); req.keepInput(); res.redirect(`/students/${row.id}/edit`); }
 });
-router.post('/:id/delete', auth.requireAdmin, modules.requireEnabled('students.manage'), async (req, res) => {
+router.post('/:id/delete', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.redirect('/students');
   await db.transaction(async (tx) => {
@@ -306,7 +306,7 @@ router.post('/:id/delete', auth.requireAdmin, modules.requireEnabled('students.m
 });
 
 // ---------- عملیات پرونده ----------
-router.post('/:id/status', auth.requireAdmin, modules.requireEnabled('students.status'), async (req, res) => {
+router.post('/:id/status', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.status'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.redirect('/students');
   const status = utils.STUDENT_STATUS[req.body.status] ? req.body.status : 'active';
@@ -317,7 +317,7 @@ router.post('/:id/status', auth.requireAdmin, modules.requireEnabled('students.s
   await activity.log(req, 'update', 'students', row.id, `وضعیت ${row.first_name} ${row.last_name} → ${utils.STUDENT_STATUS[status]}`);
   req.flash('success', 'وضعیت تحصیلی به‌روزرسانی شد.'); res.redirect('/students/' + row.id);
 });
-router.post('/:id/transfer', auth.requireAdmin, modules.requireEnabled('students.transfer'), async (req, res) => {
+router.post('/:id/transfer', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.transfer'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   const cls = await db.findById('classes', req.body.class_id);
   if (!row || !cls) { req.flash('danger', 'کلاس نامعتبر'); return res.redirect('/students/' + req.params.id); }
@@ -328,7 +328,7 @@ router.post('/:id/transfer', auth.requireAdmin, modules.requireEnabled('students
   await activity.log(req, 'transfer', 'students', row.id, `انتقال ${row.first_name} ${row.last_name} به ${cls.title}`);
   req.flash('success', `دانش‌آموز به کلاس «${cls.title}» منتقل شد.`); res.redirect('/students/' + row.id + '?tab=history');
 });
-router.post('/:id/notes', auth.requireRole('admin', 'teacher', 'staff'), modules.requireEnabled('students.notes'), async (req, res) => {
+router.post('/:id/notes', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.notes'), modules.requireEnabled('students.notes'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row || !(await canView(req, row))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   const content = utils.normalizePersian(req.body.content || '');
@@ -337,24 +337,24 @@ router.post('/:id/notes', auth.requireRole('admin', 'teacher', 'staff'), modules
   if (req.body.is_private === '0' && row.user_id && E('notifications.inapp')) await notify.push([row.user_id], { title: 'یادداشت جدید در پرونده', body: utils.truncate(content, 80), link: '/students/me?tab=notes', type: 'info' });
   req.flash('success', 'یادداشت ثبت شد.'); res.redirect(`/students/${row.id}?tab=notes`);
 });
-router.post('/:id/notes/:nid/delete', auth.requireRole('admin', 'teacher'), modules.requireEnabled('students.notes'), async (req, res) => {
+router.post('/:id/notes/:nid/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.notes'), modules.requireEnabled('students.notes'), async (req, res) => {
   const n = await db.table('student_notes').where({ id: req.params.nid, student_id: req.params.id }).first();
   if (n && (req.user.role === 'admin' || n.author_id === req.user.id)) await db.remove('student_notes', { id: n.id });
   res.redirect(`/students/${req.params.id}?tab=notes`);
 });
-router.post('/:id/documents', auth.requireAdmin, modules.requireEnabled('students.documents'), ...upload.form('students/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/:id/documents', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.documents'), ...upload.form('students/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.redirect('/students');
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده'); return res.redirect(`/students/${row.id}?tab=docs`); }
   await db.insert('student_documents', { student_id: row.id, title: utils.normalizePersian(req.body.title) || req.file.originalname, file_path: upload.relPath(req.file), file_name: req.file.originalname, mime: req.file.mimetype, size: req.file.size, uploaded_by: req.user.id, created_at: db.now() });
   req.flash('success', 'مدرک بارگذاری شد.'); res.redirect(`/students/${row.id}?tab=docs`);
 });
-router.post('/:id/documents/:did/delete', auth.requireAdmin, modules.requireEnabled('students.documents'), async (req, res) => {
+router.post('/:id/documents/:did/delete', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.documents'), async (req, res) => {
   const d = await db.table('student_documents').where({ id: req.params.did, student_id: req.params.id }).first();
   if (d) { upload.removeFile(d.file_path); await db.remove('student_documents', { id: d.id }); req.flash('success', 'مدرک حذف شد.'); }
   res.redirect(`/students/${req.params.id}?tab=docs`);
 });
-router.post('/:id/photo', auth.requireAdmin, modules.requireEnabled('students.photo'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
+router.post('/:id/photo', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.photo'), ...upload.form('students', 'single', 'photo', { images: true, maxMb: 3 }), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.redirect('/students');
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'عکسی انتخاب نشده'); return res.redirect('/students/' + row.id); }
@@ -363,7 +363,7 @@ router.post('/:id/photo', auth.requireAdmin, modules.requireEnabled('students.ph
   if (row.user_id) await db.update('users', { avatar: upload.relPath(req.file) }, { id: row.user_id });
   req.flash('success', 'عکس به‌روزرسانی شد.'); res.redirect('/students/' + row.id);
 });
-router.post('/:id/reset-password', auth.requireAdmin, modules.requireEnabled('students.user_account'), async (req, res) => {
+router.post('/:id/reset-password', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.user_account'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row || !row.user_id) return res.redirect('/students');
   const pw = req.body.password && req.body.password.length >= 6 ? req.body.password : utils.randomDigits(6);

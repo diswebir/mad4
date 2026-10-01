@@ -45,7 +45,7 @@ router.post('/:id/read', async (req, res) => { await db.table('notifications').w
 router.post('/:id/delete', async (req, res) => { await db.table('notifications').where({ id: Number(req.params.id) || 0, user_id: req.user.id }).delete(); res.redirect('/notifications'); });
 
 // ---------- ارسال دستی ----------
-const sendGuards = [auth.requireAdmin, modules.requireEnabled('notifications.broadcast')];
+const sendGuards = [auth.requireRoleOrPermission(['admin'], 'notifications.send'), modules.requireEnabled('notifications.broadcast')];
 async function sendForm(req, res, extra) {
   const classes = await db.table('classes').where('is_active', 1).orderBy('title').all();
   const users = await db.table('users').select('id', 'name', 'role', 'username').where('status', 'active').orderBy('role').orderBy('name').all();

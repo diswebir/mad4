@@ -14,7 +14,7 @@ module.exports = {
     { key: 'export', name: 'خروجی CSV', description: 'دانلود صورت‌حساب‌ها و پرداخت‌ها' }
   ],
   menu: [
-    { title: 'امور مالی', href: '/finance', icon: 'bi-cash-stack', roles: ['admin', 'staff'] },
+    { title: 'امور مالی', href: '/finance', icon: 'bi-cash-stack', roles: ['admin'], permission: ['finance.view', 'finance.manage', 'finance.payments'] },
     { title: 'شهریه و پرداخت‌ها', href: '/finance/my', icon: 'bi-cash-stack', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')

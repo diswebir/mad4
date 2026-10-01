@@ -20,10 +20,10 @@ module.exports = {
     { key: 'my', name: 'مشاهدهٔ حضور توسط دانش‌آموز', description: 'تقویم ماهانهٔ حضور در پنل دانش‌آموز' }
   ],
   menu: [
-    { title: 'حضور و غیاب', href: '/attendance', icon: 'bi-clipboard-check', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'حضور و غیاب', href: '/attendance', icon: 'bi-clipboard-check', roles: ['admin', 'teacher'], permission: ['attendance.view_all', 'attendance.manage_all'] },
     { title: 'حضور و غیاب من', href: '/attendance/my', icon: 'bi-clipboard-check', roles: ['student', 'parent'], feature: 'my' },
-    { title: 'درخواست‌های موجه', href: '/attendance/excuses', icon: 'bi-file-earmark-medical', roles: ['admin', 'staff', 'teacher', 'student'], feature: 'excuses' },
-    { title: 'حضور کارکنان', href: '/attendance/staff', icon: 'bi-person-check', roles: ['admin'], feature: 'staff' }
+    { title: 'درخواست‌های موجه', href: '/attendance/excuses', icon: 'bi-file-earmark-medical', roles: ['admin', 'teacher', 'parent', 'student'], permission: 'attendance.excuses', feature: 'excuses' },
+    { title: 'حضور کارکنان', href: '/attendance/staff', icon: 'bi-person-check', roles: ['admin'], permission: 'hr.manage', feature: 'staff' }
   ],
   routes: require('./routes')
 };

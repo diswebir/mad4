@@ -173,7 +173,7 @@ router.get('/report/class/:id', modules.requireEnabled('attendance.class_report'
   res.render(v('class'), { title: 'گزارش حضور کلاس ' + cls.title, cls, students, stats, from, to, days, threshold });
 });
 
-router.get('/report/daily', auth.requireRole('admin', 'staff'), modules.requireEnabled('attendance.daily_report'), async (req, res) => {
+router.get('/report/daily', auth.requireRoleOrPermission(['admin'], 'attendance.view_all', 'attendance.manage_all'), modules.requireEnabled('attendance.daily_report'), async (req, res) => {
   const date = parseDate(req.query.date);
   const classes = await classesQuery().orderBy('g.sort_order').orderBy('c.title').all();
   const rows = await db.table('attendance').select('class_id', 'status', 'COUNT(*) as c').where('date', date).where('session_key', 'daily').groupBy('class_id', 'status').all();
@@ -206,7 +206,7 @@ router.get('/report/monthly', modules.requireEnabled('attendance.monthly_report'
   res.render(v('monthly'), { title: 'دفتر حضور ماهانه', layout: print ? 'layouts/print' : undefined, print, classes, cls, classId, jy, jm, students, grid, dayInfo, range });
 });
 
-router.get('/export', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('attendance.export'), async (req, res) => {
+router.get('/export', auth.requireRoleOrPermission(['admin', 'teacher'], 'attendance.view_all', 'attendance.manage_all'), modules.requireEnabled('attendance.export'), async (req, res) => {
   const to = parseDate(req.query.to); const from = req.query.from ? parseDate(req.query.from) : J.addDays(to, -30);
   const q = db.table('attendance as a').join('students as s', 's.id', 'a.student_id').join('classes as c', 'c.id', 'a.class_id').leftJoin('class_subjects as cs', 'cs.id', 'a.class_subject_id').leftJoin('subjects as sb', 'sb.id', 'cs.subject_id')
     .select('a.*', 's.first_name', 's.last_name', 's.student_number', 'c.title as class_title', 'sb.title as subject_title').whereBetween('a.date', from, to).orderBy('a.date').orderBy('c.title').orderBy('s.last_name');
@@ -218,7 +218,7 @@ router.get('/export', auth.requireRole('admin', 'staff', 'teacher'), modules.req
 });
 
 // ---------- هشدارها ----------
-router.get('/alerts', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('attendance.alerts'), async (req, res) => {
+router.get('/alerts', auth.requireRoleOrPermission(['admin', 'teacher'], 'attendance.view_all', 'attendance.manage_all'), modules.requireEnabled('attendance.alerts'), async (req, res) => {
   const threshold = Math.max(1, settings.getInt('attendance_alert_threshold', 3));
   const from = J.addDays(J.todayISO(), -30);
   const q = db.table('attendance as a').join('students as s', 's.id', 'a.student_id').join('classes as c', 'c.id', 'a.class_id').select('s.id', 's.first_name', 's.last_name', 's.photo', 's.father_phone', 's.mother_phone', 'c.title as class_title', 'c.id as class_id', 'COUNT(*) as absences', 'MAX(a.date) as last_date')
@@ -257,7 +257,7 @@ router.post('/excuses', auth.requireRole('student', 'parent'), modules.requireEn
   req.flash('success', 'درخواست شما ثبت شد و پس از بررسی نتیجه اعلام می‌شود.');
   res.redirect('/attendance/excuses');
 });
-router.post('/excuses/:id/review', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('attendance.excuses'), async (req, res) => {
+router.post('/excuses/:id/review', auth.requireRoleOrPermission(['admin', 'teacher'], 'attendance.excuses'), modules.requireEnabled('attendance.excuses'), async (req, res) => {
   const ex = await db.table('absence_excuses as e').join('students as s', 's.id', 'e.student_id').select('e.*', 's.class_id', 's.user_id', 's.first_name', 's.last_name').where('e.id', req.params.id).first();
   if (!ex) return res.redirect('/attendance/excuses');
   if (!(await canViewClass(req, ex.class_id))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
@@ -271,7 +271,7 @@ router.post('/excuses/:id/review', auth.requireRole('admin', 'staff', 'teacher')
 });
 
 // ---------- حضور کارکنان ----------
-router.get('/staff', auth.requireRole('admin'), modules.requireEnabled('attendance.staff'), async (req, res) => {
+router.get('/staff', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('attendance.staff'), async (req, res) => {
   const date = parseDate(req.query.date);
   const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').orderBy('role').orderBy('name').all();
   const rows = Object.fromEntries((await db.table('staff_attendance').where('date', date).all()).map((r) => [r.user_id, r]));
@@ -279,7 +279,7 @@ router.get('/staff', auth.requireRole('admin'), modules.requireEnabled('attendan
   const monthStats = {}; (await db.table('staff_attendance').select('user_id', 'status', 'COUNT(*) as c').whereBetween('date', range.start, range.end).groupBy('user_id', 'status').all()).forEach((r) => { monthStats[r.user_id] = monthStats[r.user_id] || {}; monthStats[r.user_id][r.status] = Number(r.c); });
   res.render(v('staff'), { title: 'حضور و غیاب کارکنان', date, staff, rows, monthStats });
 });
-router.post('/staff', auth.requireRole('admin'), modules.requireEnabled('attendance.staff'), async (req, res) => {
+router.post('/staff', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('attendance.staff'), async (req, res) => {
   const date = parseDate(req.body.date);
   const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').all();
   const now = db.now();

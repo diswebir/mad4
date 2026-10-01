@@ -17,7 +17,8 @@ router.use(auth.requireAuth);
 const E = modules.isEnabled;
 
 const TYPES = { quiz: 'کوئیز', classwork: 'فعالیت کلاسی', oral: 'پرسش شفاهی', practical: 'عملی', midterm: 'میان‌ترم', written: 'کتبی', final: 'پایان‌ترم', project: 'پروژه' };
-const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
+const isStaff = (req) => req.user.role === 'admin' || req.can('exams.manage_all');
+const isViewer = (req) => req.user.role === 'admin' || req.can('exams.view_all', 'exams.manage_all');
 
 // ---------- کمکی ----------
 async function teacherCtx(req) {
@@ -54,7 +55,7 @@ async function canManageExam(req, exam) {
   return !!tc && (tc.csIds.includes(exam.class_subject_id) || tc.homeroom.includes(exam.class_id));
 }
 async function canViewClass(req, classId) {
-  if (isStaff(req)) return true;
+  if (isViewer(req)) return true;
   const tc = await teacherCtx(req); if (tc) return tc.classIds.includes(Number(classId));
   const s = await studentCtx(req); return !!s && s.class_id === Number(classId);
 }
@@ -146,7 +147,7 @@ router.get('/schedule', modules.requireEnabled('exams.schedule'), async (req, re
 });
 
 // ---------- تحلیل ----------
-router.get('/analytics', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.analytics'), async (req, res) => {
+router.get('/analytics', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.analytics'), async (req, res) => {
   const classes = await classesFor(req);
   const classId = Number(req.query.class_id) || (classes[0] && classes[0].id);
   const termId = req.query.term_id || ((await currentTerm()) || {}).id;
@@ -159,7 +160,7 @@ router.get('/analytics', auth.requireRole('admin', 'staff', 'teacher'), modules.
   const cls = await db.findById('classes', classId);
   const siblings = await db.table('classes').where('grade_level_id', cls.grade_level_id).where('is_active', 1).all();
   const compare = [];
-  for (const c of siblings) { if (!isStaff(req) && !(await canViewClass(req, c.id))) continue; const r = c.id === classId ? report : await computeClassGrades(c.id, termId); compare.push({ title: c.title, avg: r.classAvg }); }
+  for (const c of siblings) { if (!isViewer(req) && !(await canViewClass(req, c.id))) continue; const r = c.id === classId ? report : await computeClassGrades(c.id, termId); compare.push({ title: c.title, avg: r.classAvg }); }
   const pass = settings.getInt('grading_pass_score', 10);
   const failing = report.rows.filter((r) => Object.values(r.per).some((p) => p.val != null && p.val < pass)).map((r) => ({ student: r.student, subjects: report.subjects.filter((sb) => r.per[sb.subject_id].val != null && r.per[sb.subject_id].val < pass).map((sb) => sb.title + ' (' + J.toPersianDigits(r.per[sb.subject_id].val) + ')') }));
   const top = report.rows.filter((r) => r.rank && r.rank <= 5).sort((a, b) => a.rank - b.rank);
@@ -187,7 +188,7 @@ router.get('/report-card/:studentId', modules.requireEnabled('exams.report_card'
   const print = req.query.print === '1' && E('exams.print');
   res.render(v('report-card'), { title: 'کارنامه ' + s.first_name + ' ' + s.last_name, layout: print ? 'layouts/print' : undefined, print, s, term, termId, terms: allTerms, report, mine, remark, att, discipline, homeroom, canRemark, pass: settings.getInt('grading_pass_score', 10), total: report.rows.filter((r) => r.gpa != null).length });
 });
-router.post('/remarks/:studentId', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.remarks'), async (req, res) => {
+router.post('/remarks/:studentId', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.remarks'), async (req, res) => {
   const s = await db.findById('students', req.params.studentId);
   const termId = Number(req.body.term_id);
   if (!s || !termId) return res.status(404).render('errors/404', { title: 'یافت نشد' });
@@ -199,7 +200,7 @@ router.post('/remarks/:studentId', auth.requireRole('admin', 'staff', 'teacher')
 });
 
 // ---------- ریزنمرات کلاس ----------
-router.get('/class/:classId', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.class_sheet'), async (req, res) => {
+router.get('/class/:classId', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.class_sheet'), async (req, res) => {
   const cls = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.*', 'g.title as grade_title', 'g.grading_type').where('c.id', req.params.classId).first();
   if (!cls) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canViewClass(req, cls.id))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
@@ -224,7 +225,7 @@ async function examForm(req, res, exam) {
   const allCs = await classSubjectsFor(req, null);
   res.render(v('form'), { title: exam ? 'ویرایش آزمون' : 'آزمون جدید', exam: exam || {}, classes, classId, cs, allCs, terms: await terms(), currentTermId: ((await currentTerm()) || {}).id, TYPES, prefill: { class_subject_id: req.query.class_subject_id || '' } });
 }
-router.get('/new', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.manage'), (req, res) => examForm(req, res, null));
+router.get('/new', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.manage'), (req, res) => examForm(req, res, null));
 async function saveExam(req, res, exam) {
   const b = utils.cleanBody(req.body, { fields: ['class_subject_id', 'term_id', 'title', 'type', 'date', 'start_time', 'max_score', 'weight', 'description'], dates: ['date'], numbers: ['max_score', 'weight'] });
   const back = exam ? `/exams/${exam.id}/edit` : '/exams/new' + (b.class_subject_id ? '?class_subject_id=' + b.class_subject_id : '');
@@ -244,20 +245,20 @@ async function saveExam(req, res, exam) {
   req.flash('success', 'آزمون تعریف شد. اکنون می‌توانید نمرات را وارد کنید.');
   res.redirect('/exams/' + id);
 }
-router.post('/', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.manage'), (req, res) => saveExam(req, res, null));
-router.get('/:id/edit', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.manage'), async (req, res) => {
+router.post('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.manage'), (req, res) => saveExam(req, res, null));
+router.get('/:id/edit', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.manage'), async (req, res) => {
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   examForm(req, res, exam);
 });
-router.post('/:id', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.manage'), async (req, res) => {
+router.post('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.manage'), async (req, res) => {
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   saveExam(req, res, exam);
 });
-router.post('/:id/delete', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.manage'), async (req, res) => {
+router.post('/:id/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.manage'), async (req, res) => {
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
@@ -265,7 +266,7 @@ router.post('/:id/delete', auth.requireRole('admin', 'staff', 'teacher'), module
   await activity.log(req, 'delete', 'exams', exam.id, 'حذف آزمون ' + exam.title);
   req.flash('success', 'آزمون و نمرات آن حذف شد.'); res.redirect('/exams');
 });
-router.post('/:id/publish', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.publish'), async (req, res) => {
+router.post('/:id/publish', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.publish'), async (req, res) => {
   const exam = await baseQuery().where('e.id', req.params.id).first();
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
@@ -280,7 +281,7 @@ router.post('/:id/publish', auth.requireRole('admin', 'staff', 'teacher'), modul
 });
 
 // ---------- برگهٔ نمره ----------
-router.get('/:id', auth.requireRole('admin', 'staff', 'teacher'), async (req, res) => {
+router.get('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), async (req, res) => {
   const exam = await baseQuery().where('e.id', req.params.id).first();
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canViewClass(req, exam.class_id))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
@@ -295,7 +296,7 @@ router.get('/:id', auth.requireRole('admin', 'staff', 'teacher'), async (req, re
   scores.forEach((x) => { const t = to20(x, exam.max_score); dist[t < 10 ? 0 : t < 12 ? 1 : t < 15 ? 2 : t < 18 ? 3 : 4]++; });
   res.render(v('show'), { title: exam.title, exam, students, grades, stats, dist, descriptive, canManage, TYPES, pass: settings.getInt('grading_pass_score', 10) });
 });
-router.post('/:id/grades', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('exams.grades'), async (req, res) => {
+router.post('/:id/grades', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.grades'), async (req, res) => {
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
@@ -322,7 +323,7 @@ router.post('/:id/grades', auth.requireRole('admin', 'staff', 'teacher'), module
   res.redirect('/exams/' + exam.id);
 });
 
-router.get('/api/class-subjects/:classId', auth.requireRole('admin', 'staff', 'teacher'), async (req, res) => res.json(await classSubjectsFor(req, req.params.classId)));
+router.get('/api/class-subjects/:classId', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), async (req, res) => res.json(await classSubjectsFor(req, req.params.classId)));
 
 module.exports = router;
 module.exports.computeClassGrades = computeClassGrades;

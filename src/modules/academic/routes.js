@@ -40,7 +40,7 @@ crud(router, {
   rowActions: (row) => (Number(row.is_current) ? [] : [{ post: '/academic/years/' + row.id + '/current', icon: 'bi-check2-circle', label: 'تعیین به‌عنوان سال جاری', confirm: `«${row.title}» سال جاری شود؟` }]),
   pageActions: () => [{ href: '/academic/terms', label: 'نوبت‌ها', icon: 'bi-calendar3-range', class: 'btn-outline-primary' }]
 });
-router.post('/years/:id/current', auth.requireAdmin, async (req, res) => {
+router.post('/years/:id/current', auth.requireRoleOrPermission(['admin'], 'academic.manage'), async (req, res) => {
   const y = await db.findById('academic_years', req.params.id);
   if (y) { await db.table('academic_years').update({ is_current: 0 }); await db.update('academic_years', { is_current: 1 }, { id: y.id }); await settings.set('current_year_id', y.id); await activity.log(req, 'update', 'academic_years', y.id, 'تغییر سال جاری به ' + y.title); req.flash('success', `سال «${y.title}» به‌عنوان سال جاری تنظیم شد.`); }
   res.redirect('/academic/years');
@@ -64,7 +64,7 @@ crud(router, {
 
 // ---------- پایه‌ها ----------
 crud(router, {
-  path: '/grade-levels', table: 'grade_levels', title: 'پایه تحصیلی', plural: 'پایه‌های تحصیلی', icon: 'bi-layers', feature: 'academic.grade_levels', orderBy: 'sort_order', viewRoles: ['admin', 'staff'],
+  path: '/grade-levels', table: 'grade_levels', title: 'پایه تحصیلی', plural: 'پایه‌های تحصیلی', icon: 'bi-layers', feature: 'academic.grade_levels', orderBy: 'sort_order', viewRoles: ['admin'], permission: 'academic.manage', viewPermission: ['academic.manage', 'academic.schedule', 'students.view'],
   fields: [
     { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, search: true, placeholder: 'پایه هفتم' },
     { name: 'stage', label: 'دوره', type: 'select', required: true, options: utils.STAGES, list: true, filter: true },
@@ -78,7 +78,7 @@ crud(router, {
 
 // ---------- دروس ----------
 crud(router, {
-  path: '/subjects', table: 'subjects', alias: 's', title: 'درس', plural: 'دروس', icon: 'bi-book', feature: 'academic.subjects', orderBy: 'title', viewRoles: ['admin', 'staff'],
+  path: '/subjects', table: 'subjects', alias: 's', title: 'درس', plural: 'دروس', icon: 'bi-book', feature: 'academic.subjects', orderBy: 'title', viewRoles: ['admin'], permission: 'academic.manage', viewPermission: ['academic.manage', 'academic.schedule', 'students.view'],
   query: (q) => q.leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').select('s.*', 'g.title as grade_title'),
   fields: [
     { name: 'title', label: 'نام درس', type: 'text', required: true, list: true, search: true },
@@ -92,7 +92,7 @@ crud(router, {
 
 // ---------- اتاق‌ها ----------
 crud(router, {
-  path: '/rooms', table: 'rooms', title: 'اتاق', plural: 'اتاق‌ها و فضاها', icon: 'bi-building', feature: 'academic.rooms', orderBy: 'title', viewRoles: ['admin', 'staff'],
+  path: '/rooms', table: 'rooms', title: 'اتاق', plural: 'اتاق‌ها و فضاها', icon: 'bi-building', feature: 'academic.rooms', orderBy: 'title', viewRoles: ['admin'], permission: 'academic.manage', viewPermission: ['academic.manage', 'academic.schedule', 'students.view'],
   fields: [
     { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, search: true, placeholder: 'کلاس ۱۰۱' },
     { name: 'type', label: 'نوع', type: 'select', required: true, options: { class: 'کلاس درس', lab: 'آزمایشگاه', workshop: 'کارگاه', hall: 'سالن', library: 'کتابخانه', gym: 'سالن ورزش' }, list: true, filter: true, default: 'class' },
@@ -116,7 +116,7 @@ const classAccess = async (req, classId) => {
 };
 
 crud(router, {
-  path: '/classes', table: 'classes', alias: 'c', title: 'کلاس', plural: 'کلاس‌ها', icon: 'bi-door-open', feature: 'academic.classes', orderBy: 'title', viewRoles: ['admin', 'staff', 'teacher'],
+  path: '/classes', table: 'classes', alias: 'c', title: 'کلاس', plural: 'کلاس‌ها', icon: 'bi-door-open', feature: 'academic.classes', orderBy: 'title', viewRoles: ['admin', 'teacher'], permission: 'academic.manage', viewPermission: ['academic.manage', 'academic.schedule', 'students.view'],
   query: (q, req) => {
     q.leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').leftJoin('academic_years as y', 'y.id', 'c.academic_year_id').leftJoin('teachers as t', 't.id', 'c.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').leftJoin('rooms as r', 'r.id', 'c.room_id')
       .select('c.*', 'g.title as grade_title', 'y.title as year_title', 'u.name as teacher_name', 'r.title as room_title', '(SELECT COUNT(*) FROM students st WHERE st.class_id = c.id AND st.status = \'active\') as students_count');
@@ -177,7 +177,7 @@ router.get('/classes/:id', modules.requireEnabled('academic.classes'), async (re
 });
 
 // تخصیص درس و معلم به کلاس
-router.post('/classes/:id/subjects', auth.requireAdmin, modules.requireEnabled('academic.class_subjects'), async (req, res) => {
+router.post('/classes/:id/subjects', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.class_subjects'), async (req, res) => {
   const cls = await db.findById('classes', req.params.id);
   if (!cls) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const subject_id = Number(req.body.subject_id), teacher_id = req.body.teacher_id ? Number(req.body.teacher_id) : null;
@@ -191,7 +191,7 @@ router.post('/classes/:id/subjects', auth.requireAdmin, modules.requireEnabled('
   req.flash('success', 'تخصیص درس ذخیره شد.');
   res.redirect(`/academic/classes/${cls.id}#subjects`);
 });
-router.post('/classes/:id/subjects/:csId/delete', auth.requireAdmin, modules.requireEnabled('academic.class_subjects'), async (req, res) => {
+router.post('/classes/:id/subjects/:csId/delete', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.class_subjects'), async (req, res) => {
   const cs = await db.table('class_subjects').where({ id: req.params.csId, class_id: req.params.id }).first();
   if (cs) {
     if (await db.exists('exams', { class_subject_id: cs.id })) { req.flash('danger', 'برای این درس آزمون ثبت شده و قابل حذف نیست'); return res.redirect(`/academic/classes/${req.params.id}#subjects`); }
@@ -244,7 +244,7 @@ router.get('/schedule/teacher/:id', modules.requireEnabled('academic.schedule'),
   res.render(v('schedule-teacher'), { title: 'برنامه هفتگی ' + teacher.name, layout: print ? 'layouts/print' : undefined, print, teacher, grid: buildGrid(slots), periods: PERIODS(), times: periodTimes(), days: SCHOOL_DAYS(), totalHours: slots.length });
 });
 
-router.post('/schedule/class/:id/slot', auth.requireAdmin, modules.requireEnabled('academic.schedule'), async (req, res) => {
+router.post('/schedule/class/:id/slot', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
   const cls = await db.findById('classes', req.params.id);
   if (!cls) return res.status(404).json({ ok: false, message: 'کلاس یافت نشد' });
   const day = Number(req.body.day), period = Number(req.body.period), csId = req.body.class_subject_id ? Number(req.body.class_subject_id) : null, roomId = req.body.room_id ? Number(req.body.room_id) : null;
@@ -269,11 +269,11 @@ router.post('/schedule/class/:id/slot', auth.requireAdmin, modules.requireEnable
   if (wantsJson) return res.json({ ok: true, slot: { subject_title: cs.subject_title, teacher_name: cs.teacher_name } });
   req.flash('success', 'برنامه ذخیره شد.'); res.redirect(back);
 });
-router.post('/schedule/class/:id/clear', auth.requireAdmin, modules.requireEnabled('academic.schedule'), async (req, res) => {
+router.post('/schedule/class/:id/clear', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
   await db.remove('schedule_slots', { class_id: req.params.id });
   req.flash('success', 'برنامهٔ کلاس پاک شد.'); res.redirect(`/academic/schedule/class/${req.params.id}`);
 });
-router.post('/schedule/class/:id/copy', auth.requireAdmin, modules.requireEnabled('academic.schedule'), async (req, res) => {
+router.post('/schedule/class/:id/copy', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
   // کپی برنامه از کلاس دیگر (فقط دروس هم‌نام)
   const src = Number(req.body.source_id); const dst = Number(req.params.id);
   const srcSlots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').select('ss.*', 'cs.subject_id').where('ss.class_id', src).all();
@@ -286,11 +286,11 @@ router.post('/schedule/class/:id/copy', auth.requireAdmin, modules.requireEnable
 });
 
 // ---------- ارتقای گروهی ----------
-router.get('/promote', auth.requireAdmin, modules.requireEnabled('academic.promote'), async (req, res) => {
+router.get('/promote', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.promote'), async (req, res) => {
   const classes = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').leftJoin('academic_years as y', 'y.id', 'c.academic_year_id').select('c.id', 'c.title', 'g.title as grade_title', 'y.title as year_title', '(SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.status = \'active\') as cnt').orderBy('y.start_date', 'desc').orderBy('g.sort_order').all();
   res.render(v('promote'), { title: 'ارتقای گروهی دانش‌آموزان', classes });
 });
-router.post('/promote', auth.requireAdmin, modules.requireEnabled('academic.promote'), async (req, res) => {
+router.post('/promote', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.promote'), async (req, res) => {
   const from = Number(req.body.from_class), to = Number(req.body.to_class);
   if (!from || !to || from === to) { req.flash('danger', 'کلاس مبدأ و مقصد را به‌درستی انتخاب کنید'); return res.redirect('/academic/promote'); }
   const target = await db.findById('classes', to);
@@ -306,11 +306,11 @@ router.post('/promote', auth.requireAdmin, modules.requireEnabled('academic.prom
   req.flash('success', `${J.toPersianDigits(students.length)} دانش‌آموز به کلاس «${target.title}» منتقل شدند.`);
   res.redirect('/academic/classes/' + to);
 });
-router.get('/api/classes', auth.requireRole('admin', 'staff', 'teacher'), async (req, res) => {
+router.get('/api/classes', auth.requireRoleOrPermission(['admin', 'teacher', 'staff']), async (req, res) => {
   const yearId = await currentYearId();
   res.json(await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.id', 'c.title', 'c.grade_level_id', 'g.title as grade_title').where('c.is_active', 1).where((b) => (yearId ? b.where('c.academic_year_id', yearId) : b)).orderBy('g.sort_order').orderBy('c.title').all());
 });
-router.get('/promote/students/:classId', auth.requireAdmin, async (req, res) => {
+router.get('/promote/students/:classId', auth.requireRoleOrPermission(['admin'], 'academic.manage'), async (req, res) => {
   res.json(await db.table('students').select('id', 'first_name', 'last_name', 'student_number').where('class_id', req.params.classId).where('status', 'active').orderBy('last_name').all());
 });
 

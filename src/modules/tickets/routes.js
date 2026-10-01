@@ -20,7 +20,7 @@ const E = modules.isEnabled;
 const CATEGORIES = { academic: 'آموزشی', attendance: 'حضور و غیاب', finance: 'مالی', technical: 'فنی / سامانه', admin: 'اداری', discipline: 'انضباطی', leave: 'مرخصی و خروج', suggestion: 'پیشنهاد و انتقاد', other: 'سایر' };
 const STATUSES = { open: 'باز', answered: 'پاسخ داده شده', pending: 'در انتظار کاربر', closed: 'بسته' };
 const DEPARTMENTS = { admin: 'مدیریت مدرسه', teacher: 'معلم کلاس', staff: 'دفتر / امور اداری' };
-const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
+const isStaff = (req) => req.user.role === 'admin' || req.can('tickets.manage', 'tickets.assign');
 
 async function studentOf(userId) { return db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.*', 'c.title as class_title', 'c.teacher_id as homeroom_teacher_id').where('s.user_id', userId).first(); }
 async function homeroomUserId(classId) { const r = await db.table('classes as c').join('teachers as t', 't.id', 'c.teacher_id').select('t.user_id').where('c.id', classId).first(); return r ? r.user_id : null; }
@@ -79,7 +79,7 @@ router.get('/', async (req, res) => {
   res.render(v('index'), { title: 'تیکت‌ها', result, f, counts, sla, slaHours: slaHours(), CATEGORIES, STATUSES, isStaff: isStaff(req), query: req.query });
 });
 
-router.get('/export', auth.requireRole('admin', 'staff'), modules.requireEnabled('tickets.export'), async (req, res) => {
+router.get('/export', auth.requireRoleOrPermission(['admin'], 'tickets.manage'), modules.requireEnabled('tickets.export'), async (req, res) => {
   const rows = await baseQuery().orderBy('t.id', 'desc').limit(5000).all();
   await activity.log(req, 'export', 'tickets', null, 'خروجی تیکت‌ها');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="tickets-${J.todayISO()}.csv"`);
@@ -87,7 +87,7 @@ router.get('/export', auth.requireRole('admin', 'staff'), modules.requireEnabled
 });
 
 // ---------- آمار ----------
-router.get('/stats', auth.requireRole('admin', 'staff'), modules.requireEnabled('tickets.stats'), async (req, res) => {
+router.get('/stats', auth.requireRoleOrPermission(['admin'], 'tickets.manage'), modules.requireEnabled('tickets.stats'), async (req, res) => {
   const byStatus = Object.fromEntries((await db.table('tickets').select('status', 'COUNT(*) as c').groupBy('status').all()).map((r) => [r.status, Number(r.c)]));
   const byCategory = await db.table('tickets').select('category', 'COUNT(*) as c').groupBy('category').orderBy('c', 'desc').all();
   const byPriority = await db.table('tickets').select('priority', 'COUNT(*) as c').groupBy('priority').all();
@@ -104,17 +104,17 @@ router.get('/stats', auth.requireRole('admin', 'staff'), modules.requireEnabled(
 });
 
 // ---------- پاسخ‌های آماده ----------
-router.get('/canned', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('tickets.canned'), async (req, res) => {
+router.get('/canned', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.canned'), async (req, res) => {
   const rows = await db.table('canned_responses as c').leftJoin('users as u', 'u.id', 'c.user_id').select('c.*', 'u.name as owner').where((b) => b.where('c.user_id', req.user.id).orWhereNull('c.user_id')).orderBy('c.title').all();
   res.render(v('canned'), { title: 'پاسخ‌های آماده', rows });
 });
-router.post('/canned', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('tickets.canned'), async (req, res) => {
+router.post('/canned', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.canned'), async (req, res) => {
   const title = utils.normalizePersian(req.body.title || '').trim(), body = utils.normalizePersian(req.body.body || '').trim();
   if (!title || !body) { req.flash('danger', 'عنوان و متن الزامی است'); return res.redirect('/tickets/canned'); }
   await db.insert('canned_responses', { user_id: req.body.shared === '1' && req.user.role === 'admin' ? null : req.user.id, title, body, created_at: db.now() });
   req.flash('success', 'پاسخ آماده ذخیره شد.'); res.redirect('/tickets/canned');
 });
-router.post('/canned/:id/delete', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('tickets.canned'), async (req, res) => {
+router.post('/canned/:id/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.canned'), async (req, res) => {
   const row = await db.findById('canned_responses', req.params.id);
   if (row && (row.user_id === req.user.id || req.user.role === 'admin')) await db.remove('canned_responses', { id: row.id });
   res.redirect('/tickets/canned');
@@ -233,7 +233,7 @@ router.post('/:id/status', modules.requireEnabled('tickets.status'), async (req,
   await activity.log(req, 'update', 'tickets', t.id, `وضعیت ${t.code} → ${STATUSES[status]}`);
   req.flash('success', 'وضعیت تیکت تغییر کرد.'); res.redirect('/tickets/' + t.id);
 });
-router.post('/:id/assign', auth.requireRole('admin', 'staff'), modules.requireEnabled('tickets.assign'), async (req, res) => {
+router.post('/:id/assign', auth.requireRoleOrPermission(['admin'], 'tickets.assign'), modules.requireEnabled('tickets.assign'), async (req, res) => {
   const t = await db.findById('tickets', req.params.id);
   if (!t) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const uid = Number(req.body.assigned_to) || null;
@@ -242,13 +242,13 @@ router.post('/:id/assign', auth.requireRole('admin', 'staff'), modules.requireEn
   await activity.log(req, 'assign', 'tickets', t.id, `ارجاع ${t.code}`);
   req.flash('success', uid ? 'تیکت ارجاع داده شد.' : 'ارجاع برداشته شد.'); res.redirect('/tickets/' + t.id);
 });
-router.post('/:id/priority', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('tickets.priority'), async (req, res) => {
+router.post('/:id/priority', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.priority'), async (req, res) => {
   const t = await db.findById('tickets', req.params.id);
   if (!t || !(await canView(req, t))) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (utils.PRIORITIES[req.body.priority]) await db.update('tickets', { priority: req.body.priority, updated_at: db.now() }, { id: t.id });
   res.redirect('/tickets/' + t.id);
 });
-router.post('/:id/category', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('tickets.categories'), async (req, res) => {
+router.post('/:id/category', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.categories'), async (req, res) => {
   const t = await db.findById('tickets', req.params.id);
   if (!t || !(await canView(req, t))) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (CATEGORIES[req.body.category]) await db.update('tickets', { category: req.body.category, updated_at: db.now() }, { id: t.id });
@@ -261,7 +261,7 @@ router.post('/:id/rate', modules.requireEnabled('tickets.rating'), async (req, r
   if (r) await db.update('tickets', { rating: r, updated_at: db.now() }, { id: t.id });
   req.flash('success', 'از بازخورد شما سپاسگزاریم.'); res.redirect('/tickets/' + t.id);
 });
-router.post('/:id/delete', auth.requireAdmin, async (req, res) => {
+router.post('/:id/delete', auth.requireRoleOrPermission(['admin'], 'tickets.assign'), async (req, res) => {
   const t = await db.findById('tickets', req.params.id);
   if (!t) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const files = await db.table('ticket_replies').where('ticket_id', t.id).whereNotNull('file_path').pluck('file_path');

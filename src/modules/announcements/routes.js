@@ -15,7 +15,7 @@ const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const AUDIENCES = { all: 'همه', students: 'دانش‌آموزان', parents: 'اولیا', teachers: 'معلمان', staff: 'کارکنان', class: 'یک کلاس' };
-const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
+const isStaff = (req) => req.user.role === 'admin' || req.can('announcements.manage');
 
 async function ctx(req) {
   const c = { classIds: [], classId: null };
@@ -83,8 +83,8 @@ router.post('/', modules.requireEnabled('announcements.manage'), async (req, res
 router.get('/:id/edit', modules.requireEnabled('announcements.manage'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (!a) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canEdit(req, a))) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); form(req, res, a); });
 router.post('/:id', modules.requireEnabled('announcements.manage'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (!a) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canEdit(req, a))) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); return save(req, res, a); });
 router.post('/:id/delete', modules.requireEnabled('announcements.manage'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (a && (await canEdit(req, a))) { await db.remove('announcements', { id: a.id }); await activity.log(req, 'delete', 'announcements', a.id, 'حذف اطلاعیه ' + a.title); req.flash('success', 'اطلاعیه حذف شد.'); } res.redirect('/announcements'); });
-router.post('/:id/pin', auth.requireRole('admin', 'staff'), modules.requireEnabled('announcements.pin'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (a) await db.update('announcements', { is_pinned: a.is_pinned ? 0 : 1 }, { id: a.id }); res.redirect(req.get('referer') || '/announcements'); });
-router.post('/:id/toggle', auth.requireRole('admin', 'staff'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (a) await db.update('announcements', { is_active: a.is_active ? 0 : 1 }, { id: a.id }); res.redirect(req.get('referer') || '/announcements'); });
+router.post('/:id/pin', auth.requireRoleOrPermission(['admin'], 'announcements.manage'), modules.requireEnabled('announcements.pin'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (a) await db.update('announcements', { is_pinned: a.is_pinned ? 0 : 1 }, { id: a.id }); res.redirect(req.get('referer') || '/announcements'); });
+router.post('/:id/toggle', auth.requireRoleOrPermission(['admin'], 'announcements.manage'), async (req, res) => { const a = await db.findById('announcements', req.params.id); if (a) await db.update('announcements', { is_active: a.is_active ? 0 : 1 }, { id: a.id }); res.redirect(req.get('referer') || '/announcements'); });
 router.get('/:id', async (req, res) => {
   const a = await (await visibleQuery(req, base())).where('a.id', req.params.id).first();
   if (!a) return res.status(404).render('errors/404', { title: 'یافت نشد' });

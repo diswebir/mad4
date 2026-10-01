@@ -29,7 +29,7 @@ router.get('/my-classes', auth.requireRole('teacher'), modules.requireEnabled('t
   const todaySlots = modules.isEnabled('academic.schedule') ? await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').join('subjects as s', 's.id', 'cs.subject_id').join('classes as c', 'c.id', 'ss.class_id').select('ss.*', 's.title as subject_title', 'c.title as class_title').where('cs.teacher_id', t.id).where('ss.day_of_week', today).orderBy('ss.period').all() : [];
   res.render(v('my-classes'), { title: 'کلاس‌های من', teacher: t, homeroom, teaching, todaySlots });
 });
-router.get('/directory', auth.requireRole('teacher', 'admin', 'staff'), modules.requireEnabled('teachers.directory'), async (req, res) => {
+router.get('/directory', auth.requireRoleOrPermission(['admin', 'teacher'], 'teachers.view', 'teachers.manage'), modules.requireEnabled('teachers.directory'), async (req, res) => {
   const rows = await db.table('teachers as t').join('users as u', 'u.id', 't.user_id').select('t.id', 't.field', 't.education', 'u.name', 'u.phone', 'u.email', 'u.avatar').where('t.status', 'active').orderBy('u.name').all();
   res.render(v('directory'), { title: 'دفترچهٔ تماس همکاران', rows });
 });
@@ -37,7 +37,7 @@ router.get('/me', auth.requireRole('teacher'), async (req, res) => { const t = a
 
 // ---- CRUD ----
 crud(router, {
-  path: '', table: 'teachers', alias: 't', title: 'معلم', plural: 'معلمان', icon: 'bi-person-video3', feature: 'teachers.manage', roles: ['admin'], viewRoles: ['admin', 'staff'], orderBy: 'u.name', dir: 'asc', labelField: 'name', exportFeature: 'teachers.export', uploadFolder: 'teachers',
+  path: '', table: 'teachers', alias: 't', title: 'معلم', plural: 'معلمان', icon: 'bi-person-video3', feature: 'teachers.manage', roles: ['admin'], viewRoles: ['admin'], permission: 'teachers.manage', viewPermission: ['teachers.view', 'teachers.manage'], orderBy: 'u.name', dir: 'asc', labelField: 'name', exportFeature: 'teachers.export', uploadFolder: 'teachers',
   query: (q) => q.join('users as u', 'u.id', 't.user_id').select('t.*', 'u.name', 'u.username', 'u.phone', 'u.email', 'u.avatar', 'u.avatar as photo', 'u.status as user_status', 'u.last_login_at',
     '(SELECT COUNT(*) FROM classes c WHERE c.teacher_id = t.id AND c.is_active = 1) as homeroom_count', '(SELECT COUNT(*) FROM class_subjects cs WHERE cs.teacher_id = t.id) as subjects_count', '(SELECT COALESCE(SUM(cs.weekly_hours),0) FROM class_subjects cs WHERE cs.teacher_id = t.id) as hours'),
   fields: [
@@ -100,7 +100,7 @@ crud(router, {
 });
 
 // ---- بار کاری ----
-router.get('/workload', auth.requireRole('admin', 'staff'), modules.requireEnabled('teachers.workload'), async (req, res) => {
+router.get('/workload', auth.requireRoleOrPermission(['admin'], 'teachers.view', 'teachers.manage'), modules.requireEnabled('teachers.workload'), async (req, res) => {
   const rows = await db.table('teachers as t').join('users as u', 'u.id', 't.user_id').select('t.id', 't.employment_type', 'u.name',
     '(SELECT COALESCE(SUM(cs.weekly_hours),0) FROM class_subjects cs WHERE cs.teacher_id = t.id) as hours', '(SELECT COUNT(*) FROM class_subjects cs WHERE cs.teacher_id = t.id) as subjects', '(SELECT COUNT(DISTINCT cs.class_id) FROM class_subjects cs WHERE cs.teacher_id = t.id) as classes',
     '(SELECT COUNT(*) FROM schedule_slots ss JOIN class_subjects cs ON cs.id = ss.class_subject_id WHERE cs.teacher_id = t.id) as slots', '(SELECT COUNT(*) FROM classes c WHERE c.teacher_id = t.id AND c.is_active = 1) as homeroom').where('t.status', 'active').orderBy('hours', 'desc').all();
@@ -125,14 +125,14 @@ router.get('/:id', modules.requireEnabled('teachers.profile'), async (req, res) 
 });
 
 // ---- مدارک ----
-router.post('/:id/documents', auth.requireRole('admin', 'teacher'), modules.requireEnabled('teachers.documents'), ...upload.form('teachers/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/:id/documents', auth.requireRoleOrPermission(['admin', 'teacher'], 'teachers.manage'), modules.requireEnabled('teachers.documents'), ...upload.form('teachers/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
   const t = await db.findById('teachers', req.params.id);
   if (!t || (req.user.role === 'teacher' && t.user_id !== req.user.id)) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده است'); return res.redirect(`/teachers/${t.id}#docs`); }
   await db.insert('teacher_documents', { teacher_id: t.id, title: utils.normalizePersian(req.body.title) || req.file.originalname, file_path: upload.relPath(req.file), file_name: req.file.originalname, mime: req.file.mimetype, size: req.file.size, uploaded_by: req.user.id, created_at: db.now() });
   req.flash('success', 'مدرک بارگذاری شد.'); res.redirect(`/teachers/${t.id}#docs`);
 });
-router.post('/:id/documents/:docId/delete', auth.requireRole('admin', 'teacher'), modules.requireEnabled('teachers.documents'), async (req, res) => {
+router.post('/:id/documents/:docId/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'teachers.manage'), modules.requireEnabled('teachers.documents'), async (req, res) => {
   const d = await db.table('teacher_documents').where({ id: req.params.docId, teacher_id: req.params.id }).first();
   const t = await db.findById('teachers', req.params.id);
   if (d && t && (req.user.role === 'admin' || t.user_id === req.user.id)) { upload.removeFile(d.file_path); await db.remove('teacher_documents', { id: d.id }); req.flash('success', 'مدرک حذف شد.'); }

@@ -15,7 +15,7 @@ const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const AUD = { all: 'همه', students: 'دانش‌آموزان', parents: 'اولیا', teachers: 'معلمان', class: 'یک کلاس' };
-const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
+const isStaff = (req) => req.user.role === 'admin' || req.can('polls.manage');
 const canCreate = (req) => isStaff(req) || (req.user.role === 'teacher' && E('polls.teacher_create'));
 const parseOptions = (p) => { try { const o = JSON.parse(p.options || '[]'); return Array.isArray(o) ? o : []; } catch (e) { return []; } };
 

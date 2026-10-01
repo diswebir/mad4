@@ -20,7 +20,7 @@ router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled(
   const rows = await db.table('health_records as h').leftJoin('users as u', 'u.id', 'h.recorded_by').select('h.*', 'u.name as recorder').where('h.student_id', s.id).orderBy('h.date', 'desc').all();
   res.render(v('my'), { title: 'سوابق سلامت من', rows, s, TYPES });
 });
-router.get('/alerts', auth.requireRole('admin', 'staff', 'teacher'), modules.requireEnabled('health.alerts'), async (req, res) => {
+router.get('/alerts', auth.requireRoleOrPermission(['admin', 'teacher'], 'health.manage'), modules.requireEnabled('health.alerts'), async (req, res) => {
   const classes = await people.classOptions(req);
   const classId = Number(req.query.class_id) || null;
   const q = db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id', 's.first_name', 's.last_name', 's.allergies', 's.medical_conditions', 's.medications', 's.special_needs', 's.blood_type', 's.emergency_name', 's.emergency_phone', 's.father_phone', 's.mother_phone', 'c.title as class_title').where('s.status', 'active')
@@ -32,7 +32,7 @@ router.get('/alerts', auth.requireRole('admin', 'staff', 'teacher'), modules.req
 });
 
 crud(router, {
-  path: '', table: 'health_records', alias: 'h', title: 'سابقهٔ سلامت', plural: 'سلامت و بهداشت', icon: 'bi-heart-pulse', feature: 'health.records', orderBy: 'date', dir: 'desc', roles: ['admin', 'staff'],
+  path: '', table: 'health_records', alias: 'h', title: 'سابقهٔ سلامت', plural: 'سلامت و بهداشت', icon: 'bi-heart-pulse', feature: 'health.records', orderBy: 'date', dir: 'desc', roles: ['admin'], permission: 'health.manage',
   query: (q) => q.leftJoin('students as s', 's.id', 'h.student_id').leftJoin('classes as c', 'c.id', 's.class_id').select('h.*', 'c.title as class_title'),
   filterHook: (q, req) => { if (req.query.student_id) q.where('h.student_id', req.query.student_id); if (req.query.class_id) q.where('s.class_id', req.query.class_id); },
   fields: [

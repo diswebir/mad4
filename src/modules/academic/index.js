@@ -14,12 +14,12 @@ module.exports = {
     { key: 'promote', name: 'ارتقای گروهی دانش‌آموزان', description: 'انتقال همهٔ دانش‌آموزان یک کلاس به کلاس دیگر (پایان سال)' }
   ],
   menu: [
-    { title: 'کلاس‌ها', href: '/academic/classes', icon: 'bi-door-open', roles: ['admin', 'teacher', 'staff'] },
-    { title: 'برنامه هفتگی', href: '/academic/schedule', icon: 'bi-table', roles: ['admin', 'teacher', 'staff', 'student'], feature: 'schedule' },
-    { title: 'دروس', href: '/academic/subjects', icon: 'bi-book', roles: ['admin', 'staff'] },
-    { title: 'پایه‌ها', href: '/academic/grade-levels', icon: 'bi-layers', roles: ['admin', 'staff'] },
+    { title: 'کلاس‌ها', href: '/academic/classes', icon: 'bi-door-open', roles: ['admin', 'teacher'], permission: ['academic.manage', 'students.view'] },
+    { title: 'برنامه هفتگی', href: '/academic/schedule', icon: 'bi-table', roles: ['admin', 'teacher', 'student', 'parent'], permission: ['academic.schedule', 'academic.manage', 'students.view'], feature: 'schedule' },
+    { title: 'دروس', href: '/academic/subjects', icon: 'bi-book', roles: ['admin'], permission: 'academic.manage' },
+    { title: 'پایه‌ها', href: '/academic/grade-levels', icon: 'bi-layers', roles: ['admin'], permission: 'academic.manage' },
     { title: 'سال تحصیلی', href: '/academic/years', icon: 'bi-calendar-range', roles: ['admin'] },
-    { title: 'اتاق‌ها', href: '/academic/rooms', icon: 'bi-building', roles: ['admin', 'staff'], feature: 'rooms' }
+    { title: 'اتاق‌ها', href: '/academic/rooms', icon: 'bi-building', roles: ['admin'], permission: 'academic.manage', feature: 'rooms' }
   ],
   routes: require('./routes')
 };

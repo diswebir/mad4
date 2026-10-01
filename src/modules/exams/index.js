@@ -18,7 +18,7 @@ module.exports = {
     { key: 'export', name: 'خروجی CSV نمرات', description: 'دانلود ریزنمرات' }
   ],
   menu: [
-    { title: 'آزمون‌ها و نمرات', href: '/exams', icon: 'bi-award', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'آزمون‌ها و نمرات', href: '/exams', icon: 'bi-award', roles: ['admin', 'teacher'], permission: ['exams.view_all', 'exams.manage_all'] },
     { title: 'نمرات من', href: '/exams/my', icon: 'bi-award', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')

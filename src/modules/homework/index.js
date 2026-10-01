@@ -12,9 +12,9 @@ module.exports = {
     { key: 'stats', name: 'آمار تحویل', description: 'درصد ارسال و میانگین نمره برای هر تکلیف' }
   ],
   menu: [
-    { title: 'تکالیف', href: '/homework', icon: 'bi-journal-check', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'تکالیف', href: '/homework', icon: 'bi-journal-check', roles: ['admin', 'teacher'], permission: 'homework.view_all' },
     { title: 'تکالیف من', href: '/homework/my', icon: 'bi-journal-check', roles: ['student', 'parent'] },
-    { title: 'محتوای آموزشی', href: '/homework/materials', icon: 'bi-folder2-open', roles: ['admin', 'staff', 'teacher', 'student'], feature: 'materials' }
+    { title: 'محتوای آموزشی', href: '/homework/materials', icon: 'bi-folder2-open', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], feature: 'materials' }
   ],
   routes: require('./routes')
 };

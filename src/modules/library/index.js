@@ -11,7 +11,7 @@ module.exports = {
     { key: 'export', name: 'خروجی CSV', description: 'دانلود فهرست کتاب‌ها و امانت‌ها' }
   ],
   menu: [
-    { title: 'کتابخانه', href: '/library', icon: 'bi-book', roles: ['admin', 'staff', 'teacher'] },
+    { title: 'کتابخانه', href: '/library', icon: 'bi-book', roles: ['admin', 'teacher'], permission: 'library.manage' },
     { title: 'کتابخانه', href: '/library/my', icon: 'bi-book', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')

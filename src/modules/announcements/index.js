@@ -10,6 +10,6 @@ module.exports = {
     { key: 'teacher_post', name: 'اطلاعیهٔ معلم برای کلاس', description: 'معلم می‌تواند برای کلاس‌های خود اطلاعیه بگذارد' },
     { key: 'notify', name: 'اعلان انتشار', description: 'ارسال اعلان درون‌برنامه‌ای به مخاطبان هنگام انتشار' }
   ],
-  menu: [{ title: 'اطلاعیه‌ها', href: '/announcements', icon: 'bi-megaphone', roles: ['admin', 'staff', 'teacher', 'student'] }],
+  menu: [{ title: 'اطلاعیه‌ها', href: '/announcements', icon: 'bi-megaphone', roles: ['admin', 'staff', 'teacher', 'student', 'parent'] }],
   routes: require('./routes')
 };

@@ -14,7 +14,7 @@ const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
-const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
+const isStaff = (req) => req.user.role === 'admin' || req.can('messages.broadcast');
 
 /** گیرندگان مجاز برای کاربر جاری: [{group, users:[{id,name,role}]}] */
 async function recipientsFor(req) {

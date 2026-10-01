@@ -8,6 +8,6 @@ module.exports = {
     { key: 'results_public', name: 'نمایش نتایج به رأی‌دهندگان', description: 'پس از رأی‌دادن، نتایج نمایش داده می‌شود' },
     { key: 'teacher_create', name: 'ایجاد توسط معلم', description: 'معلم برای کلاس خود نظرسنجی می‌سازد' }
   ],
-  menu: [{ title: 'نظرسنجی', href: '/polls', icon: 'bi-bar-chart-steps', roles: ['admin', 'staff', 'teacher', 'student'] }],
+  menu: [{ title: 'نظرسنجی', href: '/polls', icon: 'bi-bar-chart-steps', roles: ['admin', 'staff', 'teacher', 'student', 'parent'] }],
   routes: require('./routes')
 };

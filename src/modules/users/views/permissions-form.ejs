@@ -1,0 +1,17 @@
+<% if (extra && extra.canEditPerms && row.role !== 'admin') { %>
+<hr>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="mb-0"><i class="bi bi-shield-check me-1"></i>مجوزهای اختصاصی (افزون بر سمت)</h6>
+  <div class="fs-7 text-muted">مجوزهای سمت انتخاب‌شده به‌صورت خودکار اعمال می‌شوند؛ اینجا فقط موارد اضافه را تیک بزنید.</div>
+</div>
+<div class="accordion accordion-flush border rounded" id="permAcc">
+  <% extra.GROUPS.forEach(function (g, gi) { var picked = g.items.filter(function (i) { return extra.perms.indexOf(i[0]) >= 0; }).length; %>
+  <div class="accordion-item">
+    <h2 class="accordion-header"><button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#pg<%= gi %>"><%= g.title %> <% if (picked) { %><span class="badge text-bg-primary ms-2"><%= J.toPersianDigits(picked) %></span><% } %></button></h2>
+    <div id="pg<%= gi %>" class="accordion-collapse collapse" data-bs-parent="#permAcc"><div class="accordion-body py-2"><div class="row g-1">
+      <% g.items.forEach(function (it) { %><div class="col-md-6 col-lg-4"><label class="form-check fs-7"><input type="checkbox" class="form-check-input" name="perms[]" value="<%= it[0] %>" <%= extra.perms.indexOf(it[0]) >= 0 ? 'checked' : '' %>> <%= it[1] %> <code class="text-muted">(<%= it[0] %>)</code></label></div><% }) %>
+    </div></div></div>
+  </div>
+  <% }) %>
+</div>
+<% } %>

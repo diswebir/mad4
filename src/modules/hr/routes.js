@@ -19,7 +19,7 @@ const isAdmin = (req) => req.user.role === 'admin';
 const days = (r) => (r.type === 'ساعتی' ? 0 : J.diffDays(r.from_date, r.to_date) + 1);
 
 crud(router, {
-  path: '/leaves', table: 'leave_requests', alias: 'l', title: 'درخواست مرخصی', plural: 'مرخصی‌ها', icon: 'bi-person-badge', feature: 'hr.leaves', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff', 'teacher'], viewRoles: ['admin', 'staff', 'teacher'],
+  path: '/leaves', table: 'leave_requests', alias: 'l', title: 'درخواست مرخصی', plural: 'مرخصی‌ها', icon: 'bi-person-badge', feature: 'hr.leaves', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff', 'teacher'], viewRoles: ['admin', 'staff', 'teacher'], permission: 'hr.manage',
   query: (q, req) => { q.join('users as u', 'u.id', 'l.user_id').leftJoin('users as r', 'r.id', 'l.reviewed_by').select('l.*', 'u.name as user_name', 'u.role as user_role', 'r.name as reviewer_name'); if (req && !isAdmin(req)) q.where('l.user_id', req.user.id); return q; },
   fields: [
     { name: 'user_id', label: 'درخواست‌کننده', type: 'select', list: true, readonly: true, hideInForm: true, search: true, searchColumn: 'u.name', options: async () => (await db.table('users').whereIn('role', ['teacher', 'staff', 'admin']).orderBy('name').all()).map((u) => ({ value: u.id, label: u.name })) },
@@ -58,12 +58,12 @@ crud(router, {
   }
 });
 // مدارک پرسنلی: هدایت به پروندهٔ معلم (مدارک در ماژول معلمان نگهداری می‌شود)
-router.get('/staff/:userId/documents', auth.requireAdmin, modules.requireEnabled('hr.documents'), async (req, res) => {
+router.get('/staff/:userId/documents', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('hr.documents'), async (req, res) => {
   const t = await db.table('teachers').where('user_id', Number(req.params.userId) || 0).first();
   if (!t) { req.flash('warning', 'برای این کاربر پروندهٔ معلم ثبت نشده است.'); return res.redirect('/hr/leaves'); }
   res.redirect('/teachers/' + t.id + '#docs');
 });
-router.post('/leaves/:id/review', auth.requireAdmin, modules.requireEnabled('hr.approval'), async (req, res) => {
+router.post('/leaves/:id/review', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('hr.approval'), async (req, res) => {
   const r = await db.findById('leave_requests', req.params.id);
   if (!r) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const decision = req.body.decision === 'approved' ? 'approved' : 'rejected';

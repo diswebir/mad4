@@ -69,7 +69,7 @@ router.get('/ical', modules.requireEnabled('calendar.ical'), async (req, res) =>
   res.send(lines.filter(Boolean).join('\r\n'));
 });
 crud(router, {
-  path: '/events', table: 'events', alias: 'e', title: 'رویداد', plural: 'رویدادها', icon: 'bi-calendar-event', feature: 'calendar.events', orderBy: 'start_date', dir: 'desc', roles: ['admin', 'staff', 'teacher'], viewRoles: ['admin', 'staff', 'teacher'],
+  path: '/events', table: 'events', alias: 'e', title: 'رویداد', plural: 'رویدادها', icon: 'bi-calendar-event', feature: 'calendar.events', orderBy: 'start_date', dir: 'desc', roles: ['admin', 'teacher'], viewRoles: ['admin', 'teacher'], permission: 'calendar.manage',
   breadcrumbs: [{ title: 'تقویم', href: '/calendar' }],
   query: (q, req) => { q.leftJoin('classes as c', 'c.id', 'e.class_id').select('e.*', 'c.title as class_title'); if (req && req.user.role === 'teacher') q.where('e.created_by', req.user.id); return q; },
   fields: [

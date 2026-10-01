@@ -8,7 +8,7 @@ module.exports = {
     { key: 'student_request', name: 'درخواست مشاوره توسط دانش‌آموز', description: 'دانش‌آموز از پنل خود درخواست جلسه ثبت می‌کند (از طریق تیکت با دستهٔ مشاوره)' }
   ],
   menu: [
-    { title: 'مشاوره', href: '/counseling', icon: 'bi-chat-heart', roles: ['admin', 'staff'] },
+    { title: 'مشاوره', href: '/counseling', icon: 'bi-chat-heart', roles: ['admin'], permission: 'counseling.manage' },
     { title: 'درخواست مشاوره', href: '/counseling/request', icon: 'bi-chat-heart', roles: ['student', 'parent'], feature: 'student_request' }
   ],
   routes: require('./routes')

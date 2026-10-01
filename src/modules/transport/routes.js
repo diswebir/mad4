@@ -14,7 +14,7 @@ const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
-const staffOnly = [auth.requireRole('admin', 'staff')];
+const staffOnly = [auth.requireRoleOrPermission(['admin'], 'transport.manage')];
 
 router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('transport.student_view'), async (req, res) => {
   const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
@@ -23,7 +23,7 @@ router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled(
   res.render(v('my'), { title: 'سرویس من', route, mates, s });
 });
 crud(router, {
-  path: '', table: 'transport_routes', alias: 'r', title: 'مسیر سرویس', plural: 'سرویس مدرسه', icon: 'bi-bus-front', feature: 'transport.routes', orderBy: 'title', roles: ['admin', 'staff'],
+  path: '', table: 'transport_routes', alias: 'r', title: 'مسیر سرویس', plural: 'سرویس مدرسه', icon: 'bi-bus-front', feature: 'transport.routes', orderBy: 'title', roles: ['admin'], permission: 'transport.manage',
   query: (q) => q.select('r.*', '(SELECT COUNT(*) FROM students s WHERE s.transport_route_id = r.id AND s.status = \'active\') as riders'),
   fields: [
     { name: 'title', label: 'عنوان مسیر', type: 'text', required: true, list: true, search: true, placeholder: 'مثال: مسیر ۱ — شهرک غرب' },

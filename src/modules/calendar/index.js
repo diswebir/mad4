@@ -9,6 +9,6 @@ module.exports = {
     { key: 'monthly_view', name: 'نمای ماهانه', description: 'جدول ماه شمسی با رویدادها' },
     { key: 'ical', name: 'خروجی iCal', description: 'دانلود رویدادها برای تقویم گوشی' }
   ],
-  menu: [{ title: 'تقویم', href: '/calendar', icon: 'bi-calendar3', roles: ['admin', 'staff', 'teacher', 'student'] }],
+  menu: [{ title: 'تقویم', href: '/calendar', icon: 'bi-calendar3', roles: ['admin', 'staff', 'teacher', 'student', 'parent'] }],
   routes: require('./routes')
 };
