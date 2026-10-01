@@ -6,6 +6,7 @@ if (crud.exportable !== false && (!crud.exportFeature || enabled(crud.exportFeat
 %>
 <%- include('../partials/page-header', { title: crud.plural, icon: crud.icon, actions: actions, breadcrumbs: crud.breadcrumbs || [{ title: crud.plural }] }) %>
 <% if (crud.intro) { %><div class="alert alert-info"><%- crud.intro %></div><% } %>
+<% if (typeof summaryHtml !== 'undefined' && summaryHtml) { %><%- summaryHtml %><% } %>
 <div class="card table-card">
   <div class="card-header">
     <form class="toolbar" method="get" data-auto-submit>
@@ -48,7 +49,7 @@ if (crud.exportable !== false && (!crud.exportFeature || enabled(crud.exportFeat
           <% (crud.extraColumns || []).forEach(function (c) { %><td><%- c.render(row) %></td><% }); %>
           <td class="actions">
             <% if (rowActions) rowActions(row).forEach(function (a) { %>
-              <% if (a.post) { %><a href="#" data-post="<%= a.post %>" <% if (a.confirm) { %>data-confirm="<%= a.confirm %>"<% } %> class="btn btn-sm <%= a.class || 'btn-light' %>" title="<%= a.label %>"><i class="bi <%= a.icon %>"></i></a>
+              <% if (a.post) { %><a href="#" data-post="<%= a.post %>" <% if (a.confirm) { %>data-confirm="<%= a.confirm %>"<% } %> <% if (a.params) { %>data-params="<%= JSON.stringify(a.params) %>"<% } %> class="btn btn-sm <%= a.class || 'btn-light' %>" title="<%= a.label %>"><i class="bi <%= a.icon %>"></i></a>
               <% } else { %><a href="<%= a.href %>" class="btn btn-sm <%= a.class || 'btn-light' %>" title="<%= a.label %>"><i class="bi <%= a.icon %>"></i></a><% } %>
             <% }); %>
             <% if (crud.showUrl) { %><a href="<%= crud.showUrl(row) %>" class="btn btn-sm btn-light" title="مشاهده"><i class="bi bi-eye"></i></a><% } %>

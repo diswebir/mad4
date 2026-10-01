@@ -315,3 +315,20 @@ a { text-decoration: none; }
 .report-card .table th, .report-card .table td { vertical-align: middle; }
 .score-input.is-invalid { background: #fee2e2; }
 .icon-box { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+/* calendar */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-head { padding: .5rem; text-align: center; font-weight: 600; font-size: .85rem; border-bottom: 1px solid var(--bs-border-color); background: var(--bs-tertiary-bg); }
+.cal-cell { min-height: 92px; padding: .35rem; border-bottom: 1px solid var(--bs-border-color); border-left: 1px solid var(--bs-border-color); font-size: .78rem; }
+.cal-cell:nth-child(7n + 1) { border-left: 0; }
+.cal-cell.empty { background: var(--bs-tertiary-bg); }
+.cal-cell.today { background: rgba(37, 99, 235, .08); }
+.cal-cell.today .num { background: var(--bs-primary); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; }
+.cal-cell.holiday .num { color: var(--bs-danger); font-weight: 700; }
+.cal-cell .add { opacity: 0; } .cal-cell:hover .add { opacity: 1; }
+.cal-cell .ev { display: block; color: #fff; border-radius: 4px; padding: 1px 4px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+@media (max-width: 768px) { .cal-cell { min-height: 60px; } .cal-cell .ev { font-size: 0; height: 6px; padding: 0; } }
+/* search suggestions */
+.search-suggest { position: absolute; top: 100%; right: 0; left: 0; z-index: 1050; background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.12); max-height: 70vh; overflow: auto; margin-top: 4px; }
+.search-suggest .sg-title { padding: .4rem .75rem; font-size: .75rem; font-weight: 600; color: var(--bs-secondary-color); background: var(--bs-tertiary-bg); }
+.search-suggest .sg-item { display: flex; justify-content: space-between; gap: .5rem; padding: .45rem .75rem; color: var(--bs-body-color); text-decoration: none; font-size: .85rem; }
+.search-suggest .sg-item:hover { background: rgba(37, 99, 235, .08); }

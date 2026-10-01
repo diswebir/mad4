@@ -133,3 +133,24 @@
     return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf, 'Accept': 'application/json' }, body: JSON.stringify(data || {}) }).then(function (r) { return r.json(); });
   };
 })();
+
+// پیشنهاد زندهٔ جستجو
+(function () {
+  var input = document.getElementById('globalSearch');
+  if (!input || !document.body.hasAttribute('data-live-search')) return;
+  var box = document.createElement('div'); box.className = 'search-suggest d-none'; input.parentNode.appendChild(box);
+  var timer = null;
+  input.addEventListener('input', function () {
+    clearTimeout(timer); var q = input.value.trim();
+    if (q.length < 2) { box.classList.add('d-none'); return; }
+    timer = setTimeout(function () {
+      fetch('/search/api?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.groups || !d.groups.length) { box.innerHTML = '<div class="p-2 text-secondary fs-7">نتیجه‌ای یافت نشد</div>'; box.classList.remove('d-none'); return; }
+        box.innerHTML = d.groups.map(function (g) { return '<div class="sg-title"><i class="bi ' + g.icon + ' me-1"></i>' + g.title + '</div>' + g.items.map(function (i) { return '<a class="sg-item" href="' + i.href + '"><span>' + i.title + '</span><span class="fs-7 text-secondary">' + (i.sub || '') + '</span></a>'; }).join(''); }).join('') + '<a class="sg-item text-primary justify-content-center" href="/search?q=' + encodeURIComponent(q) + '">همهٔ نتایج…</a>';
+        box.classList.remove('d-none');
+      }).catch(function () {});
+    }, 250);
+  });
+  document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== input) box.classList.add('d-none'); });
+  input.addEventListener('keydown', function (e) { if (e.key === 'Escape') box.classList.add('d-none'); });
+})();

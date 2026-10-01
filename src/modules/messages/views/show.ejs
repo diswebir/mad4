@@ -1,0 +1,13 @@
+<%- include('partials/page-header', { title: m.subject, subtitle: 'گفتگو با ' + other.name + ' (' + (ROLES[other.role] || other.role) + ')', icon: 'bi-envelope-open', breadcrumbs: [{ title: 'پیام‌ها', href: '/messages' }, { title: m.subject }], actions: [...(canReply ? [{ href: '/messages/compose?reply=' + m.id + '&to=' + other.id, label: 'پاسخ', icon: 'bi-reply', class: 'btn-primary' }] : []), { post: '/messages/' + m.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-light text-danger', confirm: 'پیام حذف شود؟' }] }) %>
+<div class="row justify-content-center"><div class="col-lg-9">
+<% var list = thread.length ? thread : [m]; list.forEach(function (x) { var mine = x.sender_id === currentUser.id; %>
+  <div class="card mb-3 <%= x.id === m.id ? 'border-primary' : '' %>"><div class="card-body">
+    <div class="d-flex gap-3 align-items-start"><%- include('partials/avatar', { user: { name: x.sender_name, avatar: x.sender_avatar }, size: 40 }) %>
+      <div class="flex-grow-1 mw-0"><div class="d-flex justify-content-between flex-wrap gap-2"><div><strong><%= mine ? 'شما' : x.sender_name %></strong> <span class="badge badge-soft-secondary"><%= ROLES[x.sender_role] || x.sender_role %></span></div><div class="fs-7 text-secondary"><%= J.formatDateTime(x.created_at) %><% if (mine && enabled('messages.read_receipt')) { %> · <%= x.is_read ? '<i class="bi bi-check2-all text-primary"></i> خوانده شده' + (x.read_at ? ' ' + J.timeAgo(x.read_at) : '') : '<i class="bi bi-check2"></i> ارسال شده' %><% } %></div></div>
+        <% if (x.subject && x.id !== list[0].id && x.subject !== list[0].subject) { %><div class="fw-semibold mt-1"><%= x.subject %></div><% } %>
+        <div class="msg-body mt-2" style="line-height:1.9"><%- utils.nl2br(utils.escapeHtml(x.body)) %></div></div></div>
+  </div></div>
+<% }); %>
+<% if (canReply) { %><form method="post" action="/messages/compose" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="mode" value="user"><input type="hidden" name="receiver_id" value="<%= other.id %>"><input type="hidden" name="parent_id" value="<%= rootId %>"><input type="hidden" name="subject" value="<%= m.subject.startsWith('پاسخ:') ? m.subject : 'پاسخ: ' + m.subject %>">
+  <div class="card-body"><textarea class="form-control" name="body" rows="4" placeholder="پاسخ سریع…" required></textarea></div><div class="card-footer bg-transparent text-end"><button class="btn btn-primary"><i class="bi bi-reply me-1"></i>ارسال پاسخ</button></div></form><% } %>
+</div></div>

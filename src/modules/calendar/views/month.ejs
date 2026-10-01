@@ -1,0 +1,23 @@
+<%- include('partials/page-header', { title: 'تقویم ' + MONTHS[jm - 1] + ' ' + J.toPersianDigits(jy), icon: 'bi-calendar3', actions: [...(canManage ? [{ href: '/calendar/events/new', label: 'رویداد جدید', icon: 'bi-plus-lg', class: 'btn-primary' }, { href: '/calendar/events', label: 'فهرست رویدادها', icon: 'bi-list-ul', class: 'btn-light' }] : []), ...(enabled('calendar.ical') ? [{ href: '/calendar/ical', label: 'iCal', icon: 'bi-download', class: 'btn-light' }] : [])] }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a class="btn btn-light btn-sm" href="/calendar?y=<%= prev.y %>&m=<%= prev.m %>"><i class="bi bi-chevron-right"></i> <%= MONTHS[prev.m - 1] %></a>
+  <a class="btn btn-outline-primary btn-sm" href="/calendar">امروز</a>
+  <a class="btn btn-light btn-sm" href="/calendar?y=<%= next.y %>&m=<%= next.m %>"><%= MONTHS[next.m - 1] %> <i class="bi bi-chevron-left"></i></a>
+</div>
+<div class="row g-3"><div class="col-xl-9">
+<% if (monthlyView) { %>
+<div class="card"><div class="cal-grid">
+  <% WEEKDAYS.forEach(function (w, i) { %><div class="cal-head <%= i === 6 ? 'text-danger' : '' %>"><%= w %></div><% }); %>
+  <% for (var k = 0; k < firstWeekday; k++) { %><div class="cal-cell empty"></div><% } %>
+  <% days.forEach(function (d) { var holiday = d.weekday === 6 || d.items.some(function (x) { return x.kind === 'holiday'; }); %>
+  <div class="cal-cell <%= d.iso === today ? 'today' : '' %> <%= holiday ? 'holiday' : '' %>">
+    <div class="d-flex justify-content-between"><span class="num"><%= J.toPersianDigits(d.d) %></span><% if (canManage) { %><a href="/calendar/events/new?start_date=<%= J.formatDate(d.iso) %>" class="add text-secondary" title="افزودن رویداد"><i class="bi bi-plus"></i></a><% } %></div>
+    <% d.items.slice(0, 3).forEach(function (x) { %><a href="<%= x.link %>" class="ev" style="background:<%= x.color %>" title="<%= x.title %><%= x.sub ? ' — ' + x.sub : '' %>"><%= x.title %></a><% }); if (d.items.length > 3) { %><div class="fs-7 text-secondary">+<%= J.toPersianDigits(d.items.length - 3) %> مورد</div><% } %>
+  </div><% }); %>
+</div></div>
+<% } else { %>
+<div class="card"><ul class="list-group list-group-flush"><% days.filter(function (d) { return d.items.length; }).forEach(function (d) { %><li class="list-group-item"><strong><%= J.formatLong(d.iso) %></strong><div class="d-flex flex-wrap gap-1 mt-1"><% d.items.forEach(function (x) { %><a href="<%= x.link %>" class="badge text-decoration-none" style="background:<%= x.color %>"><%= x.title %></a><% }); %></div></li><% }); %></ul></div>
+<% } %>
+</div>
+<div class="col-xl-3"><div class="card"><div class="card-header"><h6><i class="bi bi-clock-history me-1"></i>رویدادهای پیش رو</h6></div><ul class="list-group list-group-flush"><% upcoming.forEach(function (u) { %><li class="list-group-item"><div class="fs-7 text-secondary"><%= J.formatLong(u.date) %></div><% u.items.forEach(function (x) { %><a href="<%= x.link %>" class="d-block text-body"><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:<%= x.color %>"></span><%= x.title %><% if (x.time) { %> <span class="fs-7 text-secondary"><%= J.formatTime(x.time) %></span><% } %></a><% }); %></li><% }); if (!upcoming.length) { %><li class="list-group-item text-secondary fs-7">رویدادی در این ماه نیست</li><% } %></ul></div>
+<div class="card mt-3"><div class="card-body fs-7"><div class="fw-semibold mb-1">راهنما</div><% Object.entries(TYPES).forEach(function (t) { %><span class="badge me-1 mb-1" style="background:<%= { event: '#2563eb', holiday: '#dc2626', meeting: '#7c3aed', trip: '#059669', ceremony: '#d97706', exam: '#0891b2', deadline: '#be123c', other: '#64748b' }[t[0]] %>"><%= t[1] %></span><% }); %></div></div></div></div>

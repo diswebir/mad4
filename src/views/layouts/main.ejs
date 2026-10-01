@@ -16,7 +16,7 @@
 <script>try{var t=localStorage.getItem('theme');if(t&&!<%= currentUser && currentUser.theme ? 'true' : 'false' %>)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
 <%- typeof style !== 'undefined' ? style : '' %>
 </head>
-<body>
+<body<%= enabled('search.live') ? ' data-live-search' : '' %>>
 <% if (typeof impersonator !== 'undefined' && impersonator) { %>
 <div class="impersonate-bar">شما به‌عنوان «<%= currentUser.name %>» وارد شده‌اید (توسط <%= impersonator.name %>). <a href="#" data-post="/auth/impersonate/stop" class="text-dark text-decoration-underline">بازگشت به حساب خودم</a></div>
 <% } %>
