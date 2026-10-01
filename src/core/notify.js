@@ -22,7 +22,8 @@ async function pushRole(role, payload) {
 async function unreadCount(userId) { return db.count('notifications', { user_id: userId, is_read: 0 }); }
 
 /** ارسال پیامک از طریق درگاه (کاوه‌نگار / وب‌سرویس عمومی). در حالت غیرفعال فقط لاگ می‌شود. */
-async function sms(to, text, context) {
+async function sms(to, text, context, opts) {
+  opts = opts || {};
   const recipients = [...new Set((Array.isArray(to) ? to : [to]).map((x) => String(x || '').trim()).filter(Boolean))];
   if (!modules.isEnabled('notifications.sms') || !settings.getBool('sms_enabled')) return { ok: false, skipped: true, error: 'پیامک غیرفعال است' };
   const provider = settings.get('sms_provider') || 'log';
@@ -45,7 +46,8 @@ async function sms(to, text, context) {
   } catch (e) { result = { ok: false, error: e.message }; }
   try {
     const now = db.now();
-    await db.insert('sms_log', recipients.map((r) => ({ recipient: r, message: String(text).slice(0, 1000), provider, status: result.ok ? 'sent' : 'failed', error: result.error ? String(result.error).slice(0, 255) : null, context: context || null, created_at: now })));
+    const logText = (provider !== 'log' && opts.logText) ? opts.logText : text;
+    await db.insert('sms_log', recipients.map((r) => ({ recipient: r, message: String(logText).slice(0, 1000), provider, status: result.ok ? 'sent' : 'failed', error: result.error ? String(result.error).slice(0, 255) : null, context: context || null, created_at: now })));
   } catch (e) { /* جدول لاگ در دسترس نیست */ }
   result.count = recipients.length;
   return result;

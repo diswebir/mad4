@@ -18,6 +18,7 @@
     <% } %>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <% if (enabled('auth.remember_me')) { %><div class="form-check"><input class="form-check-input" type="checkbox" name="remember" value="1" id="remember"><label class="form-check-label" for="remember">مرا به خاطر بسپار</label></div><% } else { %><span></span><% } %>
+      <% if (enabled('auth.password_reset') && S.getBool('password_reset_enabled')) { %><a href="/auth/forgot" class="fs-7"><i class="bi bi-question-circle me-1"></i>رمز عبور را فراموش کرده‌اید؟</a><% } %>
     </div>
     <button class="btn btn-primary w-100 py-2"><i class="bi bi-box-arrow-in-left me-1"></i>ورود</button>
   </form>

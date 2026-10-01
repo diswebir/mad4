@@ -13,6 +13,8 @@ const utils = require('../core/utils');
 const J = require('../core/jalali');
 const upload = require('../core/upload');
 const { relPath, removeFile } = upload;
+const crypto = require('crypto');
+const notify = require('../core/notify');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
@@ -75,6 +77,116 @@ router.post('/theme', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- بازیابی رمز عبور (فراموشی رمز) ----------
+const RESET_TTL_MIN = 10, RESET_MAX_PER_HOUR = 3, RESET_MAX_ATTEMPTS = 5;
+const resetEnabled = () => modules.isEnabled('auth.password_reset') && settings.getBool('password_reset_enabled');
+const hashCode = (code, salt) => crypto.createHash('sha256').update(String(code) + '|' + salt).digest('hex');
+const maskPhone = (p) => p ? p.slice(0, 4) + '***' + p.slice(-3) : '';
+const maskEmail = (e) => { const [u, d] = String(e).split('@'); return u.slice(0, 2) + '***@' + (d || ''); };
+const minPwLen = () => Math.min(32, Math.max(4, settings.getInt('password_min_length', 6)));
+/** شماره‌ها/ایمیل‌های معتبر برای تحویل کد به یک کاربر (بر اساس نقش) */
+async function resetTargets(user) {
+  const phones = new Set(), emails = new Set();
+  const addP = (p) => { p = utils.normalizePhone(p); if (/^09\d{9}$/.test(p)) phones.add(p); };
+  const addE = (e) => { e = String(e || '').trim().toLowerCase(); if (utils.isValidEmail(e)) emails.add(e); };
+  addP(user.phone); addE(user.email);
+  if (user.role === 'student') { const st = await db.table('students').where('user_id', user.id).first(); if (st) { [st.mobile, st.father_phone, st.mother_phone, st.guardian_phone].forEach(addP); addE(st.email); } }
+  else if (user.role === 'parent') { const pr = await db.table('parents').where('user_id', user.id).first(); if (pr) addP(pr.phone); }
+  else if (user.role === 'teacher') { const t = await db.table('teachers').where('user_id', user.id).first(); if (t) addP(t.phone2); }
+  return { phones: [...phones], emails: [...emails] };
+}
+function guardReset(req, res, next) {
+  if (!resetEnabled()) return res.status(404).render('errors/404', { title: 'یافت نشد', layout: 'layouts/auth' });
+  next();
+}
+router.get('/forgot', auth.requireGuest, guardReset, (req, res) => {
+  const smsOn = modules.isEnabled('notifications.sms') && settings.getBool('sms_enabled');
+  const emailOn = modules.isEnabled('notifications.email') && settings.getBool('email_enabled');
+  res.render(v('forgot'), { layout: 'layouts/auth', title: 'بازیابی رمز عبور', smsOn, emailOn, captcha: makeCaptcha(req) });
+});
+router.post('/forgot', auth.requireGuest, guardReset, async (req, res) => {
+  const fail = (msg) => { req.flash('danger', msg); req.keepInput(); return res.redirect('/auth/forgot'); };
+  if (req.session.captcha != null) {
+    const ans = parseInt(J.toEnglishDigits(req.body.captcha || ''), 10);
+    if (ans !== req.session.captcha) { req.session.captcha = null; return fail('پاسخ سؤال امنیتی نادرست است.'); }
+  }
+  const username = utils.normalizePersian(J.toEnglishDigits(String(req.body.username || ''))).trim();
+  const contact = String(req.body.contact || '').trim();
+  if (!username || !contact) return fail('نام کاربری و شمارهٔ موبایل (یا ایمیل) ثبت‌شده را وارد کنید.');
+  const ip = auth.clientIp(req);
+  const since = new Date(Date.now() - 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+  const ipCount = await db.table('password_resets').where('ip', ip).where('created_at', '>=', since).count();
+  if (ipCount >= RESET_MAX_PER_HOUR * 3) return fail('تعداد درخواست‌های بازیابی از این دستگاه بیش از حد مجاز است. یک ساعت بعد دوباره تلاش کنید.');
+  const smsOn = modules.isEnabled('notifications.sms') && settings.getBool('sms_enabled');
+  const emailOn = modules.isEnabled('notifications.email') && settings.getBool('email_enabled');
+  const user = await db.table('users').where('username', username).first();
+  let channel = null, target = null;
+  if (user && user.status === 'active') {
+    const t = await resetTargets(user);
+    const asPhone = utils.normalizePhone(contact), asEmail = contact.toLowerCase();
+    if (smsOn && t.phones.includes(asPhone)) { channel = 'sms'; target = asPhone; }
+    else if (emailOn && t.emails.includes(asEmail)) { channel = 'email'; target = asEmail; }
+  }
+  // پاسخ یکسان برای جلوگیری از شناسایی حساب‌ها؛ در صورت عدم تطابق، نشست «ساختگی» ایجاد می‌شود
+  if (!channel) {
+    await db.insert('password_resets', { user_id: user ? user.id : null, code_hash: 'x', channel: 'none', target: contact.slice(0, 150), expires_at: db.now(), attempts: 0, ip, created_at: db.now() });
+    req.session.pwreset = { fake: true, hint: smsOn ? maskPhone(utils.normalizePhone(contact)) : maskEmail(contact), channel: smsOn ? 'sms' : 'email' };
+    return res.redirect('/auth/forgot/verify');
+  }
+  const userCount = await db.table('password_resets').where('user_id', user.id).where('created_at', '>=', since).count();
+  if (userCount >= RESET_MAX_PER_HOUR) return fail(`برای این حساب در یک ساعت گذشته ${J.toPersianDigits(RESET_MAX_PER_HOUR)} بار کد ارسال شده است. کمی بعد دوباره تلاش کنید یا با مدیر مدرسه تماس بگیرید.`);
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  const salt = crypto.randomBytes(8).toString('hex');
+  const expires = new Date(Date.now() + RESET_TTL_MIN * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+  const id = await db.insert('password_resets', { user_id: user.id, code_hash: salt + ':' + hashCode(code, salt), channel, target, expires_at: expires, attempts: 0, ip, created_at: db.now() });
+  const school = settings.get('school_name', 'مدرسه');
+  const text = `${school}\nکد بازیابی رمز عبور: ${code}\nاعتبار: ${J.toPersianDigits(RESET_TTL_MIN)} دقیقه. اگر شما درخواست نداده‌اید، این پیام را نادیده بگیرید.`;
+  let sent;
+  if (channel === 'sms') sent = await notify.sms(target, text, 'password_reset', { logText: `${school}\nکد بازیابی رمز عبور: ******` });
+  else sent = await notify.email(target, 'کد بازیابی رمز عبور — ' + school, `<p>کد بازیابی رمز عبور شما: <strong style="font-size:1.4em;letter-spacing:3px">${code}</strong></p><p>اعتبار این کد ${J.toPersianDigits(RESET_TTL_MIN)} دقیقه است.</p>`);
+  if (!sent || sent.ok === false) { await db.remove('password_resets', { id }); return fail('ارسال کد با خطا مواجه شد. لطفاً با مدیر مدرسه تماس بگیرید.'); }
+  await activity.log(Object.assign(req, { user: { id: user.id, name: user.name, role: user.role } }), 'password_reset_request', 'user', user.id, `درخواست بازیابی رمز (${channel === 'sms' ? maskPhone(target) : maskEmail(target)})`);
+  req.user = null;
+  req.session.pwreset = { id, user_id: user.id, channel, hint: channel === 'sms' ? maskPhone(target) : maskEmail(target) };
+  res.redirect('/auth/forgot/verify');
+});
+router.get('/forgot/verify', auth.requireGuest, guardReset, (req, res) => {
+  const st = req.session.pwreset;
+  if (!st) return res.redirect('/auth/forgot');
+  res.render(v('forgot-verify'), { layout: 'layouts/auth', title: 'تأیید کد و رمز جدید', hint: st.hint, channel: st.channel, ttl: RESET_TTL_MIN, minLen: minPwLen() });
+});
+router.post('/forgot/verify', auth.requireGuest, guardReset, async (req, res) => {
+  const st = req.session.pwreset;
+  if (!st) return res.redirect('/auth/forgot');
+  const fail = (msg) => { req.flash('danger', msg); return res.redirect('/auth/forgot/verify'); };
+  const code = J.toEnglishDigits(String(req.body.code || '')).replace(/\D/g, '');
+  const pw = String(req.body.password || ''), pw2 = String(req.body.password2 || '');
+  if (!/^\d{6}$/.test(code)) return fail('کد تأیید باید ۶ رقم باشد.');
+  if (pw.length < minPwLen()) return fail(`رمز عبور باید حداقل ${J.toPersianDigits(minPwLen())} کاراکتر باشد.`);
+  if (pw !== pw2) return fail('تکرار رمز عبور مطابقت ندارد.');
+  const row = st.fake ? null : await db.findById('password_resets', st.id);
+  const expired = !row || row.used_at || new Date(String(row.expires_at).replace(' ', 'T') + (String(row.expires_at).endsWith('Z') ? '' : 'Z')).getTime() < Date.now();
+  if (st.fake || expired) return fail('کد نادرست یا منقضی است. دوباره درخواست کد بدهید.');
+  if (row.attempts >= RESET_MAX_ATTEMPTS) { req.session.pwreset = null; return fail('تعداد تلاش‌های مجاز تمام شد. دوباره درخواست کد بدهید.'); }
+  const [salt, h] = String(row.code_hash).split(':');
+  if (hashCode(code, salt) !== h) {
+    await db.update('password_resets', { attempts: row.attempts + 1 }, { id: row.id });
+    const left = RESET_MAX_ATTEMPTS - row.attempts - 1;
+    if (left <= 0) { req.session.pwreset = null; return fail('کد نادرست بود و تعداد تلاش‌های مجاز تمام شد. دوباره درخواست کد بدهید.'); }
+    return fail(`کد تأیید نادرست است. (${J.toPersianDigits(left)} تلاش باقی‌مانده)`);
+  }
+  const user = await db.findById('users', row.user_id);
+  if (!user || user.status !== 'active') { req.session.pwreset = null; return fail('حساب کاربری در دسترس نیست.'); }
+  await db.update('users', { password: await auth.hashPassword(pw), must_change_password: 0, updated_at: db.now() }, { id: user.id });
+  await db.update('password_resets', { used_at: db.now() }, { id: row.id });
+  try { await db.table('sessions').where((b) => b.where('data', 'like', `%"userId":${user.id},%`).orWhere('data', 'like', `%"userId":${user.id}}%`)).delete(); } catch (e) { /* خاتمهٔ نشست‌های قبلی اختیاری است */ }
+  await activity.log(Object.assign(req, { user: { id: user.id, name: user.name, role: user.role } }), 'password_reset', 'user', user.id, 'بازنشانی رمز عبور با کد یک‌بارمصرف');
+  req.user = null; req.session.pwreset = null; auth.clearFailures(req, user.username);
+  req.flash('success', 'رمز عبور با موفقیت تغییر کرد. اکنون با رمز جدید وارد شوید.');
+  res.redirect('/auth/login');
+});
+router.post('/forgot/cancel', auth.requireGuest, (req, res) => { req.session.pwreset = null; res.redirect('/auth/forgot'); });
+
 router.get('/password', auth.requireAuth, (req, res) => {
   res.render(v('password'), { title: 'تغییر رمز عبور', force: !!req.user.must_change_password });
 });
@@ -85,7 +197,7 @@ router.post('/password', auth.requireAuth, async (req, res) => {
     if (!(await auth.verifyPassword(req.body.current, user.password))) { req.flash('danger', 'رمز عبور فعلی نادرست است.'); return res.redirect('/auth/password'); }
   }
   const pw = String(req.body.password || '');
-  if (pw.length < 6) { req.flash('danger', 'رمز عبور باید حداقل ۶ کاراکتر باشد.'); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
+  if (pw.length < minPwLen()) { req.flash('danger', `رمز عبور باید حداقل ${J.toPersianDigits(minPwLen())} کاراکتر باشد.`); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
   if (pw !== req.body.password2) { req.flash('danger', 'تکرار رمز عبور مطابقت ندارد.'); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
   await db.update('users', { password: await auth.hashPassword(pw), must_change_password: 0, updated_at: db.now() }, { id: user.id });
   await activity.log(req, 'password', 'user', user.id, 'تغییر رمز عبور');
