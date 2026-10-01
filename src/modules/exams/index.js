@@ -15,7 +15,9 @@ module.exports = {
     { key: 'analytics', name: 'تحلیل نمرات', description: 'نمودار توزیع نمرات، میانگین دروس و مقایسهٔ کلاس‌ها' },
     { key: 'remarks', name: 'نظر معلم در کارنامه', description: 'توضیح معلم راهنما برای هر نوبت' },
     { key: 'notify', name: 'اعلان ثبت نمره', description: 'اطلاع‌رسانی به دانش‌آموز هنگام انتشار نمرات' },
-    { key: 'export', name: 'خروجی CSV نمرات', description: 'دانلود ریزنمرات' }
+    { key: 'export', name: 'خروجی CSV نمرات', description: 'دانلود ریزنمرات' },
+    { key: 'lock', name: 'قفل نمرات نوبت', description: 'پس از نهایی شدن نوبت، نمرات فقط با مجوز «قفل نمرات» و ثبت دلیل قابل تغییرند' },
+    { key: 'history', name: 'تاریخچهٔ تغییر نمرات', description: 'ثبت هر تغییر نمره با مقدار قبلی/جدید، کاربر، زمان و دلیل' }
   ],
   menu: [
     { title: 'آزمون‌ها و نمرات', href: '/exams', icon: 'bi-award', roles: ['admin', 'teacher'], permission: ['exams.view_all', 'exams.manage_all'] },

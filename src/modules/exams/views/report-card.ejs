@@ -9,7 +9,7 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 border-bottom pb-3 mb-3">
       <div class="d-flex align-items-center gap-3"><%- include('partials/avatar', { user: { name: name, avatar: s.photo }, size: 64 }) %><div><h4 class="mb-1"><%= name %></h4><div class="text-secondary fs-7">شماره دانش‌آموزی: <span class="ltr d-inline-block"><%= J.toPersianDigits(s.student_number) %></span> · کلاس <%= s.class_title || '—' %> · پایهٔ <%= s.grade_title || '—' %></div><div class="text-secondary fs-7">نام پدر: <%= s.father_name || '—' %><% if (homeroom && homeroom.name) { %> · معلم راهنما: <%= homeroom.name %><% } %></div></div></div>
-      <div class="text-end"><div class="fw-bold"><%= S.get('school_name') %></div><div class="fs-7 text-secondary">کارنامهٔ <%= term ? term.title : '' %> · سال تحصیلی <%= term ? J.toPersianDigits(term.year_title) : '' %></div><div class="fs-7 text-secondary">تاریخ صدور: <%= J.formatDate(J.todayISO()) %></div></div>
+      <div class="text-end"><div class="fw-bold"><%= S.get('school_name') %></div><div class="fs-7 text-secondary">کارنامهٔ <%= term ? term.title : '' %> · سال تحصیلی <%= term ? J.toPersianDigits(term.year_title) : '' %> <% if (term && Number(term.is_locked) && enabled('exams.lock')) { %><span class="badge text-bg-success ms-1"><i class="bi bi-patch-check-fill me-1"></i>نهایی</span><% } else if (term && enabled('exams.lock')) { %><span class="badge badge-soft-secondary ms-1">موقت</span><% } %></div><div class="fs-7 text-secondary">تاریخ صدور: <%= J.formatDate(J.todayISO()) %></div></div>
     </div>
     <div class="row g-3">
       <div class="col-lg-8"><table class="table table-bordered align-middle mb-0 text-center">

@@ -1,0 +1,16 @@
+<%- include('partials/page-header', { title: 'تاریخچهٔ تغییر نمرات', subtitle: exam.title + ' · ' + exam.subject_title + ' · ' + exam.class_title, icon: 'bi-clock-history', breadcrumbs: [{ title: 'آزمون‌ها', href: '/exams' }, { title: exam.title, href: '/exams/' + exam.id }, { title: 'تاریخچه' }], actions: [{ href: '/exams/' + exam.id, label: 'برگهٔ نمره', icon: 'bi-pencil-square', class: 'btn-light' }] }) %>
+<% if (lock.locked) { %><div class="alert alert-warning d-flex align-items-center gap-2 py-2"><i class="bi bi-lock-fill"></i><div>نمرات نوبت «<%= lock.term.title %>» نهایی شده است؛ هر تغییر پس از قفل با دلیل در این فهرست ثبت می‌شود.</div></div><% } %>
+<div class="card table-card">
+  <div class="card-header"><h6><i class="bi bi-list-ul me-1"></i><%= J.toPersianDigits(rows.length) %> تغییر</h6></div>
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7"><thead><tr><th>زمان</th><th>دانش‌آموز</th><th>قبلی</th><th>جدید</th><th>دلیل</th><th>توسط</th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="6"><%- include('partials/empty', { message: 'تغییری ثبت نشده است' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { var old = r.old_descriptive ? (utils.DESCRIPTIVE_GRADES[r.old_descriptive] || r.old_descriptive) : (r.old_score != null ? J.toPersianDigits(Number(r.old_score)) : '—'); var nw = r.new_descriptive ? (utils.DESCRIPTIVE_GRADES[r.new_descriptive] || r.new_descriptive) : (r.new_score != null ? J.toPersianDigits(Number(r.new_score)) : '—'); %>
+    <tr><td class="text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><a href="/students/<%= r.student_id %>" class="text-body fw-500"><%= r.first_name %> <%= r.last_name %></a> <span class="text-secondary ltr d-inline-block"><%= J.toPersianDigits(r.student_number || '') %></span></td>
+      <td><span class="badge badge-soft-secondary"><%= old %></span></td>
+      <td><span class="badge <%= r.new_score == null && !r.new_descriptive ? 'badge-soft-danger' : 'badge-soft-primary' %>"><%= nw %></span></td>
+      <td><%= r.reason || '—' %></td>
+      <td><%= r.changer_name || '—' %></td></tr>
+  <% }); %>
+  </tbody></table></div>
+</div>

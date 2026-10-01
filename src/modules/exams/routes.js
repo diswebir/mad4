@@ -45,6 +45,27 @@ async function classSubjectsFor(req, classId) {
   if (tc) q.where((b) => { b.whereIn('cs.id', tc.csIds); if (tc.homeroom.length) b.orWhereIn('cs.class_id', tc.homeroom); });
   return q.all();
 }
+// ---------- قفل نمرات نوبت ----------
+const canUnlock = (req) => req.user.role === 'admin' || req.can('exams.lock');
+async function termOfExam(exam) {
+  if (exam.term_id) return db.findById('terms', exam.term_id);
+  if (exam.date) return db.table('terms').where('start_date', '<=', exam.date).where('end_date', '>=', exam.date).orderBy('id', 'desc').first();
+  return null;
+}
+/** وضعیت قفل برای یک آزمون: { locked, term } — وقتی قابلیت غیرفعال باشد همیشه باز است */
+async function lockInfo(exam) {
+  if (!E('exams.lock')) return { locked: false, term: null };
+  const term = await termOfExam(exam);
+  return { locked: !!(term && Number(term.is_locked)), term };
+}
+function lockedResponse(res, term) {
+  return res.status(403).render('errors/403', { title: 'نمرات نهایی شده', message: `نمرات «${term ? term.title : 'این نوبت'}» نهایی و قفل شده است. تغییر فقط توسط مدیر (با ثبت دلیل) امکان‌پذیر است.` });
+}
+async function logGradeChange(tx, req, exam, sid, gradeId, prev, next, reason) {
+  if (!E('exams.history')) return;
+  await tx.insert('grade_changes', { grade_id: gradeId || null, exam_id: exam.id, student_id: sid, old_score: prev ? prev.score : null, new_score: next ? next.score : null, old_descriptive: prev ? prev.descriptive : null, new_descriptive: next ? next.descriptive : null, reason: reason || null, changed_by: req.user.id, created_at: db.now() });
+}
+
 function baseQuery() {
   return db.table('exams as e').join('classes as c', 'c.id', 'e.class_id').join('subjects as s', 's.id', 'e.subject_id').leftJoin('terms as t', 't.id', 'e.term_id').leftJoin('users as u', 'u.id', 'e.created_by')
     .select('e.*', 'c.title as class_title', 's.title as subject_title', 't.title as term_title', 'u.name as creator_name', '(SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score IS NOT NULL OR g.descriptive IS NOT NULL)) as graded_count', '(SELECT COUNT(*) FROM students st WHERE st.class_id = e.class_id AND st.status = \'active\') as students_count', '(SELECT AVG(g.score) FROM grades g WHERE g.exam_id = e.id) as avg_score');
@@ -232,6 +253,7 @@ async function saveExam(req, res, exam) {
   const cs = await db.table('class_subjects').where('id', b.class_subject_id).first();
   if (!cs || !b.title || !b.date) { req.flash('danger', 'درس، عنوان و تاریخ الزامی است'); req.keepInput(); return res.redirect(back); }
   if (!(await canManageExam(req, { class_subject_id: cs.id, class_id: cs.class_id }))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
+  if (!canUnlock(req)) { const li = await lockInfo(exam || { term_id: b.term_id || null, date: b.date }); if (li.locked) return lockedResponse(res, li.term); }
   const data = { class_id: cs.class_id, subject_id: cs.subject_id, class_subject_id: cs.id, term_id: b.term_id || null, title: b.title, type: TYPES[b.type] ? b.type : 'quiz', date: b.date, start_time: b.start_time || null, max_score: b.max_score || settings.getInt('grading_max_score', 20), weight: b.weight || 1, description: b.description || null };
   if (exam) { await db.update('exams', data, { id: exam.id }); await activity.log(req, 'update', 'exams', exam.id, 'ویرایش آزمون ' + data.title); req.flash('success', 'آزمون ویرایش شد.'); return res.redirect('/exams/' + exam.id); }
   data.created_by = req.user.id; data.is_published = 0; data.created_at = db.now();
@@ -262,6 +284,7 @@ router.post('/:id/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'e
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
+  { const li = await lockInfo(exam); if (li.locked && !canUnlock(req)) return lockedResponse(res, li.term); }
   await db.remove('grades', { exam_id: exam.id }); await db.remove('exams', { id: exam.id });
   await activity.log(req, 'delete', 'exams', exam.id, 'حذف آزمون ' + exam.title);
   req.flash('success', 'آزمون و نمرات آن حذف شد.'); res.redirect('/exams');
@@ -281,6 +304,31 @@ router.post('/:id/publish', auth.requireRoleOrPermission(['admin', 'teacher'], '
 });
 
 // ---------- برگهٔ نمره ----------
+// ---------- تاریخچهٔ تغییر نمرات ----------
+function changesQuery() {
+  return db.table('grade_changes as gc').join('exams as e', 'e.id', 'gc.exam_id').join('students as s', 's.id', 'gc.student_id').join('subjects as sb', 'sb.id', 'e.subject_id').join('classes as c', 'c.id', 'e.class_id').leftJoin('users as u', 'u.id', 'gc.changed_by').leftJoin('terms as t', 't.id', 'e.term_id')
+    .select('gc.*', 'e.title as exam_title', 'e.max_score', 'e.class_id', 'sb.title as subject_title', 'c.title as class_title', 's.first_name', 's.last_name', 's.student_number', 'u.name as changer_name', 't.title as term_title', 't.is_locked as term_locked');
+}
+router.get('/changes', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all', 'exams.lock'), modules.requireEnabled('exams.history'), async (req, res) => {
+  const f = { term_id: req.query.term_id || '', class_id: req.query.class_id || '', q: utils.normalizePersian(req.query.q || '').trim() };
+  const q = changesQuery();
+  const tc = await teacherCtx(req);
+  if (tc) q.whereIn('e.class_id', tc.classIds.length ? tc.classIds : [-1]);
+  if (f.term_id) q.where('e.term_id', f.term_id);
+  if (f.class_id) q.where('e.class_id', f.class_id);
+  if (f.q) q.where((b) => b.where('s.first_name', 'like', `%${f.q}%`).orWhere('s.last_name', 'like', `%${f.q}%`).orWhere('e.title', 'like', `%${f.q}%`).orWhere('gc.reason', 'like', `%${f.q}%`));
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1), per = 40;
+  const total = await q.clone().count();
+  const rows = await q.orderBy('gc.id', 'desc').limit(per).offset((page - 1) * per).all();
+  res.render(v('changes'), { title: 'تاریخچهٔ تغییر نمرات', rows, total, page, pages: Math.max(1, Math.ceil(total / per)), f, terms: await terms(), classes: await classesFor(req) });
+});
+router.get('/:id/history', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all', 'exams.lock'), modules.requireEnabled('exams.history'), async (req, res) => {
+  const exam = await baseQuery().where('e.id', req.params.id).first();
+  if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  if (!(await canViewClass(req, exam.class_id))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
+  const rows = await changesQuery().where('gc.exam_id', exam.id).orderBy('gc.id', 'desc').all();
+  res.render(v('history'), { title: 'تاریخچهٔ نمرات — ' + exam.title, exam, rows, lock: await lockInfo(exam) });
+});
 router.get('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), async (req, res) => {
   const exam = await baseQuery().where('e.id', req.params.id).first();
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
@@ -294,15 +342,24 @@ router.get('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.vie
   const stats = scores.length ? { n: scores.length, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 100) / 100, max: Math.max(...scores), min: Math.min(...scores), pass: scores.filter((x) => to20(x, exam.max_score) >= settings.getInt('grading_pass_score', 10)).length } : null;
   const dist = [0, 0, 0, 0, 0];
   scores.forEach((x) => { const t = to20(x, exam.max_score); dist[t < 10 ? 0 : t < 12 ? 1 : t < 15 ? 2 : t < 18 ? 3 : 4]++; });
-  res.render(v('show'), { title: exam.title, exam, students, grades, stats, dist, descriptive, canManage, TYPES, pass: settings.getInt('grading_pass_score', 10) });
+  const lock = await lockInfo(exam);
+  const changesCount = E('exams.history') ? await db.table('grade_changes').where('exam_id', exam.id).count() : 0;
+  res.render(v('show'), { title: exam.title, exam, students, grades, stats, dist, descriptive, canManage, TYPES, pass: settings.getInt('grading_pass_score', 10), lock, canUnlock: canUnlock(req), changesCount });
 });
 router.post('/:id/grades', auth.requireRoleOrPermission(['admin', 'teacher'], 'exams.view_all', 'exams.manage_all'), modules.requireEnabled('exams.grades'), async (req, res) => {
   const exam = await db.findById('exams', req.params.id);
   if (!exam) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canManageExam(req, exam))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
+  const lock = await lockInfo(exam);
+  const reason = utils.normalizePersian(req.body.change_reason || '').trim() || null;
+  if (lock.locked) {
+    if (!canUnlock(req)) return lockedResponse(res, lock.term);
+    if (!reason) { req.flash('danger', 'برای تغییر نمرات نوبت نهایی‌شده، ثبت «دلیل تغییر» الزامی است.'); return res.redirect('/exams/' + exam.id); }
+  }
   const students = await db.table('students').select('id').where('class_id', exam.class_id).pluck('id');
   const existing = utils.indexBy(await db.table('grades').where('exam_id', exam.id).all(), 'student_id');
-  const now = db.now(); let saved = 0, errors = 0;
+  const now = db.now(); let saved = 0, errors = 0, changed = 0;
+  const same = (a, b) => (a == null ? null : Number(a)) === (b == null ? null : Number(b));
   await db.transaction(async (tx) => {
     for (const sid of students) {
       const rawScore = J.toEnglishDigits(req.body['score_' + sid] || '').trim().replace('/', '.').replace('٫', '.');
@@ -313,12 +370,22 @@ router.post('/:id/grades', auth.requireRoleOrPermission(['admin', 'teacher'], 'e
       if (score != null && (Number.isNaN(score) || score < 0 || score > Number(exam.max_score))) { errors++; continue; }
       if (absent) score = null;
       const row = { score, descriptive: utils.DESCRIPTIVE_GRADES[desc] ? desc : null, note: absent ? (note ? 'غایب — ' + note : 'غایب') : note, graded_by: req.user.id, updated_at: now };
-      if (score == null && !row.descriptive && !row.note) { if (existing[sid]) await tx.remove('grades', { id: existing[sid].id }); continue; }
-      if (existing[sid]) await tx.update('grades', row, { id: existing[sid].id }); else await tx.insert('grades', Object.assign({ exam_id: exam.id, student_id: sid, created_at: now }, row));
+      const prev = existing[sid];
+      if (score == null && !row.descriptive && !row.note) {
+        if (prev) { if (prev.score != null || prev.descriptive) { await logGradeChange(tx, req, exam, sid, prev.id, prev, null, reason); changed++; } await tx.remove('grades', { id: prev.id }); }
+        continue;
+      }
+      if (prev) {
+        if (!same(prev.score, row.score) || (prev.descriptive || null) !== (row.descriptive || null)) { await logGradeChange(tx, req, exam, sid, prev.id, prev, row, reason); changed++; }
+        await tx.update('grades', row, { id: prev.id });
+      } else {
+        const gid = await tx.insert('grades', Object.assign({ exam_id: exam.id, student_id: sid, created_at: now }, row));
+        if (lock.locked) { await logGradeChange(tx, req, exam, sid, gid, null, row, reason); changed++; }
+      }
       saved++;
     }
   });
-  await activity.log(req, 'grade', 'exams', exam.id, `ثبت ${saved} نمره برای ${exam.title}`);
+  await activity.log(req, 'grade', 'exams', exam.id, `ثبت ${saved} نمره برای ${exam.title}` + (lock.locked ? ` (پس از قفل — ${changed} تغییر، دلیل: ${reason})` : ''));
   req.flash(errors ? 'warning' : 'success', `${J.toPersianDigits(saved)} نمره ذخیره شد.` + (errors ? ` ${J.toPersianDigits(errors)} مقدار نامعتبر (خارج از ۰ تا ${J.toPersianDigits(exam.max_score)}) نادیده گرفته شد.` : ''));
   res.redirect('/exams/' + exam.id);
 });

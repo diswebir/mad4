@@ -7,14 +7,26 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   r = await t.get('/attendance/take?class_id=1');
   const ids = [...r.text.matchAll(/name="status_(\d+)"/g)].map((m) => m[1]).filter((v, i, a) => a.indexOf(v) === i);
   assert(ids.length >= 15, 'take form has students: ' + ids.length);
-  const body = { class_id: '1', date: r.text.match(/name="date" value="([^"]+)"/)[1], session_key: 'daily' };
+  const formDate = r.text.match(/name="date" value="([^"]+)"/)[1];
+  const body = { class_id: '1', date: formDate, session_key: 'daily' };
   ids.forEach((id, i) => { body['status_' + id] = i === 0 ? 'absent' : i === 1 ? 'late' : 'present'; if (i === 1) body['late_' + id] = '12'; if (i === 0) body['note_' + id] = 'تست'; });
   r = await t.post('/attendance/take', body); assert(r.status === 302, 'POST take -> ' + r.location + ' ' + (r.status !== 302 ? r.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 300) : ''));
   r = await t.get('/attendance/take?class_id=1'); assert(/checked[^>]*value="absent"|value="absent"[^>]*checked/.test(r.text), 'absent persisted');
   // excuse as student
   const s = new Client(); r = await s.login('40001', '123456'); assert(r.status === 302, 'student login');
   r = await s.get('/attendance/excuses');
-  const opt = /name="attendance_id"[\s\S]*?<option value="(\d+)"/.exec(r.text);
+  let opt = /name="attendance_id"[\s\S]*?<option value="(\d+)"/.exec(r.text);
+  // اگر همهٔ غیبت‌های دانش‌آموز ۴۰۰۰۱ قبلاً موجه شده‌اند (اجرای مکرر تست)، یک غیبت جدید برای او در هفته‌های قبل ثبت می‌کنیم
+  const adm = new Client(); await adm.login('admin', 'admin123'); // مدیر محدودیت پنجرهٔ ویرایش ندارد
+  for (let back = 7; !opt && back <= 35; back += 7) {
+    const d = new Date(formDate + 'T12:00:00'); d.setDate(d.getDate() - back - 1); const iso = d.toISOString().slice(0, 10); // روز قبل (شنبه تا چهارشنبه)
+    const f = await adm.get('/attendance/take?class_id=1&date=' + iso);
+    const b = { class_id: '1', date: f.text.match(/name="date" value="([^"]+)"/)[1], session_key: 'daily' };
+    ids.forEach((id) => { const m = new RegExp('name="status_' + id + '"[^>]*value="(\\w+)"[^>]*checked').exec(f.text); b['status_' + id] = m ? m[1] : 'present'; });
+    b.status_1 = 'absent';
+    await adm.post('/attendance/take', b);
+    r = await s.get('/attendance/excuses'); opt = /name="attendance_id"[\s\S]*?<option value="(\d+)"/.exec(r.text);
+  }
   assert(opt, 'student has absence option');
   if (opt) {
     // multipart post

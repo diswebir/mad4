@@ -2,7 +2,8 @@
   { href: '/exams/new', label: 'آزمون جدید', icon: 'bi-plus-lg', class: 'btn-primary' },
   ...(enabled('exams.schedule') ? [{ href: '/exams/schedule', label: 'برنامهٔ آزمون‌ها', icon: 'bi-calendar-event', class: 'btn-light' }] : []),
   ...(enabled('exams.analytics') ? [{ href: '/exams/analytics', label: 'تحلیل', icon: 'bi-graph-up', class: 'btn-light' }] : []),
-  ...(enabled('exams.class_sheet') && classes.length ? [{ href: '/exams/class/' + (f.class_id || classes[0].id), label: 'ریزنمرات کلاس', icon: 'bi-table', class: 'btn-light' }] : [])
+  ...(enabled('exams.class_sheet') && classes.length ? [{ href: '/exams/class/' + (f.class_id || classes[0].id), label: 'ریزنمرات کلاس', icon: 'bi-table', class: 'btn-light' }] : []),
+  ...(enabled('exams.history') ? [{ href: '/exams/changes', label: 'تاریخچهٔ تغییرات', icon: 'bi-clock-history', class: 'btn-light' }] : [])
 ] }) %>
 <% if (upcoming.length && !f.status) { %><div class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center fs-7"><span class="text-secondary"><i class="bi bi-calendar-event me-1"></i>پیش رو:</span><% upcoming.forEach(function (e) { %><a href="/exams/<%= e.id %>" class="badge badge-soft-primary fw-normal"><%= J.formatDate(e.date) %> — <%= e.subject_title %> <%= e.class_title %></a><% }); %></div></div><% } %>
 <form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">

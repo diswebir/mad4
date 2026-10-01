@@ -47,6 +47,20 @@ router.post('/years/:id/current', auth.requireRoleOrPermission(['admin'], 'acade
 });
 
 // ---------- نوبت‌ها ----------
+// ---------- قفل/بازکردن نمرات نوبت (نهایی‌سازی) ----------
+const canLock = (req) => req.user.role === 'admin' || req.can('exams.lock');
+async function setTermLock(req, res, locked) {
+  if (!canLock(req)) return res.status(403).render('errors/403', { title: 'غیرمجاز', message: 'نهایی‌سازی نمرات نیازمند مجوز «قفل نمرات» است.' });
+  const term = await db.findById('terms', req.params.id);
+  if (!term) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  await db.update('terms', { is_locked: locked ? 1 : 0, locked_at: locked ? db.now() : null, locked_by: locked ? req.user.id : null, updated_at: db.now() }, { id: term.id });
+  await activity.log(req, 'update', 'terms', term.id, (locked ? 'نهایی‌سازی (قفل) نمرات ' : 'بازکردن قفل نمرات ') + term.title);
+  req.flash('success', locked ? `نمرات «${term.title}» نهایی و قفل شد. از این پس تغییر نمره فقط با ثبت دلیل و توسط مدیر ممکن است.` : `قفل نمرات «${term.title}» برداشته شد.`);
+  res.redirect(req.get('referer') && /\/academic\/terms/.test(req.get('referer')) ? req.get('referer') : '/academic/terms');
+}
+router.post('/terms/:id/lock', modules.requireEnabled('exams.lock'), (req, res) => setTermLock(req, res, true));
+router.post('/terms/:id/unlock', modules.requireEnabled('exams.lock'), (req, res) => setTermLock(req, res, false));
+
 crud(router, {
   path: '/terms', table: 'terms', alias: 't', title: 'نوبت', plural: 'نوبت‌های تحصیلی', icon: 'bi-calendar3-range', feature: 'academic.years', orderBy: 'start_date', breadcrumbs: [{ title: 'سال تحصیلی', href: '/academic/years' }],
   query: (q) => q.leftJoin('academic_years as y', 'y.id', 't.academic_year_id').select('t.*', 'y.title as year_title'),
@@ -56,8 +70,12 @@ crud(router, {
     { name: 'number', label: 'شماره نوبت', type: 'number', required: true, min: 1, max: 4, list: true, col: 3 },
     { name: 'start_date', label: 'شروع', type: 'date', required: true, list: true },
     { name: 'end_date', label: 'پایان', type: 'date', required: true, list: true },
-    { name: 'is_current', label: 'نوبت جاری', type: 'checkbox', list: true }
+    { name: 'is_current', label: 'نوبت جاری', type: 'checkbox', list: true },
+    { name: 'is_locked', label: 'وضعیت نمرات', type: 'checkbox', list: true, readonly: true, hideInForm: true, format: (vv, r) => !modules.isEnabled('exams.lock') ? '—' : Number(r.is_locked) ? '<span class="badge text-bg-warning" title="نهایی‌شده' + (r.locked_at ? ' در ' + J.formatDateTime(r.locked_at) : '') + '"><i class="bi bi-lock-fill me-1"></i>نهایی</span>' : '<span class="badge badge-soft-success">باز</span>' }
   ],
+  rowActions: (r, req) => (modules.isEnabled('exams.lock') && canLock(req)) ? [Number(r.is_locked)
+    ? { post: '/academic/terms/' + r.id + '/unlock', label: 'بازکردن قفل نمرات', icon: 'bi-unlock', class: 'btn-light text-warning', confirm: 'قفل نمرات این نوبت برداشته شود؟ معلمان دوباره می‌توانند نمرات را تغییر دهند.' }
+    : { post: '/academic/terms/' + r.id + '/lock', label: 'نهایی‌سازی و قفل نمرات', icon: 'bi-lock', class: 'btn-light text-success', confirm: 'نمرات این نوبت نهایی و قفل شود؟ پس از آن تغییر نمره فقط توسط مدیر و با ثبت دلیل ممکن است.' }] : [],
   defaults: async () => ({ academic_year_id: await currentYearId(), number: 1 }),
   afterSave: async (id, data) => { if (Number(data.is_current)) await db.table('terms').where('id', '!=', id).update({ is_current: 0 }); }
 });
