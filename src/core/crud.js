@@ -1,4 +1,6 @@
 'use strict';
+/** شناسه‌های غیرعددی (مثل /loans) به مسیرهای بعدی واگذار می‌شوند تا با مسیرهای تو در تو تداخل نکنند */
+const numericId = (req, res, next) => (/^\d+$/.test(req.params.id) ? next() : next('route'));
 /**
  * سازندهٔ عمومی صفحات CRUD (فهرست + جستجو + فیلتر + صفحه‌بندی، ایجاد، ویرایش، حذف، خروجی CSV)
  * برای موجودیت‌های ساده استفاده می‌شود تا کد تکراری نوشته نشود.
@@ -176,14 +178,14 @@ function crud(router, cfg) {
     }
   });
 
-  router.get(base + '/:id/edit', ...manageGuards, async (req, res) => {
+  router.get(base + '/:id/edit', numericId, ...manageGuards, async (req, res) => {
     const row = await baseQuery(req).where((cfg.alias ? cfg.alias + '.' : '') + 'id', req.params.id).first();
     if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
     await optionMaps(req, row);
     res.render('crud/form', { title: 'ویرایش ' + cfg.title, crud: cfg, fields, row, isNew: false, urlBase: urlBase(req), action: urlBase(req) + '/' + row.id });
   });
 
-  router.post(base + '/:id', ...postGuards, async (req, res) => {
+  router.post(base + '/:id', numericId, ...postGuards, async (req, res) => {
     const row = await baseQuery(req).where((cfg.alias ? cfg.alias + '.' : '') + 'id', req.params.id).first();
     if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
     if (req.uploadError) { req.flash('danger', req.uploadError); req.keepInput(); return res.redirect(urlBase(req) + '/' + row.id + '/edit'); }
@@ -203,7 +205,7 @@ function crud(router, cfg) {
     }
   });
 
-  router.post(base + '/:id/delete', ...manageGuards, async (req, res) => {
+  router.post(base + '/:id/delete', numericId, ...manageGuards, async (req, res) => {
     if (cfg.canDelete === false) return res.redirect(urlBase(req));
     const row = await db.findById(cfg.table, req.params.id);
     if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });

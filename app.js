@@ -7,6 +7,9 @@ process.title = 'madrese';
 // پنهان‌کردن هشدار آزمایشی node:sqlite
 process.removeAllListeners('warning');
 process.on('warning', (w) => { if (w && w.name !== 'ExperimentalWarning') console.warn(w); });
+// خطاهای ناهمگام مدیریت‌نشده نباید کل سرویس را از کار بیندازند
+process.on('unhandledRejection', (err) => { console.error('[unhandledRejection]', err && err.stack ? err.stack : err); });
+process.on('uncaughtException', (err) => { console.error('[uncaughtException]', err && err.stack ? err.stack : err); });
 
 const { createApp, boot } = require('./src/app');
 const config = require('./src/core/config');

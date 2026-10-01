@@ -553,6 +553,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     const routeFee = await insert('fees', { academic_year_id: yearId, grade_level_id: null, class_id: null, title: 'سرویس ایاب و ذهاب (نوبت اول)', amount: 9000000, due_date: J.toGregorian(`${jy}/07/30`), type: 'transport', description: null, created_at: now });
     let invNo = 1001, invCount = 0, payCount = 0;
     const PAY_METHODS = ['cash', 'card', 'transfer', 'online'];
+    const payDate = (created) => { const d = J.addDays(created, ri(1, 20)); return (d < today ? d : today) + ' ' + pad(ri(8, 14), 2) + ':' + pick(['00', '15', '30', '45']) + ':00'; };
     const addInvoice = async (s, feeId, title, amount, due, created) => {
       const r = rnd();
       let paid = 0, discount = 0;
@@ -568,7 +569,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
         for (let k = 0; k < parts; k++) {
           const amt = k === parts - 1 ? remain : Math.round(paid / 2 / 10000) * 10000;
           remain -= amt;
-          await insert('payments', { invoice_id: invId, student_id: s.id, amount: amt, method: pick(PAY_METHODS), reference: chance(0.7) ? digits(12) : null, paid_at: J.addDays(created, ri(1, 20)) + ' 11:00:00', note: null, recorded_by: chance(0.5) ? adminId : staffUid, created_at: now });
+          await insert('payments', { invoice_id: invId, student_id: s.id, amount: amt, method: pick(PAY_METHODS), reference: chance(0.7) ? digits(12) : null, paid_at: payDate(created), note: null, recorded_by: chance(0.5) ? adminId : staffUid, created_at: now });
           payCount++;
         }
       }

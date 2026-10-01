@@ -72,7 +72,7 @@ function createApp() {
   app.use(express.json({ limit: '1mb' }));
 
   // سلامت سرویس
-  app.get('/health', (req, res) => res.json({ ok: true, installed: config.get().installed, db: db.info ? db.info.driver : null, version: pkg.version, uptime: Math.round(process.uptime()) }));
+  app.get('/healthz', (req, res) => res.json({ ok: true, installed: config.get().installed, db: db.info ? db.info.driver : null, version: pkg.version, uptime: Math.round(process.uptime()) }));
 
   // پیش از نصب: فقط ویزارد نصب در دسترس است
   const installer = require('./installer/routes');
@@ -115,7 +115,6 @@ function createApp() {
     }
     sessionMiddleware(req, res, next);
   });
-  app.use(csrf());
   app.use(flash());
   app.use(auth.loadUser());
 
@@ -141,6 +140,8 @@ function createApp() {
     }
     next();
   });
+  // بررسی CSRF پس از آماده‌شدن داده‌های قالب تا صفحهٔ خطا کامل رندر شود
+  app.use(csrf());
 
   // مسیرهای احراز هویت و داشبورد
   app.use('/auth', require('./auth/routes'));

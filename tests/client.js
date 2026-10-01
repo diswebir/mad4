@@ -16,7 +16,7 @@ class Client {
     const headers = Object.assign({ cookie: this.cookieHeader() }, opts.headers || {});
     let payload;
     if (body && opts.json) { headers['content-type'] = 'application/json'; headers.accept = 'application/json'; if (this.csrf) headers['x-csrf-token'] = this.csrf; payload = JSON.stringify(body); }
-    else if (body) { headers['content-type'] = 'application/x-www-form-urlencoded'; const p = new URLSearchParams(); if (this.csrf && !body._csrf) p.set('_csrf', this.csrf); for (const [k, v] of Object.entries(body)) p.set(k, v); payload = p.toString(); }
+    else if (body) { headers['content-type'] = 'application/x-www-form-urlencoded'; const p = new URLSearchParams(); if (this.csrf && !body._csrf) p.set('_csrf', this.csrf); for (const [k, v] of Object.entries(body)) { if (Array.isArray(v)) v.forEach((x) => p.append(k, x)); else p.set(k, v); } payload = p.toString(); }
     const res = await fetch(BASE + path, { method, headers, body: payload, redirect: 'manual' });
     this.storeCookies(res);
     const text = await res.text();
@@ -32,6 +32,7 @@ class Client {
     const body = { username, password };
     if (cm) { const nums = en(cm[1]).match(/\d+/g); body.captcha = String(Number(nums[0]) + Number(nums[1])); }
     const res = await this.post('/auth/login', body);
+    if (res.status === 302) await this.get(res.location || '/dashboard'); // تازه‌سازی توکن CSRF پس از ورود
     return res;
   }
 }
