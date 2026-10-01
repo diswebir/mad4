@@ -138,6 +138,10 @@ async function studentDashboard(req, res, { today, year }) {
     d.avg = scored.length ? Math.round((scored.reduce((a, r) => a + (Number(r.score) / Number(r.max_score || 20)) * 20, 0) / scored.length) * 100) / 100 : null;
   }
   if (on('exams.schedule')) d.exams = await db.table('exams as e').select('e.*', 's.title as subject_title').leftJoin('subjects as s', 'e.subject_id', 's.id').where('e.class_id', student.class_id).where('e.date', '>=', today).orderBy('e.date').limit(5).all();
+  if (on('homework.reminder')) {
+    d.dueSoon = await db.table('homework as h').select('h.id', 'h.title', 'h.due_date', 's.title as subject_title').leftJoin('subjects as s', 'h.subject_id', 's.id')
+      .joinRaw('LEFT JOIN `homework_submissions` AS `hs` ON `hs`.`homework_id` = `h`.`id` AND `hs`.`student_id` = ?', [student.id]).whereNull('hs.id').where('h.class_id', student.class_id).whereBetween('h.due_date', today, J.addDays(today, 3)).orderBy('h.due_date').limit(5).all();
+  }
   if (on('homework')) {
     d.homework = await db.table('homework as h').select('h.*', 's.title as subject_title', 'hs.status as sub_status', 'hs.score as sub_score').leftJoin('subjects as s', 'h.subject_id', 's.id')
       .joinRaw('LEFT JOIN `homework_submissions` AS `hs` ON `hs`.`homework_id` = `h`.`id` AND `hs`.`student_id` = ?', [student.id]).where('h.class_id', student.class_id).orderBy('h.due_date', 'desc').limit(6).all();

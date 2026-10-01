@@ -20,11 +20,12 @@ const flashOf = (html) => { const m = /alert[^>]*>([\s\S]*?)<\/div>/.exec(html);
   // class subject assign + schedule slot
   // معلم جدید (بدون برنامه) تا تداخل پیش نیاید
   r = await a.get('/teachers/new');
+  const uname = 't9' + String(Date.now()).slice(-7);
   const fd0 = new FormData(); fd0.append('_csrf', a.csrf);
-  for (const [k, v] of Object.entries({ name: 'معلم آزمایشگاه', username: 't9990', password: 'secret123', personnel_code: '9990', gender: 'female', status: 'active' })) fd0.append(k, v);
+  for (const [k, v] of Object.entries({ name: 'معلم آزمایشگاه', username: uname, password: 'secret123', personnel_code: '9' + String(Date.now()).slice(-6), gender: 'female', status: 'active' })) fd0.append(k, v);
   const res0 = await fetch('http://localhost:3000/teachers', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd0, redirect: 'manual' });
   assert(res0.status === 302 && !/new/.test(res0.headers.get('location')), 'create lab teacher -> ' + res0.headers.get('location'));
-  r = await a.get('/teachers?q=t9990'); const labT = [...r.text.matchAll(/\/teachers\/(\d+)\/edit/g)].map((m) => m[1]).pop();
+  r = await a.get('/teachers?q=' + uname); const labT = [...r.text.matchAll(/\/teachers\/(\d+)\/edit/g)].map((m) => m[1]).pop();
   r = await a.post('/academic/classes/1/subjects', { subject_id: subId, teacher_id: labT, weekly_hours: '1' }); assert(r.status === 302, 'assign class subject');
   r = await a.get('/academic/classes/1'); assert(/آزمایشگاه/.test(r.text), 'class shows subject');
   const csRow = new RegExp('subjects/(\\d+)/delete[\\s\\S]{0,600}?آزمایشگاه|آزمایشگاه[\\s\\S]{0,600}?subjects/(\\d+)/delete').exec(r.text);

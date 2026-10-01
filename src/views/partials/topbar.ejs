@@ -8,7 +8,7 @@
   <% } %>
   <div class="ms-auto d-flex align-items-center gap-1">
     <span class="d-none d-md-inline text-secondary fs-7 me-2"><i class="bi bi-calendar3 me-1"></i><%= J.formatLong(J.todayISO()) %></span>
-    <button class="icon-btn" type="button" data-toggle-theme title="تغییر پوسته"><i class="bi <%= theme === 'dark' ? 'bi-sun' : 'bi-moon-stars' %>"></i></button>
+    <% if (enabled('system.dark_mode')) { %><button class="icon-btn" type="button" data-toggle-theme title="تغییر پوسته"><i class="bi <%= theme === 'dark' ? 'bi-sun' : 'bi-moon-stars' %>"></i></button><% } %>
     <% if (currentUser && enabled('messages')) { %>
     <a class="icon-btn" href="/messages" title="پیام‌ها"><i class="bi bi-envelope"></i><% if (unreadMessages) { %><span class="dot"><%= J.toPersianDigits(unreadMessages) %></span><% } %></a>
     <% } %>

@@ -37,7 +37,12 @@ crud(router, {
   afterSave: async (id, d, req, isNew) => { if (isNew && E('hr.notify')) await notify.pushRole('admin', { title: 'درخواست مرخصی جدید', body: `${req.user.name} — ${d.type} از ${J.formatDate(d.from_date)} تا ${J.formatDate(d.to_date)}`, link: '/hr/leaves?f_status=pending', type: 'info' }); },
   beforeDelete: (row, req) => (row.status === 'pending' || isAdmin(req) ? true : 'فقط درخواست در انتظار قابل حذف است'),
   labelField: 'type',
-  rowActions: (row, req) => (isAdmin(req) && E('hr.approval') && row.status === 'pending' ? [{ post: '/hr/leaves/' + row.id + '/review', params: { decision: 'approved' }, icon: 'bi-check2-circle', label: 'تأیید' }, { post: '/hr/leaves/' + row.id + '/review', params: { decision: 'rejected' }, icon: 'bi-x-circle', label: 'رد', confirm: 'درخواست رد شود؟' }] : []),
+  rowActions: (row, req) => {
+    const acts = [];
+    if (isAdmin(req) && E('hr.approval') && row.status === 'pending') acts.push({ post: '/hr/leaves/' + row.id + '/review', params: { decision: 'approved' }, icon: 'bi-check2-circle', label: 'تأیید' }, { post: '/hr/leaves/' + row.id + '/review', params: { decision: 'rejected' }, icon: 'bi-x-circle', label: 'رد', confirm: 'درخواست رد شود؟' });
+    if (isAdmin(req) && E('hr.documents') && row.user_role === 'teacher' && E('teachers.documents')) acts.push({ href: '/hr/staff/' + row.user_id + '/documents', icon: 'bi-folder2-open', label: 'پرونده و مدارک' });
+    return acts;
+  },
   pageActions: (req) => (isAdmin(req) ? [{ href: '/hr/leaves?f_status=pending', label: 'در انتظار بررسی', icon: 'bi-hourglass', class: 'btn-outline-warning' }] : []),
   listData: async (req) => {
     if (!E('hr.balance') && !isAdmin(req)) return {};
@@ -51,6 +56,12 @@ crud(router, {
     const max = settings.getInt('leave_days_per_year', 30);
     return { summaryHtml: `<div class="alert alert-light border py-2"><i class="bi bi-calendar-check me-1"></i>ماندهٔ مرخصی سال تحصیلی ${year.title}: <strong>${J.toPersianDigits(Math.max(0, max - used))}</strong> از ${J.toPersianDigits(max)} روز (استفاده‌شده: ${J.toPersianDigits(used)})</div>` };
   }
+});
+// مدارک پرسنلی: هدایت به پروندهٔ معلم (مدارک در ماژول معلمان نگهداری می‌شود)
+router.get('/staff/:userId/documents', auth.requireAdmin, modules.requireEnabled('hr.documents'), async (req, res) => {
+  const t = await db.table('teachers').where('user_id', Number(req.params.userId) || 0).first();
+  if (!t) { req.flash('warning', 'برای این کاربر پروندهٔ معلم ثبت نشده است.'); return res.redirect('/hr/leaves'); }
+  res.redirect('/teachers/' + t.id + '#docs');
 });
 router.post('/leaves/:id/review', auth.requireAdmin, modules.requireEnabled('hr.approval'), async (req, res) => {
   const r = await db.findById('leave_requests', req.params.id);
