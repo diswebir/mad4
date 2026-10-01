@@ -24,7 +24,7 @@ module.exports = {
   ],
   menu: [
     { title: 'دانش‌آموزان', href: '/students', icon: 'bi-people', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'پروندهٔ من', href: '/students/me', icon: 'bi-person-vcard', roles: ['student'], feature: 'panel' }
+    { title: 'پروندهٔ من', href: '/students/me', icon: 'bi-person-vcard', roles: ['student', 'parent'], feature: 'panel' }
   ],
   routes: require('./routes')
 };

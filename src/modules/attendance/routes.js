@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -41,7 +42,7 @@ const classesQuery = () => db.table('classes as c').leftJoin('grade_levels as g'
 
 // ---------- صفحهٔ اصلی ----------
 router.get('/', async (req, res) => {
-  if (req.user.role === 'student') return res.redirect('/attendance/my');
+  if (req.user.role === 'student' || req.user.role === 'parent') return res.redirect('/attendance/my');
   const date = parseDate(req.query.date);
   const t = await teacherInfo(req);
   let q = classesQuery();
@@ -129,8 +130,8 @@ router.post('/take', async (req, res) => {
 });
 
 // ---------- دانش‌آموز ----------
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('attendance.my'), async (req, res) => {
-  const s = await db.table('students').where('user_id', req.user.id).first();
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('attendance.my'), async (req, res) => {
+  const s = await people.studentOf(req);
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   res.redirect(`/attendance/report/student/${s.id}`);
 });
@@ -139,7 +140,7 @@ router.get('/my', auth.requireRole('student'), modules.requireEnabled('attendanc
 router.get('/report/student/:id', async (req, res) => {
   const s = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.*', 'c.title as class_title').where('s.id', req.params.id).first();
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
-  const isOwner = req.user.role === 'student' && s.user_id === req.user.id;
+  const isOwner = (req.user.role === 'student' && s.user_id === req.user.id) || (req.user.role === 'parent' && (await people.childrenOf(req.user.id)).some((k) => k.id === s.id));
   if (isOwner ? !E('attendance.my') : !E('attendance.student_report')) return res.status(404).render('errors/module-disabled', { title: 'غیرفعال', feature: 'گزارش حضور' });
   if (!isOwner && !(await canViewClass(req, s.class_id))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   const cur = J.currentJalali();
@@ -232,16 +233,16 @@ router.get('/alerts', auth.requireRole('admin', 'staff', 'teacher'), modules.req
 router.get('/excuses', modules.requireEnabled('attendance.excuses'), async (req, res) => {
   let q = db.table('absence_excuses as e').join('students as s', 's.id', 'e.student_id').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('users as u', 'u.id', 'e.reviewed_by').select('e.*', 's.first_name', 's.last_name', 's.user_id', 'c.title as class_title', 'u.name as reviewer');
   let me = null;
-  if (req.user.role === 'student') { me = await db.table('students').where('user_id', req.user.id).first(); q = q.where('e.student_id', me ? me.id : -1); }
+  if (req.user.role === 'student' || req.user.role === 'parent') { me = await people.studentOf(req); q = q.where('e.student_id', me ? me.id : -1); }
   else if (req.user.role === 'teacher') { const t = await teacherInfo(req); q = q.whereIn('s.class_id', [...new Set([...t.homeroom, ...t.teaching.map((x) => x.class_id)])]); }
-  const status = req.query.status || (req.user.role === 'student' ? '' : 'pending');
+  const status = req.query.status || ((req.user.role === 'student' || req.user.role === 'parent') ? '' : 'pending');
   if (status) q = q.where('e.status', status);
   const result = await q.orderBy('e.id', 'desc').paginate(req.query.page, 20);
   const myAbsences = me ? await db.table('attendance').where('student_id', me.id).where('status', 'absent').where('session_key', 'daily').whereRaw('id NOT IN (SELECT COALESCE(attendance_id, 0) FROM absence_excuses)').orderBy('date', 'desc').limit(20).all() : [];
   res.render(v('excuses'), { title: 'درخواست‌های موجه‌شدن غیبت', result, status, me, myAbsences, query: req.query });
 });
-router.post('/excuses', auth.requireRole('student'), modules.requireEnabled('attendance.excuses'), ...upload.form('excuses', 'single', 'file', { maxMb: 5 }), async (req, res) => {
-  const me = await db.table('students').where('user_id', req.user.id).first();
+router.post('/excuses', auth.requireRole('student', 'parent'), modules.requireEnabled('attendance.excuses'), ...upload.form('excuses', 'single', 'file', { maxMb: 5 }), async (req, res) => {
+  const me = await people.studentOf(req);
   if (!me) return res.redirect('/attendance/excuses');
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/attendance/excuses'); }
   const att = await db.table('attendance').where({ id: req.body.attendance_id, student_id: me.id }).first();

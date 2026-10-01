@@ -10,7 +10,7 @@ module.exports = {
   menu: [
     { title: 'سلامت', href: '/health', icon: 'bi-heart-pulse', roles: ['admin', 'staff'] },
     { title: 'هشدارهای سلامت کلاس', href: '/health/alerts', icon: 'bi-heart-pulse', roles: ['teacher'], feature: 'alerts' },
-    { title: 'سوابق سلامت من', href: '/health/my', icon: 'bi-heart-pulse', roles: ['student'], feature: 'student_view' }
+    { title: 'سوابق سلامت من', href: '/health/my', icon: 'bi-heart-pulse', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

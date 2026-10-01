@@ -2,6 +2,9 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const enrollments = require('../enrollments/service');
+const parentsSvc = require('../parents/service');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -34,6 +37,7 @@ async function teacherScope(req) {
 async function canView(req, student) {
   if (['admin', 'staff'].includes(req.user.role)) return true;
   if (req.user.role === 'student') return student.user_id === req.user.id && E('students.panel');
+  if (req.user.role === 'parent') return E('students.panel') && (await parentsSvc.childrenOf(req.user.id)).some((k) => k.id === student.id);
   const scope = await teacherScope(req);
   return scope && scope.includes(student.class_id);
 }
@@ -77,8 +81,8 @@ function validateStudent(data, isNew) {
 }
 
 // ---------- مسیرهای ثابت (قبل از :id) ----------
-router.get('/me', auth.requireRole('student'), modules.requireEnabled('students.panel'), async (req, res) => {
-  const s = await db.table('students').where('user_id', req.user.id).first();
+router.get('/me', auth.requireRole('student', 'parent'), modules.requireEnabled('students.panel'), async (req, res) => {
+  const s = await people.studentOf(req);
   res.redirect(s ? '/students/' + s.id : '/dashboard');
 });
 
@@ -137,6 +141,7 @@ router.post('/', auth.requireAdmin, modules.requireEnabled('students.manage'), .
     data.user_id = await db.insert('users', { username, password: await auth.hashPassword(password), role: 'student', name: `${data.first_name} ${data.last_name}`, phone: data.mobile || null, email: data.email || null, status: 'active', must_change_password: settings.get('force_password_change', '0') === '1' ? 1 : 0, created_at: db.now() });
     data.created_at = db.now();
     const id = await db.insert('students', data);
+    await enrollments.ensureActive(id, data.class_id, { userId: req.user.id });
     await activity.log(req, 'create', 'students', id, `ثبت‌نام ${data.first_name} ${data.last_name} (${data.student_number})`);
     req.flash('success', `دانش‌آموز ثبت شد. نام کاربری: <code class="ltr">${username}</code> رمز: <code class="ltr">${utils.escapeHtml(password)}</code>`);
     res.redirect(req.body._another === '1' ? '/students/new?class_id=' + (data.class_id || '') : '/students/' + id);
@@ -179,7 +184,8 @@ router.post('/import', auth.requireAdmin, modules.requireEnabled('students.impor
       const password = settings.get('student_default_password', '') || data.national_id || '123456';
       data.user_id = await db.insert('users', { username, password: await auth.hashPassword(password), role: 'student', name: `${data.first_name} ${data.last_name}`, phone: data.mobile || null, status: 'active', created_at: db.now() });
       data.created_at = db.now();
-      await db.insert('students', data); report.ok++;
+      const newId = await db.insert('students', data); report.ok++;
+      await enrollments.ensureActive(newId, data.class_id, { userId: req.user.id });
     } catch (e) { report.errors.push(`ردیف ${J.toPersianDigits(i + 2)}: ${e.message}`); }
   }
   await activity.log(req, 'import', 'students', null, `ورود گروهی: ${report.ok} موفق، ${report.skipped} تکراری، ${report.errors.length} خطا`);
@@ -192,7 +198,7 @@ router.get('/:id', async (req, res) => {
   const s = await baseQuery().where('s.id', req.params.id).first();
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canView(req, s))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
-  const isStudent = req.user.role === 'student';
+  const isStudent = req.user.role === 'student' || req.user.role === 'parent';
   const data = { s, isStudent, canManage: canManage(req), isTeacher: req.user.role === 'teacher', att: null, attTotal: 0, attRecent: [], grades: null, avg: null, discipline: null, points: 0, notes: null, documents: null, transfers: null, invoices: null, due: 0, tickets: null, health: null, counseling: null, loans: null, hwStats: null, route: null, siblings: null, timeline: null };
   data.homeroom = s.class_id ? await db.table('classes as c').leftJoin('teachers as t', 't.id', 'c.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').select('u.name', 't.id as teacher_id', 'u.phone').where('c.id', s.class_id).first() : null;
   if (E('attendance')) {
@@ -230,6 +236,11 @@ router.get('/:id', async (req, res) => {
     (data.transfers || []).slice(0, 3).forEach((t) => tl.push({ date: t.created_at, icon: 'bi-arrow-left-right', color: 'secondary', text: `انتقال ${t.from_title || '—'} → ${t.to_title || '—'}` }));
     data.timeline = tl.filter((x) => x.date).sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 12);
   }
+  data.isParent = req.user.role === 'parent';
+  data.enrollmentHistory = E('enrollments') ? await enrollments.history(s.id) : null;
+  data.ENROLL_STATUS = enrollments.STATUS; data.ENROLL_COLORS = enrollments.COLORS;
+  data.parentAccounts = E('parents') && !isStudent ? await parentsSvc.parentsOfStudent(s.id) : null;
+  data.RELATIONS = utils.RELATIONS;
   data.classes = canManage(req) ? await db.table('classes').where('is_active', 1).orderBy('title').all() : [];
   const print = req.query.print === '1' && E('students.profile_print') && !isStudent;
   res.render(v(print ? 'print' : 'show'), Object.assign({ title: `${s.first_name} ${s.last_name}`, layout: print ? 'layouts/print' : undefined, tab: req.query.tab || 'overview' }, data));
@@ -271,6 +282,7 @@ router.post('/:id', auth.requireAdmin, modules.requireEnabled('students.manage')
     else if (req.body.remove_photo === '1') { upload.removeFile(row.photo); data.photo = null; }
     data.updated_at = db.now();
     await db.update('students', data, { id: row.id });
+    if (data.class_id && Number(data.class_id) !== Number(row.class_id)) await enrollments.ensureActive(row.id, data.class_id, { userId: req.user.id });
     const u = { name: `${data.first_name} ${data.last_name}`, phone: data.mobile || null, email: data.email || null, username: String(data.student_number).toLowerCase(), updated_at: db.now() };
     if (req.body.password && req.body.password.length >= 6) u.password = await auth.hashPassword(req.body.password);
     if (row.user_id) await db.update('users', u, { id: row.user_id });
@@ -300,6 +312,7 @@ router.post('/:id/status', auth.requireAdmin, modules.requireEnabled('students.s
   const status = utils.STUDENT_STATUS[req.body.status] ? req.body.status : 'active';
   await db.update('students', { status, updated_at: db.now() }, { id: row.id });
   if (row.user_id) await db.update('users', { status: status === 'active' ? 'active' : 'inactive' }, { id: row.user_id });
+  await enrollments.onStatusChange(row.id, status, { userId: req.user.id, note: utils.normalizePersian(req.body.note || '') || null });
   if (req.body.note && E('students.notes')) await db.insert('student_notes', { student_id: row.id, author_id: req.user.id, content: `تغییر وضعیت به «${utils.STUDENT_STATUS[status]}»: ${utils.normalizePersian(req.body.note)}`, type: 'status', is_private: 1, created_at: db.now() });
   await activity.log(req, 'update', 'students', row.id, `وضعیت ${row.first_name} ${row.last_name} → ${utils.STUDENT_STATUS[status]}`);
   req.flash('success', 'وضعیت تحصیلی به‌روزرسانی شد.'); res.redirect('/students/' + row.id);
@@ -309,6 +322,7 @@ router.post('/:id/transfer', auth.requireAdmin, modules.requireEnabled('students
   const cls = await db.findById('classes', req.body.class_id);
   if (!row || !cls) { req.flash('danger', 'کلاس نامعتبر'); return res.redirect('/students/' + req.params.id); }
   await db.update('students', { class_id: cls.id, grade_level_id: cls.grade_level_id, updated_at: db.now() }, { id: row.id });
+  await enrollments.ensureActive(row.id, cls.id, { userId: req.user.id });
   await db.insert('student_transfers', { student_id: row.id, from_class_id: row.class_id, to_class_id: cls.id, reason: utils.normalizePersian(req.body.reason) || null, transferred_by: req.user.id, created_at: db.now() });
   if (row.user_id && E('notifications.inapp')) await notify.push([row.user_id], { title: 'انتقال کلاس', body: `شما به کلاس «${cls.title}» منتقل شدید.`, link: '/students/me', type: 'info' });
   await activity.log(req, 'transfer', 'students', row.id, `انتقال ${row.first_name} ${row.last_name} به ${cls.title}`);

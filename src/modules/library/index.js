@@ -12,7 +12,7 @@ module.exports = {
   ],
   menu: [
     { title: 'کتابخانه', href: '/library', icon: 'bi-book', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'کتابخانه', href: '/library/my', icon: 'bi-book', roles: ['student'], feature: 'student_view' }
+    { title: 'کتابخانه', href: '/library/my', icon: 'bi-book', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

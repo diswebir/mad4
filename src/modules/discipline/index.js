@@ -12,7 +12,7 @@ module.exports = {
   ],
   menu: [
     { title: 'انضباط و تشویق', href: '/discipline', icon: 'bi-shield-check', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'سوابق انضباطی من', href: '/discipline/my', icon: 'bi-shield-check', roles: ['student'], feature: 'student_view' }
+    { title: 'سوابق انضباطی من', href: '/discipline/my', icon: 'bi-shield-check', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

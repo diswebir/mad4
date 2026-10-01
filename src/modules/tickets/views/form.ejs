@@ -5,7 +5,8 @@
   <div class="card-body">
     <% if (student) { %><div class="alert alert-light border d-flex align-items-center gap-2 fs-7"><i class="bi bi-info-circle"></i><span>تیکت از طرف <strong><%= student.first_name %> <%= student.last_name %></strong><%= student.class_title ? ' — کلاس ' + student.class_title : '' %> ثبت می‌شود.</span></div><% } %>
     <div class="row g-3">
-      <% if (currentUser.role === 'student') { %>
+      <% if (currentUser.role === 'parent' && typeof children !== 'undefined' && children.length > 1) { %><div class="col-md-6"><label class="form-label">دربارهٔ فرزند</label><select class="form-select" name="student_id"><% children.forEach(function (k) { %><option value="<%= k.id %>" <%= student && student.id === k.id ? 'selected' : '' %>><%= k.first_name %> <%= k.last_name %><%= k.class_title ? ' — ' + k.class_title : '' %></option><% }) %></select></div><% } %>
+      <% if (currentUser.role === 'student' || currentUser.role === 'parent') { %>
       <div class="col-md-6"><label class="form-label required">گیرنده</label><select class="form-select" name="department"><option value="admin">مدیریت مدرسه</option><% if (student && student.homeroom_teacher_id) { %><option value="teacher" <%= val('department') === 'teacher' ? 'selected' : '' %>>معلم کلاس (<%= student.class_title %>)</option><% } %><option value="staff" <%= val('department') === 'staff' ? 'selected' : '' %>>دفتر / امور اداری</option></select></div>
       <% } else if (isStaff) { %>
       <div class="col-md-6"><label class="form-label">دربارهٔ دانش‌آموز</label><select class="form-select" name="student_id"><option value="">— هیچ‌کدام —</option><% students.forEach(function (s) { %><option value="<%= s.id %>" <%= String(val('student_id')) === String(s.id) ? 'selected' : '' %>><%= s.first_name %> <%= s.last_name %> (<%= s.class_title || '—' %>)</option><% }); %></select></div>

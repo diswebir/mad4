@@ -16,6 +16,8 @@ const schema = require('../database/schema');
 const schemaSync = require('./core/db/schema');
 const settings = require('./core/settings');
 const modules = require('./core/modules');
+const permissions = require('./core/permissions');
+const scheduler = require('./core/scheduler');
 const auth = require('./core/auth');
 const J = require('./core/jalali');
 const utils = require('./core/utils');
@@ -36,6 +38,9 @@ async function boot(log) {
   await settings.load();
   J.setTimezoneOffset(settings.get('timezone_offset') || cfg.timezoneOffset);
   await modules.loadStates();
+  await permissions.ensureDefaults();
+  permissions.reload();
+  scheduler.start();
   return { installed: true };
 }
 
@@ -72,6 +77,14 @@ function createApp() {
   app.use(express.json({ limit: '1mb' }));
 
   // سلامت سرویس
+  // اجرای کارهای زمان‌بندی‌شده توسط cron بیرونی: GET /cron?token=...
+  app.get('/cron', async (req, res) => {
+    if (!config.get().installed) return res.status(503).json({ ok: false });
+    const token = settings.get('cron_token');
+    if (!token || String(req.query.token || '') !== token) return res.status(403).json({ ok: false, error: 'توکن نامعتبر' });
+    const results = await scheduler.runDue('cron');
+    res.json({ ok: true, ran: results.length, results: results.map((r) => ({ key: r.key, status: r.status || (r.skipped ? 'skipped' : 'unknown'), message: r.message })) });
+  });
   app.get('/healthz', (req, res) => res.json({ ok: true, installed: config.get().installed, db: db.info ? db.info.driver : null, version: pkg.version, uptime: Math.round(process.uptime()) }));
 
   // پیش از نصب: فقط ویزارد نصب در دسترس است

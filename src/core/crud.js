@@ -11,6 +11,7 @@ const J = require('./jalali');
 const validate = require('./validate');
 const activity = require('./activity');
 const modules = require('./modules');
+const auth = require('./auth');
 const { requireRole } = require('./auth');
 const upload = require('./upload');
 
@@ -51,14 +52,16 @@ function crud(router, cfg) {
   const viewRoles = cfg.viewRoles || manageRoles;
   const fields = cfg.fields;
   const perPage = cfg.perPage || 20;
-  const guards = [requireRole(...viewRoles)];
+  const managePerm = cfg.permission ? [].concat(cfg.permission) : [];
+  const viewPerm = cfg.viewPermission ? [].concat(cfg.viewPermission) : managePerm;
+  const guards = [auth.requireRoleOrPermission(viewRoles, ...viewPerm)];
   if (cfg.feature) guards.push(modules.requireEnabled(cfg.feature));
-  const manageGuards = [requireRole(...manageRoles)];
+  const manageGuards = [auth.requireRoleOrPermission(manageRoles, ...managePerm)];
   if (cfg.feature) manageGuards.push(modules.requireEnabled(cfg.feature));
   const fileFields = cfg.fields.filter((f) => f.type === 'file');
   const bodyParsers = fileFields.length ? upload.form(cfg.uploadFolder || cfg.table, 'fields', fileFields.map((f) => ({ name: f.name, maxCount: 1 })), { images: fileFields.every((f) => f.images), maxMb: cfg.maxMb }) : upload.none();
   const postGuards = [...manageGuards, ...bodyParsers];
-  const canManage = (req) => manageRoles.includes(req.user.role);
+  const canManage = (req) => manageRoles.includes(req.user.role) || (managePerm.length > 0 && req.can && req.can(...managePerm));
   const urlBase = (req) => req.baseUrl + base;
 
   const listFields = fields.filter((f) => f.list);

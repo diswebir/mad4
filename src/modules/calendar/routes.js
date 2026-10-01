@@ -14,13 +14,13 @@ router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const TYPES = { event: 'رویداد', holiday: 'تعطیل', meeting: 'جلسه', trip: 'اردو', ceremony: 'مراسم', exam: 'آزمون', deadline: 'مهلت', other: 'سایر' };
 const COLORS = { event: '#2563eb', holiday: '#dc2626', meeting: '#7c3aed', trip: '#059669', ceremony: '#d97706', exam: '#0891b2', deadline: '#be123c', other: '#64748b' };
-const AUD = { all: 'همه', students: 'دانش‌آموزان', teachers: 'معلمان', staff: 'کارکنان', class: 'یک کلاس' };
+const AUD = { all: 'همه', students: 'دانش‌آموزان', parents: 'اولیا', teachers: 'معلمان', staff: 'کارکنان', class: 'یک کلاس' };
 
 async function visibleEvents(req, from, to) {
   const q = db.table('events as e').leftJoin('classes as c', 'c.id', 'e.class_id').select('e.*', 'c.title as class_title').where('e.start_date', '<=', to).where((b) => b.where('e.end_date', '>=', from).orWhere((x) => x.whereNull('e.end_date').where('e.start_date', '>=', from))).orderBy('e.start_date').orderBy('e.start_time');
   if (!E('calendar.holidays')) q.where('e.type', '!=', 'holiday');
   const role = req.user.role;
-  if (role === 'student') { const s = await people.studentOf(req); q.where((b) => { b.whereIn('e.audience', ['all', 'students']); if (s && s.class_id) b.orWhere((x) => x.where('e.audience', 'class').where('e.class_id', s.class_id)); }); }
+  if (role === 'student' || role === 'parent') { const s = await people.studentOf(req); q.where((b) => { b.whereIn('e.audience', role === 'parent' ? ['all', 'students', 'parents'] : ['all', 'students']); if (s && s.class_id) b.orWhere((x) => x.where('e.audience', 'class').where('e.class_id', s.class_id)); }); }
   else if (role === 'teacher') { const ids = await people.teacherClassIds(req.user.id); q.where((b) => { b.whereIn('e.audience', ['all', 'teachers']).orWhere('e.created_by', req.user.id); if (ids.length) b.orWhere((x) => x.where('e.audience', 'class').whereIn('e.class_id', ids)); }); }
   return q.all();
 }
@@ -28,13 +28,13 @@ async function extraItems(req, from, to) {
   const items = [];
   if (E('calendar.exam_days') && E('exams')) {
     const q = db.table('exams as e').join('subjects as s', 's.id', 'e.subject_id').join('classes as c', 'c.id', 'e.class_id').select('e.id', 'e.title', 'e.date', 'e.start_time', 's.title as subject', 'c.title as class_title', 'c.id as class_id').whereBetween('e.date', from, to).orderBy('e.date');
-    if (req.user.role === 'student') { const s = await people.studentOf(req); q.where('e.class_id', s ? s.class_id : 0); }
+    if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); q.where('e.class_id', s ? s.class_id : 0); }
     else if (req.user.role === 'teacher') q.whereIn('e.class_id', await people.teacherClassIds(req.user.id));
     (await q.all()).forEach((x) => items.push({ kind: 'exam', date: x.date, title: `آزمون ${x.subject} — ${x.class_title}`, sub: x.title, time: x.start_time, color: COLORS.exam, link: req.user.role === 'student' ? '/exams/schedule' : '/exams/' + x.id }));
   }
   if (E('calendar.homework_due') && E('homework')) {
     const q = db.table('homework as h').join('subjects as s', 's.id', 'h.subject_id').join('classes as c', 'c.id', 'h.class_id').select('h.id', 'h.title', 'h.due_date', 's.title as subject', 'c.title as class_title').whereBetween('h.due_date', from, to);
-    if (req.user.role === 'student') { const s = await people.studentOf(req); q.where('h.class_id', s ? s.class_id : 0); }
+    if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); q.where('h.class_id', s ? s.class_id : 0); }
     else if (req.user.role === 'teacher') q.whereIn('h.class_id', await people.teacherClassIds(req.user.id));
     else q.limit(0);
     if (req.user.role !== 'admin' && req.user.role !== 'staff') (await q.all()).forEach((x) => items.push({ kind: 'homework', date: x.due_date, title: `مهلت تکلیف ${x.subject}`, sub: x.title, color: COLORS.deadline, link: '/homework/' + x.id }));

@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -25,7 +26,7 @@ async function teacherCtx(req) {
   const homeroom = await db.table('classes').where('teacher_id', t.id).pluck('id');
   return { id: t.id, csIds: cs.map((x) => x.id), classIds: [...new Set(cs.map((x) => x.class_id).concat(homeroom))] };
 }
-async function studentCtx(req) { return req.user.role === 'student' ? db.table('students').where('user_id', req.user.id).first() : null; }
+async function studentCtx(req) { return (req.user.role === 'student' || req.user.role === 'parent') ? people.studentOf(req) : null; }
 async function csFor(req, classId) {
   const q = db.table('class_subjects as cs').join('subjects as s', 's.id', 'cs.subject_id').join('classes as c', 'c.id', 'cs.class_id').select('cs.*', 's.title as subject_title', 'c.title as class_title').orderBy('c.title').orderBy('s.title');
   if (classId) q.where('cs.class_id', classId);
@@ -41,7 +42,7 @@ async function canView(req, hw) { if (await canManage(req, hw)) return true; con
 
 // ---------- فهرست ----------
 router.get('/', async (req, res) => {
-  if (req.user.role === 'student') return res.redirect('/homework/my');
+  if (req.user.role === 'student' || req.user.role === 'parent') return res.redirect('/homework/my');
   const tc = await teacherCtx(req);
   const f = { class_id: req.query.class_id || '', status: req.query.status || '', q: utils.normalizePersian(req.query.q || '') };
   const q = baseQuery();
@@ -56,7 +57,7 @@ router.get('/', async (req, res) => {
 });
 
 // ---------- دانش‌آموز ----------
-router.get('/my', auth.requireRole('student'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), async (req, res) => {
   const s = await studentCtx(req);
   if (!s || !s.class_id) return res.render(v('my'), { title: 'تکالیف من', rows: [], tab: 'pending', s });
   const rows = await db.table('homework as h').join('subjects as sb', 'sb.id', 'h.subject_id').joinRaw('LEFT JOIN homework_submissions x ON x.homework_id = h.id AND x.student_id = ?', [s.id]).select('h.*', 'sb.title as subject_title', 'x.id as sub_id', 'x.status as sub_status', 'x.score', 'x.feedback', 'x.submitted_at').where('h.class_id', s.class_id).orderBy('h.due_date', 'desc').limit(200).all();

@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -123,6 +124,7 @@ router.post('/canned/:id/delete', auth.requireRole('admin', 'staff', 'teacher'),
 async function formData(req) {
   const data = { CATEGORIES, DEPARTMENTS, isStaff: isStaff(req), students: [], student: null, teachers: [] };
   if (req.user.role === 'student') data.student = await studentOf(req.user.id);
+  if (req.user.role === 'parent') { const kid = await people.studentOf(req); data.student = kid ? await studentOf(kid.user_id) : null; data.children = await people.childrenOf(req.user.id); }
   if (isStaff(req)) { data.students = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id', 's.first_name', 's.last_name', 's.student_number', 'c.title as class_title').where('s.status', 'active').orderBy('s.last_name').all(); data.teachers = await assignees(); }
   return data;
 }
@@ -137,8 +139,8 @@ router.post('/', ...upload.form('tickets', 'single', 'file', { maxMb: 5 }), asyn
   const b = utils.cleanBody(req.body, { fields: ['subject', 'message', 'department', 'category', 'priority', 'student_id', 'assigned_to'] });
   if (!b.subject || !b.message) { req.flash('danger', 'موضوع و متن پیام الزامی است'); req.keepInput(); return res.redirect('/tickets/new'); }
   let studentId = null, classId = null, assignedTo = null, department = DEPARTMENTS[b.department] ? b.department : 'admin';
-  if (req.user.role === 'student') {
-    const s = await studentOf(req.user.id);
+  if (req.user.role === 'student' || req.user.role === 'parent') {
+    const s = req.user.role === 'student' ? await studentOf(req.user.id) : await (async () => { const kids = await people.childrenOf(req.user.id); const k = kids.find((x) => String(x.id) === String(b.student_id)) || (await people.studentOf(req)); return k ? studentOf(k.user_id) : null; })();
     if (s) { studentId = s.id; classId = s.class_id; }
     if (department === 'teacher' && classId) assignedTo = await homeroomUserId(classId);
     if (!assignedTo) department = department === 'staff' ? 'staff' : 'admin';
@@ -172,7 +174,7 @@ router.get('/:id', async (req, res) => {
   if (!t) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canView(req, t))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   const rq = db.table('ticket_replies as r').join('users as u', 'u.id', 'r.user_id').select('r.*', 'u.name', 'u.role', 'u.avatar').where('r.ticket_id', t.id).orderBy('r.id');
-  if (req.user.role === 'student' || !E('tickets.internal_notes')) rq.where('r.is_internal', 0);
+  if (req.user.role === 'student' || req.user.role === 'parent' || !E('tickets.internal_notes')) rq.where('r.is_internal', 0);
   const replies = await rq.all();
   const staffUser = req.user.role !== 'student';
   const canned = staffUser && E('tickets.canned') ? await db.table('canned_responses').where((b) => b.where('user_id', req.user.id).orWhereNull('user_id')).orderBy('title').all() : [];
@@ -225,7 +227,7 @@ router.post('/:id/status', modules.requireEnabled('tickets.status'), async (req,
   if (!t || !(await canView(req, t))) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const status = STATUSES[req.body.status] ? req.body.status : null;
   if (!status) return res.redirect('/tickets/' + t.id);
-  if (req.user.role === 'student' && status !== 'closed') return res.status(403).render('errors/403', { title: 'غیرمجاز' });
+  if ((req.user.role === 'student' || req.user.role === 'parent') && status !== 'closed') return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   await db.update('tickets', { status, closed_at: status === 'closed' ? db.now() : null, updated_at: db.now() }, { id: t.id });
   if (E('tickets.notify') && E('notifications.inapp') && req.user.id !== t.created_by) await notify.push([t.created_by], { title: 'تغییر وضعیت تیکت', body: `${t.code} → ${STATUSES[status]}`, link: '/tickets/' + t.id, type: status === 'closed' ? 'secondary' : 'info' });
   await activity.log(req, 'update', 'tickets', t.id, `وضعیت ${t.code} → ${STATUSES[status]}`);

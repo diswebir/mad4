@@ -27,5 +27,22 @@ async function classOptions(req) {
 async function staffOptions() {
   return (await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff', 'teacher']).where('status', 'active').orderBy('role').orderBy('name').all()).map((u) => ({ value: u.id, label: u.name }));
 }
-async function studentOf(req) { return req.user.role === 'student' ? db.table('students').where('user_id', req.user.id).first() : null; }
-module.exports = { teacherClassIds, studentOptions, classOptions, staffOptions, studentOf };
+/** فرزندان یک ولی (بر اساس کاربر) */
+async function childrenOf(userId) {
+  return db.table('student_parents as sp').join('parents as p', 'p.id', 'sp.parent_id').join('students as s', 's.id', 'sp.student_id').leftJoin('classes as c', 'c.id', 's.class_id')
+    .select('s.*', 'c.title as class_title', 'sp.relation as link_relation').where('p.user_id', userId).orderBy('s.first_name').all();
+}
+/** دانش‌آموزِ جاری: خود دانش‌آموز یا فرزند انتخاب‌شدهٔ ولی (قابل تغییر با ?child=) */
+async function studentOf(req) {
+  if (req.user.role === 'student') return db.table('students').where('user_id', req.user.id).first();
+  if (req.user.role === 'parent') {
+    const kids = await childrenOf(req.user.id);
+    if (!kids.length) return null;
+    const want = Number(req.query.child) || (req.session && req.session.childId);
+    const pick = kids.find((k) => k.id === Number(want)) || kids[0];
+    if (req.session && req.session.childId !== pick.id) req.session.childId = pick.id;
+    return pick;
+  }
+  return null;
+}
+module.exports = { teacherClassIds, studentOptions, classOptions, staffOptions, studentOf, childrenOf };

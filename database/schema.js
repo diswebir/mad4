@@ -12,14 +12,14 @@ module.exports = {
   users: {
     id: 'increments', username: 'string:60 unique notnull', password: 'string:255 notnull', role: 'string:20 index notnull default:student',
     name: 'string:120', email: 'string:150', phone: 'string:20', avatar: 'string:255', status: 'string:20 default:active index',
-    must_change_password: 'boolean default:0', last_login_at: 'datetime', login_count: 'integer default:0', theme: 'string:10',
+    must_change_password: 'boolean default:0', last_login_at: 'datetime', login_count: 'integer default:0', theme: 'string:10', position_id: 'integer', permissions: 'text',
     created_at: 'datetime', updated_at: 'datetime'
   },
   login_logs: { id: 'increments', user_id: 'integer index', username: 'string:60', ip: 'string:45', user_agent: 'string:255', success: 'boolean default:1', created_at: 'datetime index' },
   activity_logs: { id: 'increments', user_id: 'integer index', action: 'string:40', entity: 'string:40', entity_id: 'integer', description: 'string:255', ip: 'string:45', created_at: 'datetime index' },
 
   academic_years: { id: 'increments', title: 'string:50 notnull', start_date: 'date', end_date: 'date', is_current: 'boolean default:0', created_at: 'datetime', updated_at: 'datetime' },
-  terms: { id: 'increments', academic_year_id: 'integer index', title: 'string:50', number: 'integer default:1', start_date: 'date', end_date: 'date', is_current: 'boolean default:0', created_at: 'datetime', updated_at: 'datetime' },
+  terms: { id: 'increments', academic_year_id: 'integer index', title: 'string:50', number: 'integer default:1', start_date: 'date', end_date: 'date', is_current: 'boolean default:0', is_locked: 'boolean default:0', locked_at: 'datetime', locked_by: 'integer', created_at: 'datetime', updated_at: 'datetime' },
   grade_levels: { id: 'increments', title: 'string:60 notnull', stage: 'string:30', sort_order: 'integer default:0', grading_type: 'string:20 default:numeric', created_at: 'datetime', updated_at: 'datetime' },
   rooms: { id: 'increments', title: 'string:60 notnull', capacity: 'integer', floor: 'string:20', type: 'string:30 default:class', equipment: 'text', description: 'text', created_at: 'datetime', updated_at: 'datetime' },
   subjects: { id: 'increments', title: 'string:100 notnull', code: 'string:20', grade_level_id: 'integer index', weekly_hours: 'integer default:2', is_active: 'boolean default:1', created_at: 'datetime', updated_at: 'datetime' },
@@ -56,7 +56,7 @@ module.exports = {
 
   attendance: {
     id: 'increments', date: 'date index notnull', class_id: 'integer index', student_id: 'integer index', class_subject_id: 'integer index', period: 'integer',
-    session_key: 'string:20 default:daily', status: 'string:10 notnull default:present', minutes_late: 'integer', note: 'string:255', recorded_by: 'integer',
+    session_key: 'string:20 default:daily', status: 'string:10 notnull default:present', minutes_late: 'integer', note: 'string:255', notified: 'boolean default:0', recorded_by: 'integer',
     created_at: 'datetime', updated_at: 'datetime', __unique: [['date', 'student_id', 'session_key']], __indexes: [['class_id', 'date']]
   },
   absence_excuses: { id: 'increments', student_id: 'integer index', date: 'date', attendance_id: 'integer', reason: 'text', file_path: 'string:255', status: 'string:20 default:pending index', reviewed_by: 'integer', reviewed_at: 'datetime', review_note: 'string:255', created_at: 'datetime' },
@@ -101,5 +101,26 @@ module.exports = {
   polls: { id: 'increments', question: 'string:255 notnull', description: 'text', options: 'text', audience: 'string:20 default:all', class_id: 'integer', is_active: 'boolean default:1', multiple: 'boolean default:0', ends_at: 'date', created_by: 'integer', created_at: 'datetime' },
   poll_votes: { id: 'increments', poll_id: 'integer index', user_id: 'integer index', option_index: 'integer', created_at: 'datetime', __unique: [['poll_id', 'user_id', 'option_index']] },
 
-  transport_routes: { id: 'increments', title: 'string:100 notnull', driver_name: 'string:80', driver_phone: 'string:20', vehicle: 'string:60', plate: 'string:20', capacity: 'integer default:20', fee: 'bigint default:0', path_description: 'text', departure_time: 'time', is_active: 'boolean default:1', created_at: 'datetime' }
+  transport_routes: { id: 'increments', title: 'string:100 notnull', driver_name: 'string:80', driver_phone: 'string:20', vehicle: 'string:60', plate: 'string:20', capacity: 'integer default:20', fee: 'bigint default:0', path_description: 'text', departure_time: 'time', is_active: 'boolean default:1', created_at: 'datetime' },
+
+  // ---- فاز ۲: اولیا، سوابق تحصیلی، سمت‌ها و مجوزها
+  positions: { id: 'increments', title: 'string:80 notnull', description: 'string:255', permissions: 'text', is_system: 'boolean default:0', created_at: 'datetime', updated_at: 'datetime' },
+  parents: { id: 'increments', user_id: 'integer index', name: 'string:120 notnull', national_id: 'string:10', phone: 'string:20 index', relation: 'string:20 default:father', job: 'string:80', education: 'string:60', address: 'string:255', notes: 'text', created_at: 'datetime', updated_at: 'datetime' },
+  student_parents: { id: 'increments', student_id: 'integer index', parent_id: 'integer index', relation: 'string:20 default:father', is_primary: 'boolean default:1', created_at: 'datetime', __unique: [['student_id', 'parent_id']] },
+  enrollments: { id: 'increments', student_id: 'integer index', academic_year_id: 'integer index', class_id: 'integer index', grade_level_id: 'integer', class_title: 'string:100', grade_title: 'string:60', status: 'string:20 default:active index', enrolled_at: 'date', left_at: 'date', note: 'string:255', created_at: 'datetime', updated_at: 'datetime', __unique: [['student_id', 'academic_year_id']] },
+  grade_changes: { id: 'increments', grade_id: 'integer index', exam_id: 'integer index', student_id: 'integer index', old_score: 'decimal:6,2', new_score: 'decimal:6,2', old_descriptive: 'string:40', new_descriptive: 'string:40', reason: 'string:255', changed_by: 'integer', created_at: 'datetime index' },
+  // ---- زمان‌بند، پیامک، بازیابی رمز
+  scheduled_jobs: { id: 'increments', key: 'string:60 unique notnull', is_enabled: 'boolean default:1', run_at: 'string:5', last_run_at: 'datetime', last_status: 'string:20', last_message: 'text', last_duration_ms: 'integer', lock_token: 'string:40', locked_at: 'datetime', updated_at: 'datetime' },
+  job_runs: { id: 'increments', job_key: 'string:60 index', started_at: 'datetime', finished_at: 'datetime', status: 'string:20', message: 'text', trigger: 'string:20 default:auto' },
+  sms_log: { id: 'increments', recipient: 'string:20 index', message: 'text', provider: 'string:30', status: 'string:20', error: 'string:255', context: 'string:60', created_at: 'datetime index' },
+  password_resets: { id: 'increments', user_id: 'integer index', code_hash: 'string:120', channel: 'string:10', target: 'string:150', expires_at: 'datetime', attempts: 'integer default:0', used_at: 'datetime', ip: 'string:45', created_at: 'datetime' },
+  // ---- اسناد رسمی، پیش‌ثبت‌نام، دفتر کلاسی
+  documents: { id: 'increments', type: 'string:30 index', serial: 'string:30 unique', student_id: 'integer index', title: 'string:200', recipient: 'string:200', body: 'text', purpose: 'string:200', issued_at: 'date', issued_by: 'integer', verify_code: 'string:40 unique', data: 'text', created_at: 'datetime' },
+  applications: {
+    id: 'increments', code: 'string:20 unique', academic_year_id: 'integer index', grade_level_id: 'integer index', first_name: 'string:60 notnull', last_name: 'string:60 notnull', national_id: 'string:10 index', birth_date: 'date', birth_place: 'string:60', gender: 'string:10',
+    previous_school: 'string:120', previous_average: 'decimal:5,2', father_name: 'string:80', father_phone: 'string:20 index', father_national_id: 'string:10', father_job: 'string:80', father_education: 'string:60', mother_name: 'string:80', mother_phone: 'string:20', mother_job: 'string:80', mother_education: 'string:60',
+    address: 'string:255', postal_code: 'string:10', home_phone: 'string:20', email: 'string:150', notes: 'text', file_path: 'string:255', file_name: 'string:150', status: 'string:20 default:pending index', review_note: 'text', reviewed_by: 'integer', reviewed_at: 'datetime', student_id: 'integer', class_id: 'integer', ip: 'string:45', created_at: 'datetime index', updated_at: 'datetime'
+  },
+  syllabus_items: { id: 'increments', academic_year_id: 'integer index', subject_id: 'integer index', grade_level_id: 'integer', title: 'string:200 notnull', description: 'text', sort_order: 'integer default:0', planned_hours: 'integer', planned_from: 'date', planned_to: 'date', created_at: 'datetime', updated_at: 'datetime' },
+  lesson_logs: { id: 'increments', class_id: 'integer index', class_subject_id: 'integer index', subject_id: 'integer', teacher_id: 'integer index', date: 'date index', period: 'integer', topic: 'string:200 notnull', description: 'text', homework: 'text', syllabus_item_id: 'integer', created_by: 'integer', created_at: 'datetime', updated_at: 'datetime', __unique: [['class_subject_id', 'date', 'period']] }
 };

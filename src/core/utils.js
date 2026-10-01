@@ -5,7 +5,8 @@
 const crypto = require('crypto');
 const J = require('./jalali');
 
-const ROLES = { admin: 'مدیر', teacher: 'معلم', student: 'دانش‌آموز', staff: 'کارمند' };
+const ROLES = { admin: 'مدیر', staff: 'کارمند', teacher: 'معلم', student: 'دانش‌آموز', parent: 'ولی' };
+const RELATIONS = { father: 'پدر', mother: 'مادر', guardian: 'سرپرست', other: 'سایر' };
 const GENDERS = { male: 'پسر', female: 'دختر' };
 const GENDERS_ADULT = { male: 'مرد', female: 'زن' };
 const STAGES = { primary1: 'ابتدایی دورهٔ اول', primary2: 'ابتدایی دورهٔ دوم', middle: 'متوسطهٔ اول', high: 'متوسطهٔ دوم' };
@@ -155,6 +156,7 @@ function colorFor(str) {
 }
 
 module.exports = {
+  RELATIONS,
   ROLES, GENDERS, GENDERS_ADULT, STAGES, STUDENT_STATUS, ATT_STATUS, ATT_COLORS, PRIORITIES, PRIORITY_COLORS, BLOOD_TYPES, EDUCATIONS, DESCRIPTIVE_GRADES, GENERIC_STATUS, statusBadge, attBadge, priorityBadge, normalizePersian, escapeHtml, nl2br, truncate, money, num, percent, randomString, randomDigits, slugify,
   isValidNationalId, normalizePhone, isValidMobile, isValidEmail, cleanBody, toCSV, parseCSV, parseCSVObjects, pick, groupBy, indexBy, sumBy, avg, clampInt, fileSize, initials, colorFor
 };

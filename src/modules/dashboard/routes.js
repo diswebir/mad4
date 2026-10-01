@@ -38,6 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
   const today = J.todayISO();
   const year = await currentYear();
   if (user.role === 'student') return studentDashboard(req, res, { today, year });
+  if (user.role === 'parent') return res.redirect('/parents/panel');
   if (user.role === 'teacher') return teacherDashboard(req, res, { today, year });
   return adminDashboard(req, res, { today, year });
 });

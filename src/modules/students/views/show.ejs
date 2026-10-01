@@ -8,6 +8,8 @@ if (enabled('finance') && !isTeacher) tabs.push({ k: 'finance', t: 'مالی', i
 if (enabled('students.notes')) tabs.push({ k: 'notes', t: 'یادداشت‌ها', i: 'bi-journal-text' });
 if (enabled('students.documents')) tabs.push({ k: 'docs', t: 'مدارک', i: 'bi-folder2-open' });
 if (enabled('students.transfer') || enabled('health') || enabled('counseling') || enabled('library')) tabs.push({ k: 'history', t: 'سوابق', i: 'bi-clock-history' });
+if (enabled('enrollments') && typeof enrollmentHistory !== 'undefined' && enrollmentHistory) tabs.push({ k: 'enrollments', t: 'سوابق تحصیلی', i: 'bi-mortarboard' });
+if (enabled('parents') && typeof parentAccounts !== 'undefined' && parentAccounts && !isStudent) tabs.push({ k: 'parents', t: 'حساب اولیا', i: 'bi-people' });
 if (!tabs.find(function (x) { return x.k === tab; })) tab = 'overview';
 var guardianPhone = s.guardian_type === 'mother' ? s.mother_phone : (s.guardian_type === 'other' ? s.guardian_phone : s.father_phone);
 var guardianName = s.guardian_type === 'mother' ? s.mother_name : (s.guardian_type === 'other' ? s.guardian_name : s.father_name);
@@ -169,6 +171,35 @@ var guardianName = s.guardian_type === 'mother' ? s.mother_name : (s.guardian_ty
           <div class="col-md-3"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-upload me-1"></i>بارگذاری</button></div></form></div><% } %>
       </div>
 
+    <% } else if (tab === 'enrollments') { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-mortarboard me-1"></i>سوابق تحصیلی (سال به سال)</h6><% if (canManage) { %><a href="/enrollments?student_id=<%= s.id %>" class="fs-7">مدیریت</a><% } %></div>
+        <div class="table-responsive"><table class="table mb-0"><thead><tr><th>سال تحصیلی</th><th>پایه</th><th>کلاس</th><th>وضعیت</th><th>از</th><th>تا</th><th>توضیح</th></tr></thead><tbody>
+        <% if (!enrollmentHistory.length) { %><tr><td colspan="7" class="text-center text-muted py-4">سابقه‌ای ثبت نشده است</td></tr><% } %>
+        <% enrollmentHistory.forEach(function (e) { %><tr><td><%= e.year_title || '—' %></td><td><%= e.grade_title || '—' %></td><td><%= e.class_title || '—' %></td><td><span class="badge text-bg-<%= ENROLL_COLORS[e.status] || 'secondary' %>"><%= ENROLL_STATUS[e.status] || e.status %></span></td><td><%= J.formatDate(e.enrolled_at, true) %></td><td><%= e.left_at ? J.formatDate(e.left_at, true) : '—' %></td><td class="fs-7 text-muted"><%= e.note || '' %></td></tr><% }) %>
+        </tbody></table></div></div>
+    <% } else if (tab === 'parents') { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>حساب‌های کاربری اولیا</h6><a href="/parents" class="fs-7">همهٔ اولیا</a></div>
+        <div class="table-responsive"><table class="table mb-0"><thead><tr><th>نام</th><th>نسبت</th><th>نام کاربری</th><th>تلفن</th><th>وضعیت</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
+        <% if (!parentAccounts.length) { %><tr><td colspan="7" class="text-center text-muted py-4">هنوز حساب ولی برای این دانش‌آموز ساخته نشده است</td></tr><% } %>
+        <% parentAccounts.forEach(function (p) { %><tr><td><a href="/parents/<%= p.id %>"><%= p.name %></a></td><td><%= RELATIONS[p.relation] || p.relation %></td><td dir="ltr" class="text-end"><%= p.username %></td><td dir="ltr" class="text-end"><%= J.toPersianDigits(p.phone || '') %></td><td><span class="badge text-bg-<%= p.user_status === 'active' ? 'success' : 'secondary' %>"><%= p.user_status === 'active' ? 'فعال' : 'غیرفعال' %></span></td><td class="fs-7"><%= p.last_login_at ? J.formatDateTime(p.last_login_at) : '—' %></td>
+          <td class="text-nowrap"><% if (canManage) { %><form method="post" action="/parents/<%= p.id %>/unlink/<%= s.id %>" class="d-inline" onsubmit="return confirm('حذف پیوند این ولی با دانش‌آموز؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></form><% } %></td></tr><% }) %>
+        </tbody></table></div></div>
+      <% if (canManage) { %>
+      <div class="card"><div class="card-header"><h6><i class="bi bi-person-plus me-1"></i>ساخت/پیوند حساب ولی</h6></div><div class="card-body">
+        <p class="text-muted fs-7">نام کاربری ولی به‌صورت پیش‌فرض شمارهٔ موبایل اوست. اگر ولی با همین شماره قبلاً حساب داشته باشد (خواهر/برادر)، همان حساب پیوند می‌خورد.</p>
+        <div class="row g-3">
+          <% [['father', 'پدر', s.father_name, s.father_phone, s.father_national_id], ['mother', 'مادر', s.mother_name, s.mother_phone, s.mother_national_id], ['guardian', 'سرپرست', s.guardian_name, s.guardian_phone, '']].forEach(function (r) { %>
+          <div class="col-md-4"><form method="post" action="/parents/link/<%= s.id %>" class="border rounded p-3 h-100"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="relation" value="<%= r[0] %>">
+            <div class="fw-bold mb-2"><%= r[1] %></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="name" placeholder="نام و نام خانوادگی" value="<%= r[2] || '' %>" required></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="phone" placeholder="موبایل (نام کاربری)" value="<%= r[3] || '' %>" dir="ltr" required></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="national_id" placeholder="کد ملی (اختیاری)" value="<%= r[4] || '' %>" dir="ltr"></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="password" placeholder="رمز (خالی = پیش‌فرض)" dir="ltr"></div>
+            <div class="form-check form-check-sm mb-2"><input class="form-check-input" type="checkbox" name="send_sms" value="1" id="sms_<%= r[0] %>"><label class="form-check-label fs-7" for="sms_<%= r[0] %>">ارسال پیامک اطلاعات ورود</label></div>
+            <button class="btn btn-sm btn-primary w-100"><i class="bi bi-person-plus me-1"></i>ساخت حساب <%= r[1] %></button></form></div>
+          <% }) %>
+        </div></div></div>
+      <% } %>
     <% } else if (tab === 'history') { %>
       <% if (enabled('students.transfer')) { %>
       <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-arrow-left-right me-1"></i>تاریخچهٔ انتقال کلاس</h6></div><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th>تاریخ</th><th>از</th><th>به</th><th>دلیل</th><th>توسط</th></tr></thead><tbody><% transfers.forEach(function (t) { %><tr><td class="fs-7"><%= J.formatDateTime(t.created_at) %></td><td><%= t.from_title || '—' %></td><td><%= t.to_title || '—' %></td><td class="fs-7"><%= t.reason || '' %></td><td class="fs-7"><%= t.by_name || '' %></td></tr><% }); if (!transfers.length) { %><tr><td colspan="5" class="text-center text-secondary py-3">انتقالی ثبت نشده</td></tr><% } %></tbody></table></div></div>

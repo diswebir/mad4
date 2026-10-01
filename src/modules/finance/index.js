@@ -15,7 +15,7 @@ module.exports = {
   ],
   menu: [
     { title: 'امور مالی', href: '/finance', icon: 'bi-cash-stack', roles: ['admin', 'staff'] },
-    { title: 'شهریه و پرداخت‌ها', href: '/finance/my', icon: 'bi-cash-stack', roles: ['student'], feature: 'student_view' }
+    { title: 'شهریه و پرداخت‌ها', href: '/finance/my', icon: 'bi-cash-stack', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

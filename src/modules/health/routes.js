@@ -14,7 +14,7 @@ router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const TYPES = { checkup: 'معاینهٔ دوره‌ای', illness: 'بیماری', injury: 'حادثه / آسیب', vaccination: 'واکسیناسیون', medication: 'دارو', dental: 'دندان‌پزشکی', vision: 'بینایی‌سنجی', other: 'سایر' };
 
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('health.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('health.student_view'), async (req, res) => {
   const s = await people.studentOf(req);
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const rows = await db.table('health_records as h').leftJoin('users as u', 'u.id', 'h.recorded_by').select('h.*', 'u.name as recorder').where('h.student_id', s.id).orderBy('h.date', 'desc').all();

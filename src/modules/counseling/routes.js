@@ -12,7 +12,7 @@ router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const TOPICS = { academic: 'تحصیلی', behavioral: 'رفتاری', family: 'خانوادگی', career: 'هدایت تحصیلی/شغلی', social: 'اجتماعی', emotional: 'هیجانی', other: 'سایر' };
 
-router.get('/request', auth.requireRole('student'), modules.requireEnabled('counseling.student_request'), (req, res) => {
+router.get('/request', auth.requireRole('student', 'parent'), modules.requireEnabled('counseling.student_request'), (req, res) => {
   if (!E('tickets')) { req.flash('warning', 'ماژول تیکت فعال نیست؛ لطفاً حضوری به دفتر مشاوره مراجعه کنید.'); return res.redirect('/dashboard'); }
   res.redirect('/tickets/new?category=counseling&subject=' + encodeURIComponent('درخواست جلسهٔ مشاوره'));
 });

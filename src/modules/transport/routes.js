@@ -16,7 +16,7 @@ router.use(auth.requireAuth);
 const E = modules.isEnabled;
 const staffOnly = [auth.requireRole('admin', 'staff')];
 
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('transport.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('transport.student_view'), async (req, res) => {
   const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const route = s.transport_route_id ? await db.findById('transport_routes', s.transport_route_id) : null;
   const mates = route ? await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.first_name', 's.last_name', 'c.title as class_title').where('s.transport_route_id', route.id).where('s.status', 'active').where('s.id', '!=', s.id).orderBy('c.title').all() : [];

@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const notify = require('../../core/notify');
@@ -13,13 +14,13 @@ const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
-const AUDIENCES = { all: 'همه', students: 'دانش‌آموزان', teachers: 'معلمان', staff: 'کارکنان', class: 'یک کلاس' };
+const AUDIENCES = { all: 'همه', students: 'دانش‌آموزان', parents: 'اولیا', teachers: 'معلمان', staff: 'کارکنان', class: 'یک کلاس' };
 const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
 
 async function ctx(req) {
   const c = { classIds: [], classId: null };
   if (req.user.role === 'teacher') { const t = await db.table('teachers').where('user_id', req.user.id).first(); if (t) { const a = await db.table('class_subjects').where('teacher_id', t.id).pluck('class_id'); const b = await db.table('classes').where('teacher_id', t.id).pluck('id'); c.classIds = [...new Set(a.concat(b))]; } }
-  if (req.user.role === 'student') { const s = await db.table('students').where('user_id', req.user.id).first(); c.classId = s ? s.class_id : null; }
+  if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); c.classId = s ? s.class_id : null; }
   return c;
 }
 function base() { return db.table('announcements as a').leftJoin('users as u', 'u.id', 'a.author_id').leftJoin('classes as c', 'c.id', 'a.class_id').select('a.*', 'u.name as author_name', 'c.title as class_title'); }
@@ -33,7 +34,7 @@ async function visibleQuery(req, q) {
   const role = req.user.role;
   q.where((b) => {
     b.where('a.audience', 'all');
-    if (role === 'student') { b.orWhere('a.audience', 'students'); if (c.classId) b.orWhere((x) => x.where('a.audience', 'class').where('a.class_id', c.classId)); }
+    if (role === 'student' || role === 'parent') { b.orWhere('a.audience', 'students'); if (role === 'parent') b.orWhere('a.audience', 'parents'); if (c.classId) b.orWhere((x) => x.where('a.audience', 'class').where('a.class_id', c.classId)); }
     if (role === 'teacher') { b.orWhere('a.audience', 'teachers').orWhere('a.author_id', req.user.id); if (c.classIds.length) b.orWhere((x) => x.where('a.audience', 'class').whereIn('a.class_id', c.classIds)); }
   });
   return q;

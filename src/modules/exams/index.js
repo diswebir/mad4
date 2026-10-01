@@ -19,7 +19,7 @@ module.exports = {
   ],
   menu: [
     { title: 'آزمون‌ها و نمرات', href: '/exams', icon: 'bi-award', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'نمرات من', href: '/exams/my', icon: 'bi-award', roles: ['student'], feature: 'student_view' }
+    { title: 'نمرات من', href: '/exams/my', icon: 'bi-award', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const notify = require('../../core/notify');
@@ -25,6 +26,8 @@ async function recipientsFor(req) {
     if (teachers.length) groups.push({ group: 'معلمان', users: teachers });
     const studs = await db.table('students as s').join('users as u', 'u.id', 's.user_id').leftJoin('classes as c', 'c.id', 's.class_id').select('u.id', 'u.name', 'u.role', 'c.title as class_title').where('s.status', 'active').orderBy('c.title').orderBy('u.name').all();
     if (studs.length) groups.push({ group: 'دانش‌آموزان', users: studs.map((s) => ({ id: s.id, name: s.name + (s.class_title ? ' — ' + s.class_title : ''), role: 'student' })) });
+    const pars = await parentsOfClasses(null);
+    if (pars.length) groups.push({ group: 'اولیا', users: pars });
   } else if (req.user.role === 'teacher') {
     const t = await db.table('teachers').where('user_id', req.user.id).first();
     const teachers = await db.table('users').select('id', 'name', 'role').where({ role: 'teacher', status: 'active' }).where('id', '!=', req.user.id).orderBy('name').all();
@@ -33,9 +36,11 @@ async function recipientsFor(req) {
       const classIds = [...new Set((await db.table('class_subjects').where('teacher_id', t.id).pluck('class_id')).concat(await db.table('classes').where('teacher_id', t.id).pluck('id')))];
       const studs = await db.table('students as s').join('users as u', 'u.id', 's.user_id').leftJoin('classes as c', 'c.id', 's.class_id').select('u.id', 'u.name', 'c.title as class_title').whereIn('s.class_id', classIds).where('s.status', 'active').orderBy('c.title').orderBy('u.name').all();
       if (studs.length) groups.push({ group: 'دانش‌آموزان کلاس‌های من', users: studs.map((s) => ({ id: s.id, name: s.name + (s.class_title ? ' — ' + s.class_title : ''), role: 'student' })) });
+      const pars = classIds.length ? await parentsOfClasses(classIds) : [];
+      if (pars.length) groups.push({ group: 'اولیای کلاس‌های من', users: pars });
     }
-  } else if (req.user.role === 'student' && E('messages.student_send')) {
-    const s = await db.table('students').where('user_id', req.user.id).first();
+  } else if (req.user.role === 'parent' || (req.user.role === 'student' && E('messages.student_send'))) {
+    const s = await people.studentOf(req);
     if (s && s.class_id) {
       const tids = [...new Set((await db.table('class_subjects').where('class_id', s.class_id).whereNotNull('teacher_id').pluck('teacher_id')).concat((await db.table('classes').where('id', s.class_id).whereNotNull('teacher_id').pluck('teacher_id'))))];
       const teachers = tids.length ? await db.table('teachers as t').join('users as u', 'u.id', 't.user_id').select('u.id', 'u.name', 'u.role').whereIn('t.id', tids).where('u.status', 'active').orderBy('u.name').all() : [];
@@ -43,6 +48,14 @@ async function recipientsFor(req) {
     }
   }
   return groups;
+}
+async function parentsOfClasses(classIds) {
+  const q = db.table('student_parents as sp').join('parents as p', 'p.id', 'sp.parent_id').join('users as u', 'u.id', 'p.user_id').join('students as s', 's.id', 'sp.student_id')
+    .select('u.id', 'u.name', 'u.role', 's.first_name', 's.last_name', 'sp.relation').where('u.status', 'active').where('s.status', 'active').orderBy('s.last_name');
+  if (classIds) q.whereIn('s.class_id', classIds);
+  const seen = new Map();
+  for (const r of await q.all()) { if (!seen.has(r.id)) seen.set(r.id, { id: r.id, role: 'parent', name: `${r.name} (${utils.RELATIONS[r.relation] || 'ولی'} ${r.first_name} ${r.last_name})` }); }
+  return [...seen.values()];
 }
 async function canSendTo(req, receiverId) {
   const groups = await recipientsFor(req);
@@ -74,13 +87,17 @@ router.get('/compose', async (req, res) => {
 });
 router.post('/compose', async (req, res) => {
   if (req.user.role === 'student' && !E('messages.student_send')) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
-  const b = utils.cleanBody(req.body, { fields: ['receiver_id', 'subject', 'body', 'parent_id', 'mode', 'class_id', 'role'] });
+  const b = utils.cleanBody(req.body, { fields: ['receiver_id', 'subject', 'body', 'parent_id', 'mode', 'class_id', 'role', 'target'] });
   if (!b.body) { req.flash('danger', 'متن پیام الزامی است'); req.keepInput(); return res.redirect('/messages/compose' + (b.receiver_id ? '?to=' + b.receiver_id : '')); }
   const subject = b.subject || 'بدون موضوع';
   let receivers = [];
   if (b.mode === 'class' && E('messages.broadcast') && req.user.role !== 'student') {
     if (req.user.role === 'teacher') { const t = await db.table('teachers').where('user_id', req.user.id).first(); const ok = t && ((await db.table('class_subjects').where({ teacher_id: t.id, class_id: Number(b.class_id) || 0 }).exists()) || (await db.table('classes').where({ teacher_id: t.id, id: Number(b.class_id) || 0 }).exists())); if (!ok) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); }
     receivers = await db.table('students').where('class_id', Number(b.class_id) || 0).where('status', 'active').whereNotNull('user_id').pluck('user_id');
+    if (b.target === 'parents' || b.target === 'both') {
+      const pids = (await parentsOfClasses([Number(b.class_id) || 0])).map((u) => u.id);
+      receivers = b.target === 'parents' ? pids : [...new Set(receivers.concat(pids))];
+    }
   } else if (b.mode === 'role' && E('messages.broadcast') && isStaff(req)) {
     receivers = await db.table('users').where({ role: b.role || 'teacher', status: 'active' }).where('id', '!=', req.user.id).pluck('id');
   } else {

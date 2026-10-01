@@ -14,7 +14,7 @@ const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
 const E = modules.isEnabled;
-const AUD = { all: 'همه', students: 'دانش‌آموزان', teachers: 'معلمان', class: 'یک کلاس' };
+const AUD = { all: 'همه', students: 'دانش‌آموزان', parents: 'اولیا', teachers: 'معلمان', class: 'یک کلاس' };
 const isStaff = (req) => ['admin', 'staff'].includes(req.user.role);
 const canCreate = (req) => isStaff(req) || (req.user.role === 'teacher' && E('polls.teacher_create'));
 const parseOptions = (p) => { try { const o = JSON.parse(p.options || '[]'); return Array.isArray(o) ? o : []; } catch (e) { return []; } };
@@ -23,7 +23,7 @@ async function visible(req) {
   const q = db.table('polls as p').leftJoin('classes as c', 'c.id', 'p.class_id').leftJoin('users as u', 'u.id', 'p.created_by').select('p.*', 'c.title as class_title', 'u.name as creator', '(SELECT COUNT(DISTINCT user_id) FROM poll_votes pv WHERE pv.poll_id = p.id) as voters').orderBy('p.is_active', 'desc').orderBy('p.id', 'desc');
   if (isStaff(req)) return q;
   q.where('p.is_active', 1);
-  if (req.user.role === 'student') { const s = await people.studentOf(req); q.where((b) => { b.whereIn('p.audience', ['all', 'students']); if (s && s.class_id) b.orWhere((x) => x.where('p.audience', 'class').where('p.class_id', s.class_id)); }); }
+  if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); q.where((b) => { b.whereIn('p.audience', req.user.role === 'parent' ? ['all', 'students', 'parents'] : ['all', 'students']); if (s && s.class_id) b.orWhere((x) => x.where('p.audience', 'class').where('p.class_id', s.class_id)); }); }
   else { const ids = await people.teacherClassIds(req.user.id); q.where((b) => { b.whereIn('p.audience', ['all', 'teachers']).orWhere('p.created_by', req.user.id); if (ids.length) b.orWhere((x) => x.where('p.audience', 'class').whereIn('p.class_id', ids)); }); }
   return q;
 }

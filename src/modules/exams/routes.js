@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -27,7 +28,7 @@ async function teacherCtx(req) {
   const homeroom = await db.table('classes').where('teacher_id', t.id).pluck('id');
   return { id: t.id, csIds: cs.map((x) => x.id), classIds: [...new Set(cs.map((x) => x.class_id).concat(homeroom))], homeroom };
 }
-async function studentCtx(req) { if (req.user.role !== 'student') return null; return db.table('students').where('user_id', req.user.id).first(); }
+async function studentCtx(req) { if (req.user.role !== 'student' && req.user.role !== 'parent') return null; return people.studentOf(req); }
 async function currentTerm() { return (await db.table('terms').where('is_current', 1).first()) || (await db.table('terms').orderBy('id', 'desc').first()); }
 async function terms() { return db.table('terms as t').join('academic_years as y', 'y.id', 't.academic_year_id').select('t.*', 'y.title as year_title').orderBy('t.id', 'desc').all(); }
 async function classesFor(req) {
@@ -98,7 +99,7 @@ async function computeClassGrades(classId, termId, { publishedOnly = false } = {
 
 // ---------- فهرست آزمون‌ها ----------
 router.get('/', async (req, res) => {
-  if (req.user.role === 'student') return res.redirect('/exams/my');
+  if (req.user.role === 'student' || req.user.role === 'parent') return res.redirect('/exams/my');
   const classes = await classesFor(req);
   const tc = await teacherCtx(req);
   const f = { class_id: req.query.class_id || '', term_id: req.query.term_id || '', type: req.query.type || '', q: utils.normalizePersian(req.query.q || ''), status: req.query.status || '' };
@@ -117,7 +118,7 @@ router.get('/', async (req, res) => {
 });
 
 // ---------- پنل دانش‌آموز ----------
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('exams.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('exams.student_view'), async (req, res) => {
   const s = await studentCtx(req);
   if (!s) return res.render('errors/404', { title: 'پرونده یافت نشد' });
   const termId = req.query.term_id || ((await currentTerm()) || {}).id;
@@ -169,12 +170,12 @@ router.get('/analytics', auth.requireRole('admin', 'staff', 'teacher'), modules.
 router.get('/report-card/:studentId', modules.requireEnabled('exams.report_card'), async (req, res) => {
   const s = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').select('s.*', 'c.title as class_title', 'g.title as grade_title', 'g.grading_type').where('s.id', req.params.studentId).first();
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
-  if (req.user.role === 'student') { const me = await studentCtx(req); if (!me || me.id !== s.id || !E('exams.student_view')) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); }
+  if (req.user.role === 'student' || req.user.role === 'parent') { const me = await studentCtx(req); if (!me || me.id !== s.id || !E('exams.student_view')) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); }
   else if (!(await canViewClass(req, s.class_id))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   const allTerms = await terms();
   const termId = Number(req.query.term_id) || ((await currentTerm()) || {}).id;
   const term = allTerms.find((t) => t.id === termId) || null;
-  const publishedOnly = req.user.role === 'student' && E('exams.publish');
+  const publishedOnly = (req.user.role === 'student' || req.user.role === 'parent') && E('exams.publish');
   const report = s.class_id ? await computeClassGrades(s.class_id, termId, { publishedOnly }) : { rows: [], subjects: [], subjectAvg: {} };
   const mine = report.rows.find((r) => r.student.id === s.id) || { per: {}, gpa: null, rank: null };
   const remark = E('exams.remarks') ? await db.table('term_remarks as r').leftJoin('users as u', 'u.id', 'r.author_id').select('r.*', 'u.name as author_name').where({ 'r.student_id': s.id, 'r.term_id': termId }).first() : null;

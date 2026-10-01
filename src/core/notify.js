@@ -22,28 +22,33 @@ async function pushRole(role, payload) {
 async function unreadCount(userId) { return db.count('notifications', { user_id: userId, is_read: 0 }); }
 
 /** ارسال پیامک از طریق درگاه (کاوه‌نگار / وب‌سرویس عمومی). در حالت غیرفعال فقط لاگ می‌شود. */
-async function sms(to, text) {
-  if (!modules.isEnabled('notifications.sms') || !settings.getBool('sms_enabled')) return { ok: false, skipped: true };
-  const provider = settings.get('sms_provider');
+async function sms(to, text, context) {
+  const recipients = [...new Set((Array.isArray(to) ? to : [to]).map((x) => String(x || '').trim()).filter(Boolean))];
+  if (!modules.isEnabled('notifications.sms') || !settings.getBool('sms_enabled')) return { ok: false, skipped: true, error: 'پیامک غیرفعال است' };
+  const provider = settings.get('sms_provider') || 'log';
   const apiKey = settings.get('sms_api_key');
   const sender = settings.get('sms_sender');
-  if (!apiKey) return { ok: false, error: 'کلید API تنظیم نشده است' };
-  const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
   if (!recipients.length) return { ok: false, error: 'گیرنده‌ای وجود ندارد' };
+  let result;
   try {
-    if (provider === 'kavenegar') {
+    if (provider === 'log') result = { ok: true, status: 200, logged: true };
+    else if (!apiKey) result = { ok: false, error: 'کلید API تنظیم نشده است' };
+    else if (provider === 'kavenegar') {
       const url = `https://api.kavenegar.com/v1/${encodeURIComponent(apiKey)}/sms/send.json?receptor=${encodeURIComponent(recipients.join(','))}&sender=${encodeURIComponent(sender)}&message=${encodeURIComponent(text)}`;
       const res = await httpGet(url);
-      return { ok: res.status < 400, status: res.status };
-    }
-    if (provider === 'webhook') {
+      result = { ok: res.status < 400, status: res.status, error: res.status >= 400 ? 'HTTP ' + res.status : null };
+    } else if (provider === 'webhook') {
       const url = settings.get('sms_webhook_url', '');
-      if (!url) return { ok: false, error: 'آدرس وب‌هوک تنظیم نشده' };
-      const res = await httpPostJson(url, { apiKey, sender, to: recipients, text });
-      return { ok: res.status < 400, status: res.status };
-    }
-    return { ok: false, error: 'درگاه پیامک ناشناخته' };
-  } catch (e) { return { ok: false, error: e.message }; }
+      if (!url) result = { ok: false, error: 'آدرس وب‌هوک تنظیم نشده' };
+      else { const res = await httpPostJson(url, { apiKey, sender, to: recipients, text }); result = { ok: res.status < 400, status: res.status, error: res.status >= 400 ? 'HTTP ' + res.status : null }; }
+    } else result = { ok: false, error: 'درگاه پیامک ناشناخته' };
+  } catch (e) { result = { ok: false, error: e.message }; }
+  try {
+    const now = db.now();
+    await db.insert('sms_log', recipients.map((r) => ({ recipient: r, message: String(text).slice(0, 1000), provider, status: result.ok ? 'sent' : 'failed', error: result.error ? String(result.error).slice(0, 255) : null, context: context || null, created_at: now })));
+  } catch (e) { /* جدول لاگ در دسترس نیست */ }
+  result.count = recipients.length;
+  return result;
 }
 
 async function email(to, subject, html) {

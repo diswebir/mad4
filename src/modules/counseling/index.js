@@ -9,7 +9,7 @@ module.exports = {
   ],
   menu: [
     { title: 'مشاوره', href: '/counseling', icon: 'bi-chat-heart', roles: ['admin', 'staff'] },
-    { title: 'درخواست مشاوره', href: '/counseling/request', icon: 'bi-chat-heart', roles: ['student'], feature: 'student_request' }
+    { title: 'درخواست مشاوره', href: '/counseling/request', icon: 'bi-chat-heart', roles: ['student', 'parent'], feature: 'student_request' }
   ],
   routes: require('./routes')
 };

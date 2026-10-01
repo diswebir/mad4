@@ -1,4 +1,5 @@
 'use strict';
+const permissions = require('./permissions');
 /**
  * رجیستری ماژول‌ها و قابلیت‌ها
  * هر ماژول در src/modules/<key>/index.js تعریف می‌شود و می‌تواند فعال/غیرفعال شود.
@@ -103,9 +104,12 @@ function menuFor(user) {
       if ((mod.category || 'main') !== cat.key) continue;
       if (!isEnabled(mod.key)) continue;
       for (const item of mod.menu) {
-        if (item.roles && user && !item.roles.includes(user.role)) continue;
+        if (item.roles && user && !item.roles.includes(user.role) && !(item.permission && permissions.can(user, item.permission))) continue;
+        if (!item.roles && item.permission && !permissions.can(user, item.permission)) continue;
         if (item.feature && !isEnabled(mod.key + '.' + item.feature)) continue;
-        items.push(Object.assign({ module: mod.key, icon: item.icon || mod.icon }, item));
+        const it = Object.assign({ module: mod.key, icon: item.icon || mod.icon }, item);
+        if (user && user.role === 'parent' && /\sمن$/.test(it.title)) it.title = it.title.replace(/\sمن$/, ' فرزندم');
+        items.push(it);
       }
     }
     if (items.length) groups.push({ key: cat.key, title: cat.title, icon: cat.icon, items });

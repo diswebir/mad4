@@ -200,14 +200,14 @@ router.get('/reports', ...staff, modules.requireEnabled('finance.reports'), asyn
 });
 
 // ---------- پنل دانش‌آموز ----------
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('finance.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.student_view'), async (req, res) => {
   const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const invoices = await db.table('invoices').where('student_id', s.id).where('status', '!=', 'cancelled').orderBy('due_date', 'desc').all();
   const payments = await db.table('payments as p').leftJoin('invoices as i', 'i.id', 'p.invoice_id').select('p.*', 'i.title as invoice_title', 'i.number').where('p.student_id', s.id).orderBy('p.paid_at', 'desc').all();
   const total = invoices.reduce((a, i) => a + Number(i.amount) - Number(i.discount || 0), 0); const paid = invoices.reduce((a, i) => a + Number(i.paid_amount || 0), 0);
   res.render(v('my'), { title: 'شهریه و پرداخت‌ها', s, invoices, payments, total, paid, METHODS, unit: unit(), today: J.todayISO() });
 });
-router.get('/my/:id', auth.requireRole('student'), modules.requireEnabled('finance.student_view'), async (req, res) => {
+router.get('/my/:id', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.student_view'), async (req, res) => {
   const s = await people.studentOf(req);
   const inv = s ? await db.table('invoices as i').join('students as s', 's.id', 'i.student_id').leftJoin('classes as c', 'c.id', 's.class_id').select('i.*', 's.first_name', 's.last_name', 's.student_number', 's.father_name', 'c.title as class_title').where('i.id', req.params.id).where('i.student_id', s.id).first() : null;
   if (!inv) return res.status(404).render('errors/404', { title: 'یافت نشد' });

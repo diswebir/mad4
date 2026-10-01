@@ -19,7 +19,7 @@ const TYPES = { negative: 'انضباطی (منفی)', positive: 'تشویقی (
 const manageRoles = () => (E('discipline.teacher_record') ? ['admin', 'staff', 'teacher'] : ['admin', 'staff']);
 
 // پنل دانش‌آموز — قبل از crud تا مسیر /my با /:id تداخل نکند
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('discipline.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('discipline.student_view'), async (req, res) => {
   const s = await people.studentOf(req);
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const rows = await db.table('discipline_records as d').leftJoin('users as u', 'u.id', 'd.recorded_by').select('d.*', 'u.name as recorder').where('d.student_id', s.id).orderBy('d.date', 'desc').orderBy('d.id', 'desc').all();

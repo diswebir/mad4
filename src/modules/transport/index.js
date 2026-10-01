@@ -9,7 +9,7 @@ module.exports = {
   ],
   menu: [
     { title: 'سرویس مدرسه', href: '/transport', icon: 'bi-bus-front', roles: ['admin', 'staff'] },
-    { title: 'سرویس من', href: '/transport/my', icon: 'bi-bus-front', roles: ['student'], feature: 'student_view' }
+    { title: 'سرویس من', href: '/transport/my', icon: 'bi-bus-front', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   routes: require('./routes')
 };

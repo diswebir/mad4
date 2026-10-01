@@ -25,7 +25,7 @@ async function recount(bookId) {
 }
 const loanQuery = () => db.table('book_loans as l').join('books as b', 'b.id', 'l.book_id').leftJoin('students as s', 's.id', 'l.student_id').leftJoin('users as u', 'u.id', 'l.user_id').leftJoin('classes as c', 'c.id', 's.class_id').select('l.*', 'b.title as book_title', 'b.author', 's.first_name', 's.last_name', 'c.title as class_title', 'u.name as user_name');
 
-router.get('/my', auth.requireRole('student'), modules.requireEnabled('library.student_view'), async (req, res) => {
+router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('library.student_view'), async (req, res) => {
   const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const loans = await loanQuery().where('l.student_id', s.id).orderBy('l.id', 'desc').all();
   let books = { data: [], total: 0, pages: 0 };

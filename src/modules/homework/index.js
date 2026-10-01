@@ -13,7 +13,7 @@ module.exports = {
   ],
   menu: [
     { title: 'تکالیف', href: '/homework', icon: 'bi-journal-check', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'تکالیف من', href: '/homework/my', icon: 'bi-journal-check', roles: ['student'] },
+    { title: 'تکالیف من', href: '/homework/my', icon: 'bi-journal-check', roles: ['student', 'parent'] },
     { title: 'محتوای آموزشی', href: '/homework/materials', icon: 'bi-folder2-open', roles: ['admin', 'staff', 'teacher', 'student'], feature: 'materials' }
   ],
   routes: require('./routes')

@@ -21,7 +21,7 @@ module.exports = {
   ],
   menu: [
     { title: 'حضور و غیاب', href: '/attendance', icon: 'bi-clipboard-check', roles: ['admin', 'staff', 'teacher'] },
-    { title: 'حضور و غیاب من', href: '/attendance/my', icon: 'bi-clipboard-check', roles: ['student'], feature: 'my' },
+    { title: 'حضور و غیاب من', href: '/attendance/my', icon: 'bi-clipboard-check', roles: ['student', 'parent'], feature: 'my' },
     { title: 'درخواست‌های موجه', href: '/attendance/excuses', icon: 'bi-file-earmark-medical', roles: ['admin', 'staff', 'teacher', 'student'], feature: 'excuses' },
     { title: 'حضور کارکنان', href: '/attendance/staff', icon: 'bi-person-check', roles: ['admin'], feature: 'staff' }
   ],

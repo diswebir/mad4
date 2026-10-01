@@ -2,6 +2,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../../core/db');
+const people = require('../../core/people');
 const auth = require('../../core/auth');
 const modules = require('../../core/modules');
 const activity = require('../../core/activity');
@@ -110,7 +111,7 @@ const classAccess = async (req, classId) => {
     if (await db.exists('classes', { id: classId, teacher_id: t.id })) return true;
     return db.exists('class_subjects', { class_id: classId, teacher_id: t.id });
   }
-  if (req.user.role === 'student') { const s = await db.table('students').where('user_id', req.user.id).first(); return !!(s && Number(s.class_id) === Number(classId)); }
+  if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); return !!(s && Number(s.class_id) === Number(classId)); }
   return false;
 };
 
@@ -213,7 +214,7 @@ function buildGrid(slots) {
 }
 
 router.get('/schedule', modules.requireEnabled('academic.schedule'), async (req, res) => {
-  if (req.user.role === 'student') { const s = await db.table('students').where('user_id', req.user.id).first(); return s && s.class_id ? res.redirect('/academic/schedule/class/' + s.class_id) : res.render('errors/404', { title: 'کلاس تعریف نشده' }); }
+  if (req.user.role === 'student' || req.user.role === 'parent') { const s = await people.studentOf(req); return s && s.class_id ? res.redirect('/academic/schedule/class/' + s.class_id) : res.render('errors/404', { title: 'کلاس تعریف نشده' }); }
   if (req.user.role === 'teacher') return res.redirect('/academic/schedule/teacher/' + req._teacherId);
   const yearId = await currentYearId();
   const classes = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.*', 'g.title as grade_title', '(SELECT COUNT(*) FROM schedule_slots ss WHERE ss.class_id = c.id) as slots').where('c.is_active', 1).where((b) => (yearId ? b.where('c.academic_year_id', yearId) : b)).orderBy('g.sort_order').orderBy('c.title').all();
@@ -236,7 +237,7 @@ router.get('/schedule/teacher/:id', modules.requireEnabled('academic.schedule'),
   const teacher = await db.table('teachers as t').join('users as u', 'u.id', 't.user_id').select('t.*', 'u.name').where('t.id', req.params.id).first();
   if (!teacher) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (req.user.role === 'teacher' && teacher.id !== req._teacherId) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
-  if (req.user.role === 'student') return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
+  if (req.user.role === 'student' || req.user.role === 'parent') return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   const slots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').join('subjects as s', 's.id', 'cs.subject_id').join('classes as c', 'c.id', 'ss.class_id').leftJoin('rooms as r', 'r.id', 'ss.room_id')
     .select('ss.*', 's.title as subject_title', 'c.title as class_title', 'r.title as room_title').where('cs.teacher_id', teacher.id).all();
   const print = req.query.print === '1' && modules.isEnabled('academic.schedule_print');

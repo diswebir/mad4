@@ -4,6 +4,7 @@
  */
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const permissions = require('./permissions');
 const settings = require('./settings');
 
 const attempts = new Map(); // key: ip|username → { count, lockedUntil }
@@ -47,14 +48,18 @@ function loadUser() {
       const user = await db.table('users').where('id', req.session.userId).first();
       if (!user || user.status !== 'active') { req.session.userId = null; return next(); }
       delete user.password;
+      user.perms = await permissions.permissionsOf(user);
       req.user = user;
+      req.can = (...keys) => permissions.can(user, ...keys);
       res.locals.currentUser = user;
+      res.locals.can = req.can;
       if (req.session.impersonatorId) res.locals.impersonator = await db.table('users').select('id', 'name', 'role').where('id', req.session.impersonatorId).first();
       // پروفایل دانش‌آموز/معلم (در صورت نیاز)
       req.profile = async () => {
         if (req._profile !== undefined) return req._profile;
         if (user.role === 'student') req._profile = await db.table('students').where('user_id', user.id).first();
         else if (user.role === 'teacher') req._profile = await db.table('teachers').where('user_id', user.id).first();
+        else if (user.role === 'parent') req._profile = await db.table('parents').where('user_id', user.id).first();
         else req._profile = null;
         return req._profile;
       };
@@ -89,6 +94,28 @@ function requireRole(...roles) {
 }
 const requireAdmin = requireRole('admin');
 const requireStaff = requireRole('admin', 'teacher', 'staff');
+/** دسترسی بر اساس مجوز (هر کدام از کلیدها کافی است)؛ مدیر همیشه مجاز است */
+function requirePermission(...keys) {
+  keys = keys.flat();
+  return (req, res, next) => {
+    if (!req.user) return requireAuth(req, res, next);
+    if (permissions.can(req.user, ...keys)) return next();
+    if (wantsJson(req)) return res.status(403).json({ ok: false, error: 'دسترسی غیرمجاز' });
+    res.status(403);
+    return res.render('errors/403', { title: 'دسترسی غیرمجاز', message: 'برای این بخش به مجوز «' + keys.map((k) => permissions.LABELS[k] || k).join('» یا «') + '» نیاز دارید.' });
+  };
+}
+/** نقش‌های مجاز یا داشتن مجوز */
+function requireRoleOrPermission(roles, ...keys) {
+  roles = [].concat(roles); keys = keys.flat();
+  return (req, res, next) => {
+    if (!req.user) return requireAuth(req, res, next);
+    if (roles.includes(req.user.role) || permissions.can(req.user, ...keys)) return next();
+    if (wantsJson(req)) return res.status(403).json({ ok: false, error: 'دسترسی غیرمجاز' });
+    res.status(403);
+    return res.render('errors/403', { title: 'دسترسی غیرمجاز', message: 'شما مجوز دسترسی به این بخش را ندارید.' });
+  };
+}
 
 function requireGuest(req, res, next) {
   if (req.user) return res.redirect('/dashboard');
@@ -131,4 +158,4 @@ async function logLogin(req, user, username, success) {
   } catch (e) { /* ignore */ }
 }
 
-module.exports = { hashPassword, verifyPassword, clientIp, isLocked, recordFailure, clearFailures, loadUser, requireAuth, requireRole, requireAdmin, requireStaff, requireGuest, login, logout, authenticate, logLogin, wantsJson };
+module.exports = { hashPassword, verifyPassword, clientIp, isLocked, recordFailure, clearFailures, loadUser, requireAuth, requireRole, requireAdmin, requireStaff, requirePermission, requireRoleOrPermission, requireGuest, login, logout, authenticate, logLogin, wantsJson };
