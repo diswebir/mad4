@@ -105,7 +105,7 @@ router.post('/take', async (req, res) => {
       if (status !== 'late') minutes = null;
       const row = { status, note, minutes_late: minutes, period: req.body.period ? parseInt(req.body.period, 10) || null : null, recorded_by: req.user.id, updated_at: now };
       const prev = existing[s.id];
-      if (prev) { if (prev.status !== status || prev.note !== note || prev.minutes_late !== minutes) await tx.update('attendance', row, { id: prev.id }); }
+      if (prev) { if (prev.status !== status || prev.note !== note || prev.minutes_late !== minutes) { if (prev.status !== status) row.notified = 0; await tx.update('attendance', row, { id: prev.id }); } }
       else await tx.insert('attendance', Object.assign({ date, class_id: classId, student_id: s.id, class_subject_id: csId, session_key: sessionKey, created_at: now }, row));
       if (status === 'absent' && (!prev || prev.status !== 'absent')) newlyAbsent.push(s);
       count++;
@@ -117,11 +117,11 @@ router.post('/take', async (req, res) => {
     const subj = csId ? await db.table('class_subjects as cs').join('subjects as s', 's.id', 'cs.subject_id').select('s.title').where('cs.id', csId).first() : null;
     const dateFa = J.formatDate(date);
     await notify.push(newlyAbsent.map((s) => s.user_id), { title: 'ثبت غیبت', body: `غیبت شما در تاریخ ${dateFa}${subj ? ' — درس ' + subj.title : ''} ثبت شد.${E('attendance.excuses') ? ' در صورت داشتن دلیل موجه، درخواست ثبت کنید.' : ''}`, link: '/attendance/my', type: 'warning' });
-    if (!csId) {
+    if (!csId && settings.get('attendance_sms_mode', 'scheduled') === 'immediate') {
       const tpl = settings.get('sms_template_absent');
       for (const s of newlyAbsent) {
         const phone = s.guardian_type === 'mother' ? s.mother_phone : (s.guardian_type === 'other' ? s.guardian_phone : s.father_phone) || s.father_phone || s.mother_phone;
-        if (phone) await notify.sms(phone, notify.template(tpl, { name: `${s.first_name} ${s.last_name}`, date: dateFa, school: settings.get('school_name') }));
+        if (phone) { const r = await notify.sms(phone, notify.template(tpl, { name: `${s.first_name} ${s.last_name}`, date: dateFa, school: settings.get('school_name') }), 'attendance'); if (r && r.ok) await db.table('attendance').where({ student_id: s.id, date, session_key: sessionKey }).update({ notified: 1 }); }
       }
     }
   }

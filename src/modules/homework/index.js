@@ -16,5 +16,6 @@ module.exports = {
     { title: 'تکالیف من', href: '/homework/my', icon: 'bi-journal-check', roles: ['student', 'parent'] },
     { title: 'محتوای آموزشی', href: '/homework/materials', icon: 'bi-folder2-open', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], feature: 'materials' }
   ],
+  jobs: require('./jobs'),
   routes: require('./routes')
 };

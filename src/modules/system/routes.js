@@ -12,6 +12,8 @@ const notify = require('../../core/notify');
 const utils = require('../../core/utils');
 const J = require('../../core/jalali');
 const schema = require('../../../database/schema');
+const backup = require('../../core/backup');
+const scheduler = require('../../core/scheduler');
 const auth = require('../../core/auth');
 const upload = require('../../core/upload');
 const { relPath, removeFile } = upload;
@@ -27,6 +29,8 @@ router.use('/activity', P('system.logs'));
 router.use('/backup', P('system.backup'));
 router.use('/demo', auth.requireAdmin);
 router.use('/info', P('system.settings', 'system.logs'));
+router.use('/jobs', P('system.jobs'), modules.requireEnabled('system.scheduler'));
+router.use('/sms-log', P('system.logs'), modules.requireEnabled('system.sms_log'));
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },
@@ -39,10 +43,10 @@ const TABS = [
 ];
 const FIELDS = {
   school: ['school_name', 'school_slogan', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
-  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'grading_pass_score', 'grading_max_score', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
+  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
   appearance: ['primary_color', 'default_theme', 'sidebar_style'],
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days'],
-  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent'],
+  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure']
 };
 
@@ -131,28 +135,13 @@ router.post('/activity/clear', async (req, res) => {
 
 // پشتیبان‌گیری
 router.get('/backup', modules.requireEnabled('system.backup'), async (req, res) => {
-  const dir = path.join(config.get().storage, 'backups');
-  fs.mkdirSync(dir, { recursive: true });
-  const files = fs.readdirSync(dir).filter((f) => /\.(json|sqlite)$/.test(f)).map((f) => { const st = fs.statSync(path.join(dir, f)); return { name: f, size: st.size, mtime: st.mtime.toISOString().slice(0, 19).replace('T', ' ') }; }).sort((a, b) => b.mtime.localeCompare(a.mtime));
+  const files = backup.list();
   const counts = {};
   for (const t of ['users', 'students', 'teachers', 'classes', 'attendance', 'grades', 'tickets']) counts[t] = await db.count(t);
   res.render(v('backup'), { title: 'پشتیبان‌گیری', files, counts, dbInfo: db.info });
 });
 router.post('/backup/create', modules.requireEnabled('system.backup'), async (req, res) => {
-  const dir = path.join(config.get().storage, 'backups');
-  fs.mkdirSync(dir, { recursive: true });
-  const stamp = J.nowISO().replace(/[: ]/g, '-');
-  let name;
-  if (db.info.client === 'sqlite' && req.body.type === 'file') {
-    if (db.driver.saveNow) db.driver.saveNow();
-    name = `backup-${stamp}.sqlite`;
-    fs.copyFileSync(db.info.filename, path.join(dir, name));
-  } else {
-    name = `backup-${stamp}.json`;
-    const out = { version: pkg.version, created_at: J.nowISO(), dialect: db.dialect, tables: {} };
-    for (const t of Object.keys(schema)) { if (t === 'sessions') continue; out.tables[t] = await db.table(t).all(); }
-    fs.writeFileSync(path.join(dir, name), JSON.stringify(out));
-  }
+  const name = await backup.create(req.body.type === 'file' ? 'file' : 'json');
   await activity.log(req, 'backup', 'system', null, 'ایجاد پشتیبان ' + name);
   req.flash('success', 'نسخهٔ پشتیبان ساخته شد: ' + name);
   res.redirect('/system/backup');
@@ -228,5 +217,54 @@ router.get('/info', modules.requireEnabled('system.system_info'), async (req, re
   };
   res.render(v('info'), { title: 'اطلاعات سامانه', info, tables });
 });
+
+// ---------- کارهای زمان‌بندی‌شده ----------
+router.get('/jobs', async (req, res) => {
+  const jobs = await scheduler.state();
+  const runs = await scheduler.recentRuns(40);
+  const token = await scheduler.cronToken();
+  const base = settings.get('site_url', '') || `${req.protocol}://${req.get('host')}`;
+  res.render(v('jobs'), { title: 'کارهای زمان‌بندی‌شده', jobs, runs, token, cronUrl: `${base.replace(/\/$/, '')}/cron?token=${token}`, mode: settings.get('scheduler_mode', 'internal'), keep: settings.get('backup_keep', 7), appRoot: process.cwd() });
+});
+router.post('/jobs/settings', async (req, res) => {
+  await settings.setMany({ scheduler_mode: ['internal', 'external'].includes(req.body.scheduler_mode) ? req.body.scheduler_mode : 'internal', backup_keep: String(Math.max(1, Math.min(60, Number(req.body.backup_keep) || 7))) });
+  await activity.log(req, 'update', 'system', null, 'تنظیمات زمان‌بند');
+  req.flash('success', 'تنظیمات زمان‌بند ذخیره شد'); res.redirect('/system/jobs');
+});
+router.post('/jobs/token', async (req, res) => {
+  await settings.set('cron_token', require('crypto').randomBytes(16).toString('hex'));
+  req.flash('success', 'توکن جدید ساخته شد؛ آدرس cron بیرونی را به‌روزرسانی کنید.'); res.redirect('/system/jobs');
+});
+router.post('/jobs/:key', async (req, res) => {
+  const key = String(req.params.key);
+  const job = scheduler.definitions().find((j) => j.key === key);
+  if (!job) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  if (req.body.action === 'run') {
+    const r = await scheduler.runJob(key, 'manual', true);
+    await activity.log(req, 'run', 'jobs', null, `اجرای دستی ${job.name}: ${r.status || ''} ${r.message || ''}`);
+    req.flash(r.ok ? 'success' : (r.skipped ? 'warning' : 'danger'), `${job.name}: ${r.message}${r.ms != null ? ' (' + J.toPersianDigits(r.ms) + ' ms)' : ''}`);
+  } else {
+    const patch = { updated_at: J.nowISO() };
+    if (req.body.action === 'toggle') { const row = await db.table('scheduled_jobs').where('key', key).first(); patch.is_enabled = row && row.is_enabled ? 0 : 1; }
+    if (req.body.run_at && /^\d{2}:\d{2}$/.test(J.toEnglishDigits(req.body.run_at))) patch.run_at = J.toEnglishDigits(req.body.run_at);
+    await db.table('scheduled_jobs').where('key', key).update(patch);
+    req.flash('success', 'ذخیره شد');
+  }
+  res.redirect('/system/jobs');
+});
+// ---------- لاگ پیامک ----------
+router.get('/sms-log', async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1), per = 40;
+  const q = db.table('sms_log');
+  if (req.query.q) q.where((b) => b.where('recipient', 'like', `%${J.toEnglishDigits(req.query.q)}%`).orWhere('message', 'like', `%${utils.normalizePersian(req.query.q)}%`));
+  if (req.query.status) q.where('status', req.query.status);
+  if (req.query.context) q.where('context', req.query.context);
+  const total = await q.clone().count();
+  const rows = await q.clone().orderBy('id', 'desc').limit(per).offset((page - 1) * per).all();
+  const stats = Object.fromEntries((await db.table('sms_log').select('status', 'COUNT(*) as c').groupBy('status').all()).map((r) => [r.status, Number(r.c)]));
+  const contexts = await db.table('sms_log').select('context').whereNotNull('context').groupBy('context').pluck('context');
+  res.render(v('sms-log'), { title: 'لاگ پیامک', rows, total, page, pages: Math.ceil(total / per), stats, contexts, f: { q: req.query.q || '', status: req.query.status || '', context: req.query.context || '' }, provider: settings.get('sms_provider', 'log'), smsEnabled: settings.getBool('sms_enabled') });
+});
+router.post('/sms-log/clear', async (req, res) => { await db.table('sms_log').where('created_at', '<', J.addDays(J.todayISO(), -30)).delete(); req.flash('success', 'لاگ‌های قدیمی‌تر از ۳۰ روز پاک شد'); res.redirect('/system/sms-log'); });
 
 module.exports = router;

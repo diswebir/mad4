@@ -31,6 +31,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-12"><h6 class="text-brand mt-2">حضور و غیاب</h6></div>
         <%- inp('late_threshold_minutes', 'آستانهٔ تأخیر (دقیقه)', { col: 4, ltr: true }) %><%- inp('attendance_alert_threshold', 'هشدار پس از چند غیبت در ماه', { col: 4, ltr: true }) %>
         <%- sw('attendance_absent_notify', 'ارسال اعلان غیبت به دانش‌آموز/ولی') %>
+        <%- sel('attendance_sms_mode', 'زمان ارسال پیامک غیبت به ولی', { scheduled: 'تجمیعی روزانه با زمان‌بند (پیش‌فرض ۰۹:۳۰)', immediate: 'بلافاصله پس از ثبت' }) %>
         <div class="col-12"><h6 class="text-brand mt-2">نمرات</h6></div>
         <%- inp('grading_max_score', 'نمرهٔ کامل', { col: 4, ltr: true }) %><%- inp('grading_pass_score', 'نمرهٔ قبولی', { col: 4, ltr: true }) %>
         <div class="col-12"><h6 class="text-brand mt-2">دانش‌آموزان و تیکت‌ها</h6></div>
@@ -51,9 +52,10 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>توکن CSRF، هدرهای امنیتی (helmet)، هش رمز عبور (bcrypt) و بازسازی نشست پس از ورود همیشه فعال هستند.</div></div>
       <% } else if (tab === 'sms') { %>
         <%- sw('sms_enabled', 'فعال‌سازی ارسال پیامک') %>
-        <%- sel('sms_provider', 'درگاه', { kavenegar: 'کاوه‌نگار', webhook: 'وب‌هوک سفارشی (POST JSON)' }) %>
+        <%- sel('sms_provider', 'درگاه', { log: 'فقط ثبت در لاگ (آزمایشی، بدون هزینه)', kavenegar: 'کاوه‌نگار', webhook: 'وب‌هوک سفارشی (POST JSON)' }) %>
         <%- inp('sms_api_key', 'کلید API', { ltr: true }) %><%- inp('sms_sender', 'شمارهٔ فرستنده', { ltr: true }) %>
         <%- inp('sms_webhook_url', 'آدرس وب‌هوک (در صورت انتخاب وب‌هوک)', { col: 12, ltr: true }) %>
+        <%- inp('site_url', 'نشانی عمومی سامانه (برای لینک داخل پیامک‌ها)', { col: 12, ltr: true, placeholder: 'https://school.example.com' }) %>
         <%- inp('sms_template_absent', 'قالب پیامک غیبت', { col: 12, type: 'textarea', help: 'متغیرها: {name} {date} {school} {class}' }) %>
       <% } else if (tab === 'email') { %>
         <%- sw('email_enabled', 'فعال‌سازی ارسال ایمیل') %>

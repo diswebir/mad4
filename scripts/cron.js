@@ -2,7 +2,7 @@
 'use strict';
 /**
  * اجرای کارهای زمان‌بندی‌شدهٔ سررسیدشده و خروج (برای Cron هاست):
- *   */15 * * * * cd /home/USER/madrese && /usr/bin/node scripts/cron.js >> storage/logs/cron.log 2>&1
+ *   (هر ۱۵ دقیقه)  cd /home/USER/madrese && /usr/bin/node scripts/cron.js >> storage/logs/cron.log 2>&1
  * با --job <key> فقط همان کار (اجباری) اجرا می‌شود؛ با --list فهرست کارها چاپ می‌شود.
  */
 const path = require('path');

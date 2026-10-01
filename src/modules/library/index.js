@@ -14,5 +14,6 @@ module.exports = {
     { title: 'کتابخانه', href: '/library', icon: 'bi-book', roles: ['admin', 'teacher'], permission: 'library.manage' },
     { title: 'کتابخانه', href: '/library/my', icon: 'bi-book', roles: ['student', 'parent'], feature: 'student_view' }
   ],
+  jobs: require('./jobs'),
   routes: require('./routes')
 };

@@ -6,6 +6,9 @@ module.exports = {
     { key: 'appearance', name: 'شخصی‌سازی ظاهر (رنگ اصلی و پوسته)', description: 'رنگ برند و پوستهٔ پیش‌فرض' },
     { key: 'modules', name: 'مدیریت ماژول‌ها و قابلیت‌ها', description: 'فعال/غیرفعال‌سازی هر ماژول و قابلیت', locked: true },
     { key: 'backup', name: 'پشتیبان‌گیری از پایگاه داده', description: 'دانلود نسخهٔ پشتیبان (SQLite / JSON)' },
+    { key: 'scheduler', name: 'زمان‌بند کارهای پس‌زمینه', description: 'اجرای خودکار کارهای روزانه (پیامک غیبت، یادآوری‌ها، پشتیبان‌گیری، پاک‌سازی) با تیک داخلی، cron هاست یا URL' },
+    { key: 'auto_backup', name: 'پشتیبان‌گیری خودکار روزانه', description: 'نسخهٔ پشتیبان شبانه با نگه‌داری N نسخهٔ آخر' },
+    { key: 'sms_log', name: 'لاگ پیامک‌ها', description: 'ثبت همهٔ پیامک‌های ارسالی (گیرنده، متن، وضعیت، سرویس‌دهنده) و ارائه‌دهندهٔ «لاگ» برای تست بدون هزینه' },
     { key: 'activity_log', name: 'گزارش فعالیت کاربران', description: 'ثبت ایجاد/ویرایش/حذف و سایر اقدامات' },
     { key: 'sms_settings', name: 'تنظیمات درگاه پیامک', description: 'کاوه‌نگار یا وب‌هوک سفارشی' },
     { key: 'email_settings', name: 'تنظیمات ایمیل (SMTP)', description: 'ارسال ایمیل از طریق سرور SMTP' },
@@ -18,11 +21,14 @@ module.exports = {
     { key: 'installer', name: 'ویزارد نصب وب و بازیابی اتصال', description: 'همیشه فعال', locked: true }
   ],
   menu: [
-    { title: 'تنظیمات مدرسه', href: '/system/settings', icon: 'bi-sliders', roles: ['admin'] },
-    { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2', roles: ['admin'] },
-    { title: 'گزارش فعالیت', href: '/system/activity', icon: 'bi-clock-history', roles: ['admin'], feature: 'activity_log' },
-    { title: 'پشتیبان‌گیری', href: '/system/backup', icon: 'bi-cloud-arrow-down', roles: ['admin'], feature: 'backup' },
-    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], feature: 'system_info' }
+    { title: 'تنظیمات مدرسه', href: '/system/settings', icon: 'bi-sliders', roles: ['admin'], permission: 'system.settings' },
+    { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2', roles: ['admin'], permission: 'system.modules' },
+    { title: 'گزارش فعالیت', href: '/system/activity', icon: 'bi-clock-history', roles: ['admin'], permission: 'system.logs', feature: 'activity_log' },
+    { title: 'پشتیبان‌گیری', href: '/system/backup', icon: 'bi-cloud-arrow-down', roles: ['admin'], permission: 'system.backup', feature: 'backup' },
+    { title: 'کارهای زمان‌بندی‌شده', href: '/system/jobs', icon: 'bi-alarm', roles: ['admin'], permission: 'system.jobs', feature: 'scheduler' },
+    { title: 'لاگ پیامک', href: '/system/sms-log', icon: 'bi-chat-left-dots', roles: ['admin'], permission: 'system.logs', feature: 'sms_log' },
+    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], permission: ['system.settings', 'system.logs'], feature: 'system_info' }
   ],
+  jobs: require('./jobs'),
   routes: require('./routes')
 };

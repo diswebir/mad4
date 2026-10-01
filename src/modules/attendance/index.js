@@ -25,5 +25,6 @@ module.exports = {
     { title: 'درخواست‌های موجه', href: '/attendance/excuses', icon: 'bi-file-earmark-medical', roles: ['admin', 'teacher', 'parent', 'student'], permission: 'attendance.excuses', feature: 'excuses' },
     { title: 'حضور کارکنان', href: '/attendance/staff', icon: 'bi-person-check', roles: ['admin'], permission: 'hr.manage', feature: 'staff' }
   ],
+  jobs: require('./jobs'),
   routes: require('./routes')
 };

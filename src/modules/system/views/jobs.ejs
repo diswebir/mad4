@@ -1,0 +1,50 @@
+<%- include('partials/page-header', { title: 'کارهای زمان‌بندی‌شده', icon: 'bi-alarm', subtitle: 'کارهای پس‌زمینه (پیامک غیبت، یادآوری‌ها، پشتیبان‌گیری، پاک‌سازی). هر کار قابل فعال/غیرفعال‌کردن، تغییر ساعت و اجرای دستی است.', breadcrumbs: [{ title: 'سیستم' }, { title: 'زمان‌بند' }] }) %>
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="card table-card mb-3">
+      <div class="card-header"><h6><i class="bi bi-list-task me-1"></i>فهرست کارها</h6><span class="fs-7 text-muted">حالت: <strong><%= mode === 'internal' ? 'تیک داخلی (هر دقیقه)' : 'فقط cron بیرونی' %></strong></span></div>
+      <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>کار</th><th>ماژول</th><th>زمان‌بندی</th><th>آخرین اجرا</th><th>وضعیت</th><th></th></tr></thead><tbody>
+      <% jobs.forEach(function (j) { %>
+      <tr class="<%= !j.is_enabled || !j.moduleEnabled ? 'opacity-50' : '' %>">
+        <td><div class="fw-bold"><%= j.name %></div><div class="fs-7 text-muted"><%= j.description %></div><code class="fs-7 text-muted"><%= j.key %></code></td>
+        <td class="fs-7"><%= j.moduleName %><% if (!j.moduleEnabled) { %><br><span class="badge text-bg-secondary">ماژول غیرفعال</span><% } %></td>
+        <td>
+          <% if (j.schedule === 'daily') { %><form method="post" action="/system/jobs/<%= j.key %>" class="d-flex gap-1"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="action" value="time"><input class="form-control form-control-sm" name="run_at" value="<%= j.run_at || j.defaultTime %>" dir="ltr" style="width:72px" pattern="\d{2}:\d{2}"><button class="btn btn-sm btn-light" title="ذخیرهٔ ساعت"><i class="bi bi-check"></i></button></form><div class="fs-7 text-muted">روزانه</div>
+          <% } else { %><span class="badge text-bg-light"><%= j.schedule === 'hourly' ? 'هر ساعت' : 'هر ۱۵ دقیقه' %></span><% } %>
+        </td>
+        <td class="fs-7"><% if (j.last_run_at) { %><%= J.formatDateTime(j.last_run_at) %><br><span class="text-muted"><%= J.toPersianDigits(j.last_duration_ms || 0) %> ms</span><% } else { %><span class="text-muted">هرگز</span><% } %></td>
+        <td><% if (j.last_status) { %><span class="badge text-bg-<%= j.last_status === 'ok' ? 'success' : 'danger' %>" title="<%= j.last_message || '' %>"><%= j.last_status === 'ok' ? 'موفق' : 'ناموفق' %></span><div class="fs-7 text-muted text-truncate" style="max-width:220px" title="<%= j.last_message || '' %>"><%= j.last_message || '' %></div><% } else { %>—<% } %></td>
+        <td class="text-nowrap">
+          <form method="post" action="/system/jobs/<%= j.key %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="action" value="toggle"><button class="btn btn-sm btn-outline-<%= j.is_enabled ? 'warning' : 'success' %>" title="<%= j.is_enabled ? 'غیرفعال‌سازی' : 'فعال‌سازی' %>"><i class="bi bi-<%= j.is_enabled ? 'pause' : 'play' %>"></i></button></form>
+          <form method="post" action="/system/jobs/<%= j.key %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="action" value="run"><button class="btn btn-sm btn-primary" title="اجرای فوری"><i class="bi bi-lightning-charge"></i> اجرا</button></form>
+        </td>
+      </tr>
+      <% }) %>
+      </tbody></table></div>
+    </div>
+    <div class="card table-card">
+      <div class="card-header"><h6><i class="bi bi-clock-history me-1"></i>آخرین اجراها</h6></div>
+      <div class="table-responsive"><table class="table table-sm mb-0 fs-7"><thead><tr><th>کار</th><th>شروع</th><th>مدت</th><th>محرک</th><th>وضعیت</th><th>پیام</th></tr></thead><tbody>
+      <% if (!runs.length) { %><tr><td colspan="6" class="text-center text-muted py-3">هنوز اجرایی ثبت نشده</td></tr><% } %>
+      <% runs.forEach(function (r) { var ms = r.finished_at && r.started_at ? Math.max(0, Date.parse(r.finished_at.replace(' ', 'T') + 'Z') - Date.parse(r.started_at.replace(' ', 'T') + 'Z')) : null; %><tr><td><code><%= r.job_key %></code></td><td><%= J.formatDateTime(r.started_at) %></td><td><%= ms != null ? J.toPersianDigits(ms) + ' ms' : '…' %></td><td><%= { auto: 'خودکار', manual: 'دستی', cron: 'cron', cli: 'خط فرمان' }[r.trigger] || r.trigger %></td><td><span class="badge text-bg-<%= r.status === 'ok' ? 'success' : (r.status === 'running' ? 'info' : 'danger') %>"><%= r.status %></span></td><td class="text-muted"><%= r.message || '' %></td></tr><% }) %>
+      </tbody></table></div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-gear me-1"></i>تنظیمات زمان‌بند</h6></div><div class="card-body">
+      <form method="post" action="/system/jobs/settings"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="mb-3"><label class="form-label">روش اجرا</label><select class="form-select" name="scheduler_mode"><option value="internal" <%= mode === 'internal' ? 'selected' : '' %>>تیک داخلی برنامه (پیش‌فرض؛ نیاز به تنظیم ندارد)</option><option value="external" <%= mode === 'external' ? 'selected' : '' %>>فقط cron بیرونی (برای هاست‌هایی که پروسه را می‌خوابانند)</option></select><div class="form-text">در هاست‌های cPanel/Passenger که پروسهٔ Node پس از بی‌کاری متوقف می‌شود، تیک داخلی ممکن است اجرا نشود؛ در این صورت cron هاست را روی اسکریپت یا آدرس زیر تنظیم کنید (هر دو حالت، همزمان نیز بی‌خطرند؛ قفل اتمی از اجرای دوباره جلوگیری می‌کند).</div></div>
+        <div class="mb-3"><label class="form-label">تعداد نسخه‌های پشتیبان خودکار نگه‌داشته‌شده</label><input type="number" class="form-control" name="backup_keep" value="<%= keep %>" min="1" max="60"></div>
+        <button class="btn btn-primary w-100"><i class="bi bi-check-lg me-1"></i>ذخیره</button>
+      </form>
+    </div></div>
+    <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-terminal me-1"></i>Cron هاست (cPanel → Cron Jobs)</h6></div><div class="card-body fs-7">
+      <p class="mb-1">هر ۱۵ دقیقه:</p>
+      <pre class="bg-light p-2 rounded small" dir="ltr">*/15 * * * * cd <%= appRoot %> && node scripts/cron.js >> storage/logs/cron.log 2>&1</pre>
+      <p class="mb-1 mt-3">یا فراخوانی آدرس (با curl/wget یا سرویس‌های cron آنلاین):</p>
+      <pre class="bg-light p-2 rounded small text-break" dir="ltr">*/15 * * * * curl -s "<%= cronUrl %>" > /dev/null</pre>
+      <form method="post" action="/system/jobs/token" onsubmit="return confirm('توکن فعلی باطل می‌شود؛ ادامه؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat me-1"></i>ساخت توکن جدید</button></form>
+      <p class="text-muted mt-2 mb-0">دستورات مفید: <code dir="ltr">node scripts/cron.js --list</code> (فهرست) و <code dir="ltr">node scripts/cron.js --job backup_auto</code> (اجرای اجباری یک کار).</p>
+    </div></div>
+  </div>
+</div>

@@ -21,5 +21,6 @@ module.exports = {
   menu: [
     { title: 'تیکت‌ها', href: '/tickets', icon: 'bi-chat-left-text', roles: ['admin', 'staff', 'teacher', 'student', 'parent'], badge: 'tickets' }
   ],
+  jobs: require('./jobs'),
   routes: require('./routes')
 };
