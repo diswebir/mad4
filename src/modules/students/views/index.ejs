@@ -1,0 +1,46 @@
+<%- include('partials/page-header', { title: 'دانش‌آموزان', subtitle: J.toPersianDigits(result.total) + ' نفر', icon: 'bi-people', breadcrumbs: [{ title: 'دانش‌آموزان' }], actions: [
+  ...(canManage && enabled('students.import') ? [{ href: '/students/import', label: 'ورود گروهی', icon: 'bi-upload', class: 'btn-light' }] : []),
+  ...(enabled('students.export') && currentUser.role !== 'student' ? [{ href: '/students?' + new URLSearchParams(Object.assign({}, query, { export: '1' })).toString(), label: 'خروجی CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : []),
+  ...(canManage ? [{ href: '/students/new', label: 'ثبت‌نام دانش‌آموز', icon: 'bi-person-plus', class: 'btn-primary' }] : [])
+] }) %>
+<form method="get" class="card mb-3"><div class="card-body py-2">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-4"><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" name="q" value="<%= search %>" placeholder="<%= enabled('students.search') ? 'نام، شماره، کد ملی، نام پدر، تلفن…' : 'نام یا شماره دانش‌آموزی' %>"></div></div>
+    <div class="col-md-2"><select class="form-select" name="class_id" data-auto-submit><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="grade_level_id" data-auto-submit><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="status" data-auto-submit><option value="" <%= f.status === '' ? 'selected' : '' %>>همهٔ وضعیت‌ها</option><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
+    <div class="col-md-1"><select class="form-select" name="gender" data-auto-submit><option value="">جنسیت</option><option value="male" <%= f.gender === 'male' ? 'selected' : '' %>>پسر</option><option value="female" <%= f.gender === 'female' ? 'selected' : '' %>>دختر</option></select></div>
+    <div class="col-md-1 d-grid"><button class="btn btn-outline-primary">جستجو</button></div>
+  </div>
+  <% if (f.status === '') { %><input type="hidden" name="all" value="1"><% } %>
+</div></form>
+<div class="card table-card">
+  <% if (!result.data.length) { %><%- include('partials/empty', { message: 'دانش‌آموزی با این مشخصات یافت نشد', action: canManage ? { href: '/students/new', label: 'ثبت‌نام دانش‌آموز' } : null }) %><% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'student_number', dir: sort === 'student_number' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">شماره</a></th>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'last_name', dir: sort === 'last_name' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">نام</a></th>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'class_title', dir: sort === 'class_title' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">کلاس</a></th>
+      <% if (enabled('students.parents')) { %><th>ولی / تماس</th><% } %>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'birth_date', dir: sort === 'birth_date' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">تولد</a></th>
+      <th>وضعیت</th><th class="text-end">عملیات</th></tr></thead>
+    <tbody><% result.data.forEach(function (s) { %>
+      <tr>
+        <td class="ltr text-end text-secondary"><%= J.toPersianDigits(s.student_number) %></td>
+        <td><a href="/students/<%= s.id %>" class="d-flex align-items-center gap-2 fw-semibold"><%- include('partials/avatar', { user: { name: s.first_name + ' ' + s.last_name, avatar: s.photo }, size: 32 }) %><span><%= s.first_name %> <%= s.last_name %><% if (s.gender) { %> <span class="fs-7 text-secondary fw-normal">(<%= utils.GENDERS[s.gender] %>)</span><% } %></span></a></td>
+        <td><% if (s.class_id) { %><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a><div class="fs-7 text-secondary"><%= s.grade_title || '' %></div><% } else { %><span class="badge badge-soft-warning">بدون کلاس</span><% } %></td>
+        <% if (enabled('students.parents')) { %><td class="fs-7"><%= s.father_name || s.guardian_name || '—' %><div class="ltr text-end text-secondary"><%= J.toPersianDigits(s.father_phone || s.guardian_phone || s.mother_phone || s.mobile || '') %></div></td><% } %>
+        <td class="fs-7"><%= s.birth_date ? J.formatDate(s.birth_date) : '—' %></td>
+        <td><%- utils.statusBadge(s.status, utils.STUDENT_STATUS) %></td>
+        <td class="text-end"><div class="btn-group">
+          <a href="/students/<%= s.id %>" class="btn btn-sm btn-light" title="پرونده"><i class="bi bi-folder2-open"></i></a>
+          <% if (enabled('students.id_card')) { %><a href="/students/<%= s.id %>/card" target="_blank" class="btn btn-sm btn-light" title="کارت"><i class="bi bi-person-badge"></i></a><% } %>
+          <% if (canManage) { %><a href="/students/<%= s.id %>/edit" class="btn btn-sm btn-light" title="ویرایش"><i class="bi bi-pencil"></i></a><% } %>
+        </div></td>
+      </tr>
+    <% }); %></tbody>
+  </table></div>
+  <%- include('partials/pagination', { result: result, query: query }) %>
+  <% } %>
+</div>
+<% if (canManage && f.class_id && enabled('students.id_card')) { %><div class="mt-2 text-end"><a href="/students/cards/class/<%= f.class_id %>" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer me-1"></i>چاپ کارت‌های این کلاس</a></div><% } %>

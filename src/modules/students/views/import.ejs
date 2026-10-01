@@ -1,0 +1,16 @@
+<%- include('partials/page-header', { title: 'ورود گروهی دانش‌آموزان', icon: 'bi-upload', breadcrumbs: [{ title: 'دانش‌آموزان', href: '/students' }, { title: 'ورود گروهی' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <form method="post" action="/students/import" enctype="multipart/form-data" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6>بارگذاری فایل CSV</h6></div>
+      <div class="card-body">
+        <div class="mb-3"><label class="form-label required">فایل CSV (UTF-8)</label><input type="file" class="form-control" name="file" accept=".csv,text/csv" required><div class="form-text">فایل اکسل خود را با «ذخیره به‌عنوان CSV UTF-8» تبدیل کنید یا از <a href="/students/import/template">فایل نمونه</a> استفاده نمایید.</div></div>
+        <div class="mb-3"><label class="form-label">ثبت همهٔ ردیف‌ها در کلاس</label><select class="form-select" name="class_id"><option value="">— بدون کلاس (بعداً تعیین می‌شود) —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %></option><% }); %></select></div>
+        <div class="alert alert-light border fs-7 mb-0"><ul class="mb-0 ps-3"><li>ردیف‌های با کد ملی تکراری نادیده گرفته می‌شوند.</li><li>شماره دانش‌آموزی در صورت خالی بودن خودکار تولید می‌شود.</li><li>جنسیت: <code>male/female</code> یا «پسر/دختر».</li><li>تاریخ‌ها به‌صورت شمسی <code class="ltr">1391/04/15</code>.</li><li>رمز پیش‌فرض: کد ملی (یا ۱۲۳۴۵۶).</li></ul></div>
+      </div>
+      <div class="card-footer bg-transparent text-end"><button class="btn btn-primary px-4"><i class="bi bi-upload me-1"></i>شروع ورود</button></div>
+    </form>
+  </div>
+  <div class="col-lg-6"><div class="card table-card"><div class="card-header"><h6>ستون‌های قابل قبول</h6><a href="/students/import/template" class="btn btn-sm btn-light"><i class="bi bi-download me-1"></i>فایل نمونه</a></div>
+    <div class="table-responsive" style="max-height:520px"><table class="table table-sm mb-0"><thead><tr><th>نام ستون (انگلیسی)</th><th>یا عنوان فارسی</th></tr></thead><tbody><% columns.forEach(function (c) { %><tr><td class="ltr text-end"><code><%= c.key %></code></td><td><%= c.label %></td></tr><% }); %></tbody></table></div></div></div>
+</div>

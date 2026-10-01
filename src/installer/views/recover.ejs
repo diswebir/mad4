@@ -1,0 +1,18 @@
+<div class="card">
+  <div class="card-header"><h5><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>اتصال به پایگاه داده برقرار نشد</h5></div>
+  <form method="post" action="/install/recover" class="card-body">
+    <% if (bootError) { %><div class="alert alert-danger ltr text-start fs-7"><%= bootError %></div><% } %>
+    <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+    <p>سامانه نصب شده اما اتصال به پایگاه داده ممکن نیست. می‌توانید تنظیمات را اصلاح کنید. برای امنیت، «کلید بازیابی» لازم است: ۱۲ کاراکتر اول مقدار <code>appKey</code> در فایل <code>storage/config.json</code>.</p>
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">کلید بازیابی</label><input class="form-control ltr" name="recovery_key" required></div>
+      <div class="col-md-4"><label class="form-label">نوع</label><select class="form-select" name="db_client"><option value="mysql" <%= form.client === 'mysql' ? 'selected' : '' %>>MySQL</option><option value="sqlite" <%= form.client === 'sqlite' ? 'selected' : '' %>>SQLite</option></select></div>
+      <div class="col-md-4"><label class="form-label">میزبان</label><input class="form-control ltr" name="db_host" value="<%= form.host || 'localhost' %>"></div>
+      <div class="col-md-3"><label class="form-label">پورت</label><input class="form-control ltr" name="db_port" value="<%= form.port || 3306 %>"></div>
+      <div class="col-md-3"><label class="form-label">نام پایگاه داده</label><input class="form-control ltr" name="db_name" value="<%= form.database || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">نام کاربری</label><input class="form-control ltr" name="db_user" value="<%= form.user || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">رمز عبور</label><input class="form-control ltr" type="password" name="db_password" value=""></div>
+    </div>
+    <div class="text-end mt-3"><button class="btn btn-primary">ذخیره و اتصال مجدد</button></div>
+  </form>
+</div>

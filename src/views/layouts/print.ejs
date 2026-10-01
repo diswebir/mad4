@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title><%= title %> | <%= school('school_name', 'سامانه مدیریت مدرسه') %></title>
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css">
+<style>
+  body { background: #fff; font-size: 13px; }
+  .print-header { border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 14px; }
+  .print-toolbar { position: sticky; top: 0; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 8px 16px; }
+  @media print { .print-toolbar { display: none !important; } .print-wrap { padding: 0 !important; } a { text-decoration: none; color: inherit; } }
+  .table { font-size: 12.5px; } .table th { background: #f1f5f9 !important; }
+</style>
+</head>
+<body>
+<div class="print-toolbar no-print d-flex align-items-center gap-2">
+  <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>چاپ</button>
+  <a href="javascript:history.back()" class="btn btn-light btn-sm"><i class="bi bi-arrow-right me-1"></i>بازگشت</a>
+  <span class="text-secondary fs-7 ms-auto">برای حذف سربرگ/پاورقی مرورگر، در پنجرهٔ چاپ گزینهٔ «Headers and footers» را غیرفعال کنید.</span>
+</div>
+<div class="print-wrap p-4">
+  <div class="print-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" style="height:52px"><% } else { %><img src="/assets/img/favicon.svg" alt="" style="height:44px"><% } %>
+      <div><div class="fw-bold fs-5"><%= school('school_name', 'سامانه مدیریت مدرسه') %></div><div class="text-secondary fs-7"><%= school('school_slogan', '') %></div></div>
+    </div>
+    <div class="text-end fs-7 text-secondary"><div><%= title %></div><div>تاریخ چاپ: <%= J.formatLong(J.todayISO()) %></div></div>
+  </div>
+  <%- body %>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<%- include('partials/page-header', { title: exam.id ? 'ویرایش آزمون' : 'آزمون جدید', icon: 'bi-award', breadcrumbs: [{ title: 'آزمون‌ها', href: '/exams' }, { title: exam.id ? 'ویرایش' : 'جدید' }] }) %>
+<% var old = typeof oldInput !== 'undefined' && oldInput ? oldInput : {}; var val = function (k, d) { return old[k] !== undefined ? old[k] : (exam[k] !== undefined && exam[k] !== null ? exam[k] : (d !== undefined ? d : '')); }; var selCs = String(val('class_subject_id', prefill.class_subject_id)); %>
+<div class="row justify-content-center"><div class="col-lg-8">
+<form method="post" action="<%= exam.id ? '/exams/' + exam.id : '/exams' %>" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body"><div class="row g-3">
+    <div class="col-md-6"><label class="form-label">کلاس</label><select class="form-select" id="clsSel"><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= c.id === classId ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+    <div class="col-md-6"><label class="form-label required">درس</label><select class="form-select" name="class_subject_id" id="csSel" required><% cs.forEach(function (x) { %><option value="<%= x.id %>" <%= selCs === String(x.id) ? 'selected' : '' %>><%= x.subject_title %><%= x.teacher_name ? ' — ' + x.teacher_name : '' %></option><% }); %></select></div>
+    <div class="col-md-8"><label class="form-label required">عنوان</label><input class="form-control" name="title" required maxlength="120" value="<%= val('title') %>" placeholder="مثال: میان‌ترم ریاضی"></div>
+    <div class="col-md-4"><label class="form-label">نوع</label><select class="form-select" name="type"><% Object.keys(TYPES).forEach(function (k) { %><option value="<%= k %>" <%= val('type', 'quiz') === k ? 'selected' : '' %>><%= TYPES[k] %></option><% }); %></select></div>
+    <div class="col-md-4"><label class="form-label required">تاریخ</label><input class="form-control jdate" name="date" required value="<%= val('date') ? J.formatDate(val('date')) : '' %>" placeholder="۱۴۰۵/۰۸/۱۵"></div>
+    <div class="col-md-4"><label class="form-label">ساعت شروع</label><input type="time" class="form-control ltr" name="start_time" value="<%= val('start_time') %>"></div>
+    <div class="col-md-4"><label class="form-label">نوبت</label><select class="form-select" name="term_id"><option value="">—</option><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(val('term_id', currentTermId)) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select></div>
+    <div class="col-md-4"><label class="form-label">بارم (نمرهٔ کامل)</label><input type="number" class="form-control ltr" name="max_score" min="1" max="1000" step="0.5" value="<%= val('max_score', S.get('grading_max_score', '20')) %>"></div>
+    <div class="col-md-4"><label class="form-label">ضریب</label><input type="number" class="form-control ltr" name="weight" min="0.5" max="10" step="0.5" value="<%= val('weight', 1) %>"><div class="form-text">میان‌ترم/پایان‌ترم معمولاً ضریب ۲ تا ۳</div></div>
+    <div class="col-md-4 d-flex align-items-end"><% if (!exam.id && enabled('exams.schedule') && enabled('notifications.inapp')) { %><label class="form-check"><input type="checkbox" class="form-check-input" name="notify" value="1" checked> اطلاع‌رسانی به دانش‌آموزان</label><% } %></div>
+    <div class="col-12"><label class="form-label">توضیحات / منابع</label><textarea class="form-control" name="description" rows="2"><%= val('description') %></textarea></div>
+  </div></div>
+  <div class="card-footer bg-transparent d-flex justify-content-between"><a href="/exams" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4">ذخیره</button></div>
+</form></div></div>
+<script>
+(function () { var cls = document.getElementById('clsSel'), cs = document.getElementById('csSel'); if (!cls) return; cls.addEventListener('change', function () { fetch('/exams/api/class-subjects/' + cls.value, { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (rows) { cs.innerHTML = rows.map(function (x) { return '<option value="' + x.id + '">' + x.subject_title + (x.teacher_name ? ' — ' + x.teacher_name : '') + '</option>'; }).join(''); }); }); })();
+</script>

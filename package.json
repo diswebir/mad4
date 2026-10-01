@@ -1,0 +1,39 @@
+{
+  "name": "madrese",
+  "version": "1.0.0",
+  "description": "سامانه جامع مدیریت مدرسه — Node.js، ماژولار، قابل نصب روی هاست cPanel",
+  "main": "app.js",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "NODE_ENV=development node app.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "reset": "node scripts/reset.js",
+    "test": "node tests/smoke.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
+    "connect-session-knex": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^5.2.1",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
+    "jalaali-js": "^2.0.1",
+    "knex": "^3.3.0",
+    "multer": "^2.4.0",
+    "mysql2": "^3.24.5",
+    "nodemailer": "^10.0.13",
+    "sql.js": "^1.14.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

@@ -1,0 +1,41 @@
+<% var total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0); var canCreate = currentUser.role !== 'teacher' || enabled('tickets.teacher_create'); %>
+<%- include('partials/page-header', { title: 'تیکت‌ها', subtitle: isStaff ? 'مرکز پشتیبانی و ارتباط با دانش‌آموزان و اولیا' : 'ارتباط با مدیریت و معلم', icon: 'bi-chat-left-text', actions: [
+  ...(canCreate ? [{ href: '/tickets/new', label: 'تیکت جدید', icon: 'bi-plus-lg', class: 'btn-primary' }] : []),
+  ...(isStaff && enabled('tickets.stats') ? [{ href: '/tickets/stats', label: 'آمار', icon: 'bi-bar-chart', class: 'btn-light' }] : []),
+  ...(currentUser.role !== 'student' && enabled('tickets.canned') ? [{ href: '/tickets/canned', label: 'پاسخ‌های آماده', icon: 'bi-card-text', class: 'btn-light' }] : []),
+  ...(isStaff && enabled('tickets.export') ? [{ href: '/tickets/export', label: 'CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : [])
+] }) %>
+<% if (sla && sla.length) { %>
+<div class="alert alert-warning d-flex align-items-start gap-2"><i class="bi bi-hourglass-split fs-5"></i><div><strong><%= J.toPersianDigits(sla.length) %> تیکت بیش از <%= J.toPersianDigits(slaHours) %> ساعت بی‌پاسخ مانده است:</strong>
+  <ul class="mb-0 mt-1 fs-7"><% sla.forEach(function (t) { %><li><a href="/tickets/<%= t.id %>"><%= t.code %> — <%= t.subject %></a> <span class="text-secondary">(<%= t.creator_name %> · <%= J.timeAgo(t.last_reply_at) %>)</span></li><% }); %></ul></div></div>
+<% } %>
+<ul class="nav nav-pills mb-3 flex-wrap gap-1">
+  <li class="nav-item"><a class="nav-link <%= !f.status ? 'active' : '' %>" href="?">همه <span class="badge rounded-pill text-bg-light"><%= J.toPersianDigits(total) %></span></a></li>
+  <% Object.keys(STATUSES).forEach(function (k) { %><li class="nav-item"><a class="nav-link <%= f.status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= STATUSES[k] %> <span class="badge rounded-pill text-bg-light"><%= J.toPersianDigits(counts[k] || 0) %></span></a></li><% }); %>
+  <% if (isStaff) { %><li class="nav-item ms-auto"><a class="nav-link <%= f.mine === '1' ? 'active' : '' %>" href="?mine=1"><i class="bi bi-person-check me-1"></i>ارجاع به من</a></li><li class="nav-item"><a class="nav-link <%= f.mine === 'unassigned' ? 'active' : '' %>" href="?mine=unassigned"><i class="bi bi-person-dash me-1"></i>بدون مسئول</a></li><% } %>
+</ul>
+<form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
+  <input type="hidden" name="status" value="<%= f.status %>"><input type="hidden" name="mine" value="<%= f.mine %>">
+  <input class="form-control form-control-sm" style="max-width:260px" name="q" value="<%= f.q %>" placeholder="جستجو: کد، موضوع، نام…">
+  <% if (enabled('tickets.categories')) { %><select class="form-select form-select-sm w-auto" name="category" data-auto-submit><option value="">همهٔ دسته‌ها</option><% Object.keys(CATEGORIES).forEach(function (k) { %><option value="<%= k %>" <%= f.category === k ? 'selected' : '' %>><%= CATEGORIES[k] %></option><% }); %></select><% } %>
+  <% if (enabled('tickets.priority')) { %><select class="form-select form-select-sm w-auto" name="priority" data-auto-submit><option value="">همهٔ اولویت‌ها</option><% Object.keys(utils.PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= f.priority === k ? 'selected' : '' %>><%= utils.PRIORITIES[k] %></option><% }); %></select><% } %>
+  <button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+  <% if (f.q || f.category || f.priority) { %><a href="?status=<%= f.status %>" class="btn btn-sm btn-light">پاک کردن</a><% } %>
+</div></form>
+<div class="card table-card">
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>کد</th><th>موضوع</th><% if (currentUser.role !== 'student') { %><th>ایجادکننده</th><% } %><% if (enabled('tickets.categories')) { %><th>دسته</th><% } %><% if (enabled('tickets.priority')) { %><th>اولویت</th><% } %><th>وضعیت</th><% if (isStaff && enabled('tickets.assign')) { %><th>مسئول</th><% } %><th>آخرین پاسخ</th></tr></thead>
+    <tbody><% result.data.forEach(function (t) { var unread = (currentUser.role === 'student' && t.status === 'answered') || (currentUser.role !== 'student' && t.status === 'open'); %>
+      <tr class="<%= unread ? 'fw-semibold' : '' %>">
+        <td><a href="/tickets/<%= t.id %>" class="ltr d-inline-block font-monospace fs-7"><%= t.code %></a></td>
+        <td><a href="/tickets/<%= t.id %>" class="text-body"><%= t.subject %></a><% if (t.replies_count > 1) { %> <span class="badge badge-soft-secondary fw-normal"><i class="bi bi-chat"></i> <%= J.toPersianDigits(t.replies_count) %></span><% } %><% if (t.rating) { %> <span class="text-warning fs-7"><i class="bi bi-star-fill"></i> <%= J.toPersianDigits(t.rating) %></span><% } %></td>
+        <% if (currentUser.role !== 'student') { %><td><div class="d-flex align-items-center gap-2"><%- include('partials/avatar', { user: { name: t.creator_name, avatar: t.creator_avatar }, size: 26 }) %><div><div class="fs-7"><%= t.creator_name %></div><% if (t.class_title) { %><div class="text-secondary" style="font-size:.7rem"><%= t.class_title %></div><% } %></div></div></td><% } %>
+        <% if (enabled('tickets.categories')) { %><td class="fs-7"><%= CATEGORIES[t.category] || t.category || '—' %></td><% } %>
+        <% if (enabled('tickets.priority')) { %><td><%- utils.priorityBadge(t.priority) %></td><% } %>
+        <td><%- include('_status', { status: t.status }) %></td>
+        <% if (isStaff && enabled('tickets.assign')) { %><td class="fs-7"><%= t.assignee_name || '—' %></td><% } %>
+        <td class="fs-7 text-secondary text-nowrap" title="<%= J.formatDateTime(t.last_reply_at) %>"><%= J.timeAgo(t.last_reply_at) %></td>
+      </tr><% }); if (!result.data.length) { %><tr><td colspan="9"><%- include('partials/empty', { message: 'تیکتی وجود ندارد', icon: 'bi-chat-left', action: canCreate ? { href: '/tickets/new', label: 'ثبت تیکت جدید' } : null }) %></td></tr><% } %></tbody>
+  </table></div>
+  <%- include('partials/pagination', { result: result, query: query }) %>
+</div>

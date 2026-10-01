@@ -1,0 +1,26 @@
+<%- include('partials/page-header', { title: 'اطلاعات سامانه', icon: 'bi-info-circle', breadcrumbs: [{ title: 'اطلاعات سامانه' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card"><div class="card-header"><h6>محیط اجرا</h6></div><div class="card-body info-list">
+      <div class="item"><div class="k">نسخهٔ سامانه</div><div class="v"><%= J.toPersianDigits(info.version) %></div></div>
+      <div class="item"><div class="k">Node.js</div><div class="v ltr text-end"><%= info.node %></div></div>
+      <div class="item"><div class="k">سیستم‌عامل</div><div class="v ltr text-end"><%= info.platform %></div></div>
+      <div class="item"><div class="k">محیط</div><div class="v"><%= info.env %> <%= info.passenger ? '(Passenger/cPanel)' : '' %></div></div>
+      <div class="item"><div class="k">پایگاه داده</div><div class="v ltr text-end"><%= info.db.driver %><%= info.db.database ? ' / ' + info.db.database : '' %></div></div>
+      <div class="item"><div class="k">زمان اجرا</div><div class="v"><%= J.toPersianDigits(Math.floor(info.uptime / 3600)) %> ساعت و <%= J.toPersianDigits(Math.floor((info.uptime % 3600) / 60)) %> دقیقه</div></div>
+      <div class="item"><div class="k">حافظهٔ مصرفی</div><div class="v"><%= utils.fileSize(info.rss) %> (heap: <%= utils.fileSize(info.heap) %>)</div></div>
+      <div class="item"><div class="k">حافظهٔ سرور</div><div class="v"><%= utils.fileSize(info.freeMem) %> آزاد از <%= utils.fileSize(info.totalMem) %></div></div>
+      <div class="item"><div class="k">CPU</div><div class="v"><%= J.toPersianDigits(info.cpus) %> هسته</div></div>
+      <div class="item"><div class="k">ماژول‌ها</div><div class="v"><%= J.toPersianDigits(info.modules.modulesEnabled) %>/<%= J.toPersianDigits(info.modules.modules) %> فعال · <%= J.toPersianDigits(info.modules.featuresEnabled) %>/<%= J.toPersianDigits(info.modules.features) %> قابلیت</div></div>
+      <div class="item"><div class="k">تاریخ نصب</div><div class="v"><%= info.installedAt ? J.formatDateTime(info.installedAt) : '—' %></div></div>
+      <div class="item"><div class="k">پوشهٔ داده</div><div class="v ltr text-end fs-7"><%= info.storage %></div></div>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card table-card"><div class="card-header"><h6>جدول‌های پایگاه داده</h6><span class="fs-7 text-secondary"><%= J.toPersianDigits(tables.length) %> جدول</span></div>
+      <div class="table-responsive" style="max-height:520px;overflow:auto"><table class="table table-sm table-sticky"><thead><tr><th>جدول</th><th>رکوردها</th></tr></thead><tbody>
+        <% tables.forEach(function (t) { %><tr><td class="ltr text-start"><%= t.name %></td><td><%= J.toPersianDigits(t.count) %></td></tr><% }); %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>

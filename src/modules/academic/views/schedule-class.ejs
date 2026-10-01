@@ -1,0 +1,53 @@
+<% if (!print) { %>
+<%- include('partials/page-header', { title: 'برنامه هفتگی ' + cls.title, subtitle: cls.grade_title, icon: 'bi-table', breadcrumbs: [{ title: 'برنامه هفتگی', href: '/academic/schedule' }, { title: cls.title }], actions: [
+  ...(enabled('academic.schedule_print') ? [{ href: '/academic/schedule/class/' + cls.id + '?print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-outline-secondary', target: '_blank' }] : []),
+  { href: '/academic/classes/' + cls.id, label: 'صفحه کلاس', icon: 'bi-door-open', class: 'btn-light' }
+] }) %>
+<% if (isAdmin) { %><div class="alert alert-info d-flex align-items-center gap-2"><i class="bi bi-info-circle"></i><div>برای تنظیم هر زنگ روی خانهٔ آن کلیک کنید. تداخل برنامهٔ معلمان به‌صورت خودکار بررسی می‌شود.</div>
+  <form method="post" action="/academic/schedule/class/<%= cls.id %>/clear" class="ms-auto d-inline" data-confirm="کل برنامهٔ این کلاس پاک شود؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger">پاک‌کردن برنامه</button></form></div><% } %>
+<% } else { %><h5 class="mb-3">برنامهٔ هفتگی کلاس <%= cls.title %> — <%= cls.grade_title %></h5><% } %>
+<div class="card"><div class="table-responsive"><table class="table table-bordered schedule-table mb-0 text-center align-middle">
+  <thead><tr><th style="width:90px">روز / زنگ</th><% for (var p = 1; p <= periods; p++) { %><th>زنگ <%= J.toPersianDigits(p) %><div class="fs-7 fw-normal text-secondary ltr"><%= J.toPersianDigits(times[p-1] || '') %></div></th><% } %></tr></thead>
+  <tbody><% days.forEach(function (d) { %>
+    <tr><th class="bg-light"><%= J.WEEKDAYS[d] %></th>
+    <% for (var p = 1; p <= periods; p++) { var s = grid[d] && grid[d][p]; %>
+      <td class="<%= isAdmin && !print ? 'slot-cell' : '' %> <%= s ? 'has-slot' : '' %>" <% if (isAdmin && !print) { %>data-day="<%= d %>" data-period="<%= p %>" data-cs="<%= s ? s.class_subject_id : '' %>" data-room="<%= s && s.room_id ? s.room_id : '' %>" role="button"<% } %>>
+        <% if (s) { %><div class="fw-semibold"><%= s.subject_title %></div><div class="fs-7 text-secondary"><%= s.teacher_name || '' %></div><% if (s.room_title) { %><div class="fs-7 text-muted"><i class="bi bi-geo-alt"></i> <%= s.room_title %></div><% } %><% } else if (isAdmin && !print) { %><span class="text-muted fs-7">+</span><% } %>
+      </td>
+    <% } %></tr>
+  <% }); %></tbody>
+</table></div></div>
+<% if (isAdmin && !print) { %>
+<div class="modal fade" id="slotModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+  <form method="post" action="/academic/schedule/class/<%= cls.id %>/slot">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="day" id="slotDay"><input type="hidden" name="period" id="slotPeriod">
+  <div class="modal-header"><h6 class="modal-title" id="slotTitle">تنظیم زنگ</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="mb-3"><label class="form-label">درس (معلم)</label><select class="form-select" name="class_subject_id" id="slotCs"><option value="">— خالی —</option><% classSubjects.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.teacher_name ? ' — ' + c.teacher_name : '' %></option><% }); %></select>
+      <% if (!classSubjects.length) { %><div class="form-text text-danger">ابتدا در صفحهٔ کلاس، درس‌ها را به کلاس تخصیص دهید.</div><% } %></div>
+    <div class="mb-2"><label class="form-label">اتاق (اختیاری)</label><select class="form-select" name="room_id" id="slotRoom"><option value="">— پیش‌فرض کلاس —</option><% rooms.forEach(function (r) { %><option value="<%= r.id %>"><%= r.title %></option><% }); %></select></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div>
+  </form>
+</div></div></div>
+<div class="card mt-3"><div class="card-body d-flex flex-wrap align-items-center gap-2">
+  <form method="post" action="/academic/schedule/class/<%= cls.id %>/copy" class="d-flex gap-2 align-items-center"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <span class="fs-7 text-secondary">کپی برنامه از کلاس دیگر (دروس هم‌نام):</span>
+    <select name="source_id" class="form-select form-select-sm" style="width:auto" required id="copySrc"></select><button class="btn btn-sm btn-outline-primary" data-confirm="برنامهٔ فعلی جایگزین می‌شود. ادامه؟">کپی</button></form>
+</div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modal = new bootstrap.Modal(document.getElementById('slotModal'));
+  var days = <%- JSON.stringify(J.WEEKDAYS) %>;
+  document.querySelectorAll('.slot-cell').forEach(function (td) {
+    td.addEventListener('click', function () {
+      document.getElementById('slotDay').value = td.dataset.day; document.getElementById('slotPeriod').value = td.dataset.period;
+      document.getElementById('slotCs').value = td.dataset.cs || ''; document.getElementById('slotRoom').value = td.dataset.room || '';
+      document.getElementById('slotTitle').textContent = days[td.dataset.day] + ' — زنگ ' + App.fa(td.dataset.period);
+      modal.show();
+    });
+  });
+  fetch('/academic/api/classes').then(function (r) { return r.json(); }).then(function (list) { var sel = document.getElementById('copySrc'); list.filter(function (c) { return c.id !== <%= cls.id %>; }).forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = c.title; sel.appendChild(o); }); }).catch(function(){});
+});
+</script>
+<% } %>

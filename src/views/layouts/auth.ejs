@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="<%= typeof theme !== 'undefined' ? theme : 'light' %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<title><%= title %> | <%= school('school_name') %></title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css?v=<%= appVersion %>">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="text-center mb-4">
+      <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" style="height:72px" class="mb-2 rounded-3"><% } else { %><div class="d-inline-flex align-items-center justify-content-center rounded-4 bg-brand mb-2" style="width:64px;height:64px;font-size:2rem"><i class="bi bi-mortarboard-fill"></i></div><% } %>
+      <h4 class="mb-0"><%= school('school_name') %></h4>
+      <div class="text-secondary fs-7"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></div>
+    </div>
+    <%- include('../partials/flash') %>
+    <%- body %>
+    <p class="text-center text-secondary fs-7 mt-3"><%= J.formatLong(J.todayISO()) %></p>
+  </div>
+</div>
+<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/app.js?v=<%= appVersion %>"></script>
+<%- typeof script !== 'undefined' ? script : '' %>
+</body>
+</html>

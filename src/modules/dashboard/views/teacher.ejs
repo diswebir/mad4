@@ -1,0 +1,66 @@
+<div class="page-header">
+  <div><h1><i class="bi bi-speedometer2"></i>داشبورد معلم</h1><div class="text-secondary fs-7 mt-1">خوش آمدید <%= currentUser.name %> عزیز · <%= J.formatLong(today) %></div></div>
+  <div class="page-actions d-flex gap-2 flex-wrap">
+    <% if (enabled('attendance') && typeof homeroom !== 'undefined' && homeroom.length) { %><a href="/attendance/take?class_id=<%= homeroom[0].id %>" class="btn btn-primary"><i class="bi bi-calendar-check me-1"></i>حضور و غیاب امروز</a><% } %>
+    <% if (enabled('homework')) { %><a href="/homework/new" class="btn btn-outline-secondary"><i class="bi bi-journal-plus me-1"></i>تکلیف جدید</a><% } %>
+  </div>
+</div>
+<% if (!teacher) { %><div class="alert alert-warning">پروفایل معلم برای حساب شما تعریف نشده است. با مدیر تماس بگیرید.</div><% } else { %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card text-primary"><div class="card-body d-flex align-items-center gap-3"><div class="icon bg-brand-soft"><i class="bi bi-door-open"></i></div><div><div class="value"><%= J.toPersianDigits(homeroom.length) %></div><div class="label">کلاس تحت سرپرستی</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-book"></i></div><div><div class="value"><%= J.toPersianDigits(teaching.length) %></div><div class="label">درس در حال تدریس</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-info"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-people"></i></div><div><div class="value"><%= J.toPersianDigits(studentCount) %></div><div class="label">دانش‌آموز</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-inbox"></i></div><div><div class="value"><%= J.toPersianDigits(typeof toGrade !== 'undefined' ? toGrade : 0) %></div><div class="label">تکلیف در انتظار تصحیح</div></div></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="card table-card mb-3">
+      <div class="card-header"><h6><i class="bi bi-door-open me-1 text-brand"></i>کلاس‌های من</h6><a href="/teachers/my-classes" class="fs-7">جزئیات</a></div>
+      <table class="table table-hover"><thead><tr><th>کلاس</th><th>پایه</th><th>دانش‌آموز</th><th>حضور امروز</th><th class="actions"></th></tr></thead><tbody>
+        <% if (!homeroom.length) { %><tr><td colspan="5" class="text-center text-secondary py-3">کلاسی به‌عنوان معلم راهنما به شما تخصیص نیافته است</td></tr><% } %>
+        <% homeroom.forEach(function (c) { %><tr><td class="fw-500"><a href="/academic/classes/<%= c.id %>"><%= c.title %></a></td><td><%= c.grade_title %></td><td><%= J.toPersianDigits(c.students) %></td><td><% if (enabled('attendance')) { %><%- c.attendanceDone ? '<span class="badge badge-soft-success">ثبت شده</span>' : '<span class="badge badge-soft-warning">ثبت نشده</span>' %><% } %></td><td class="actions"><% if (enabled('attendance')) { %><a href="/attendance/take?class_id=<%= c.id %>" class="btn btn-sm btn-soft"><i class="bi bi-calendar-check"></i></a><% } %><a href="/academic/classes/<%= c.id %>" class="btn btn-sm btn-light"><i class="bi bi-people"></i></a></td></tr><% }); %>
+      </tbody></table>
+    </div>
+    <div class="card table-card">
+      <div class="card-header"><h6><i class="bi bi-book me-1 text-brand"></i>دروس من</h6></div>
+      <table class="table table-hover table-sm"><thead><tr><th>درس</th><th>کلاس</th><th>ساعت هفتگی</th><th class="actions"></th></tr></thead><tbody>
+        <% if (!teaching.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">درسی تخصیص نیافته است</td></tr><% } %>
+        <% teaching.forEach(function (t) { %><tr><td class="fw-500"><%= t.subject_title %></td><td><%= t.class_title %></td><td><%= J.toPersianDigits(t.weekly_hours) %></td><td class="actions"><% if (enabled('exams')) { %><a href="/exams?class_id=<%= t.class_id %>&subject_id=<%= t.subject_id %>" class="btn btn-sm btn-light" title="آزمون‌ها"><i class="bi bi-journal-check"></i></a><% } %><% if (enabled('attendance.per_subject')) { %><a href="/attendance/take?class_id=<%= t.class_id %>&class_subject_id=<%= t.id %>" class="btn btn-sm btn-light" title="حضور و غیاب این درس"><i class="bi bi-calendar-check"></i></a><% } %><% if (enabled('homework')) { %><a href="/homework?class_id=<%= t.class_id %>" class="btn btn-sm btn-light" title="تکالیف"><i class="bi bi-journal-text"></i></a><% } %></td></tr><% }); %>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <% if (typeof schedule !== 'undefined') { %>
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-table me-1 text-brand"></i>برنامهٔ امروز (<%= todayName %>)</h6><a href="/academic/schedule/teacher/<%= teacher.id %>" class="fs-7">برنامهٔ هفتگی</a></div>
+      <ul class="list-group list-group-flush">
+        <% if (!schedule.length) { %><li class="list-group-item text-secondary fs-7">امروز کلاسی ندارید</li><% } %>
+        <% schedule.forEach(function (s) { %><li class="list-group-item d-flex justify-content-between align-items-center"><span><span class="badge badge-soft-primary me-2">زنگ <%= J.toPersianDigits(s.period) %></span><%= s.subject_title %> — <%= s.class_title %></span><span class="fs-7 text-secondary ltr"><%= J.formatTime(s.start_time) %>–<%= J.formatTime(s.end_time) %></span></li><% }); %>
+      </ul>
+    </div>
+    <% } %>
+    <% if (typeof tickets !== 'undefined') { %>
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-ticket-detailed me-1 text-brand"></i>تیکت‌های در انتظار پاسخ</h6><a href="/tickets" class="fs-7">همه</a></div>
+      <ul class="list-group list-group-flush">
+        <% if (!tickets.length) { %><li class="list-group-item text-secondary fs-7">تیکت بازی ندارید</li><% } %>
+        <% tickets.forEach(function (t) { %><li class="list-group-item"><a href="/tickets/<%= t.id %>" class="fw-500 d-block"><%= utils.truncate(t.subject, 50) %></a><span class="fs-7 text-secondary"><%= t.creator %> · <%= J.timeAgo(t.updated_at || t.created_at) %></span></li><% }); %>
+      </ul>
+    </div>
+    <% } %>
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-megaphone me-1 text-brand"></i>اطلاعیه‌ها</h6></div>
+      <ul class="list-group list-group-flush">
+        <% if (!announcements.length) { %><li class="list-group-item text-secondary fs-7">اطلاعیه‌ای نیست</li><% } %>
+        <% announcements.forEach(function (a) { %><li class="list-group-item"><a href="/announcements/<%= a.id %>" class="fw-500 d-block"><% if (a.is_pinned) { %><i class="bi bi-pin-angle-fill text-warning me-1"></i><% } %><%= a.title %></a><span class="fs-7 text-secondary"><%= utils.truncate(a.body || '', 80) %></span></li><% }); %>
+      </ul>
+    </div>
+    <% if (typeof exams !== 'undefined' && exams.length) { %>
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-journal-check me-1 text-brand"></i>آزمون‌های پیش روی من</h6></div>
+      <ul class="list-group list-group-flush"><% exams.forEach(function (x) { %><li class="list-group-item d-flex justify-content-between"><span class="fs-7"><%= x.subject_title %> — <%= x.title %> (<%= x.class_title %>)</span><span class="badge badge-soft-primary"><%= J.formatDate(x.date) %></span></li><% }); %></ul>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>

@@ -1,0 +1,81 @@
+<%- include('partials/page-header', { title: 'کلاس ' + cls.title, subtitle: cls.grade_title + ' · ' + (cls.year_title || '') + (cls.room_title ? ' · ' + cls.room_title : '') + ' · شیفت ' + (cls.shift === 'afternoon' ? 'عصر' : 'صبح'), icon: 'bi-door-open', breadcrumbs: [{ title: 'کلاس‌ها', href: '/academic/classes' }, { title: cls.title }], actions: [
+  ...(enabled('academic.schedule') ? [{ href: '/academic/schedule/class/' + cls.id, label: 'برنامه هفتگی', icon: 'bi-table', class: 'btn-light' }] : []),
+  ...(enabled('attendance') && currentUser.role !== 'student' ? [{ href: '/attendance/take?class_id=' + cls.id, label: 'حضور و غیاب', icon: 'bi-clipboard-check', class: 'btn-outline-primary' }] : []),
+  ...(isAdmin ? [{ href: '/academic/classes/' + cls.id + '/edit', label: 'ویرایش', icon: 'bi-pencil', class: 'btn-primary' }] : [])
+] }) %>
+
+<% if (enabled('academic.class_stats')) { %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card text-primary"><div class="card-body d-flex align-items-center gap-3"><div class="icon bg-brand-soft"><i class="bi bi-people"></i></div><div><div class="value"><%= J.toPersianDigits(stats.active || 0) %></div><div class="label">دانش‌آموز فعال <span class="text-muted">/ ظرفیت <%= J.toPersianDigits(cls.capacity || 0) %></span></div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-info"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-gender-ambiguous"></i></div><div><div class="value"><%= J.toPersianDigits(stats.boys || 0) %> / <%= J.toPersianDigits(stats.girls || 0) %></div><div class="label">پسر / دختر</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-clipboard-check"></i></div><div><div class="value"><%= stats.attendanceRate != null ? J.toPersianDigits(stats.attendanceRate) + '٪' : '—' %></div><div class="label">نرخ حضور · <%= J.toPersianDigits(stats.absences || 0) %> غیبت</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-award"></i></div><div><div class="value"><%= stats.avgScore != null ? J.toPersianDigits(stats.avgScore) : '—' %></div><div class="label">میانگین نمرات · <%= J.toPersianDigits(stats.exams || 0) %> آزمون</div></div></div></div></div>
+</div>
+<% } %>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card table-card">
+      <div class="card-header"><h6><i class="bi bi-people me-1"></i>دانش‌آموزان (<%= J.toPersianDigits(students.length) %>)</h6>
+        <% if (isAdmin && enabled('students')) { %><a href="/students/new?class_id=<%= cls.id %>" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>ثبت‌نام در این کلاس</a><% } %></div>
+      <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+        <thead><tr><th>#</th><th>نام</th><th>شماره</th><th>ولی</th><th>تماس</th><% if (enabled('attendance')) { %><th>غیبت</th><% } %><th>وضعیت</th></tr></thead>
+        <tbody><% students.forEach(function (s, i) { var ex = studentExtra[s.id] || {}; %>
+          <tr>
+            <td class="text-muted"><%= J.toPersianDigits(i + 1) %></td>
+            <td><a href="/students/<%= s.id %>" class="d-flex align-items-center gap-2 fw-semibold"><%- include('partials/avatar', { user: { name: s.first_name + ' ' + s.last_name, avatar: s.photo }, size: 28 }) %><%= s.first_name %> <%= s.last_name %></a></td>
+            <td class="ltr text-end text-secondary"><%= J.toPersianDigits(s.student_number) %></td>
+            <td><%= s.father_name || s.guardian_name || '—' %></td>
+            <td class="ltr text-end"><%= J.toPersianDigits(s.father_phone || s.guardian_phone || s.mobile || '—') %></td>
+            <% if (enabled('attendance')) { %><td><% if (ex.absent) { %><span class="badge badge-soft-danger"><%= J.toPersianDigits(ex.absent) %></span><% } else { %><span class="text-muted">۰</span><% } %></td><% } %>
+            <td><%- utils.statusBadge(s.status) %></td>
+          </tr>
+        <% }); if (!students.length) { %><tr><td colspan="7"><%- include('partials/empty', { message: 'هنوز دانش‌آموزی در این کلاس ثبت نشده است' }) %></td></tr><% } %></tbody>
+      </table></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-person-video3 me-1"></i>معلم راهنما</h6></div>
+      <div class="card-body">
+        <% if (cls.teacher_id) { %><div class="d-flex align-items-center gap-3"><%- include('partials/avatar', { user: { name: cls.teacher_name, avatar: cls.teacher_avatar }, size: 48 }) %><div><a href="/teachers/<%= cls.teacher_id %>" class="fw-semibold"><%= cls.teacher_name %></a><div class="fs-7 text-secondary ltr text-end"><%= J.toPersianDigits(cls.teacher_phone || '') %></div></div></div>
+        <% } else { %><div class="text-secondary fs-7">معلم راهنما تعیین نشده است.<% if (isAdmin) { %> <a href="/academic/classes/<%= cls.id %>/edit">تعیین کنید</a><% } %></div><% } %>
+      </div>
+    </div>
+    <div class="card table-card" id="subjects">
+      <div class="card-header"><h6><i class="bi bi-book me-1"></i>دروس و معلمان</h6></div>
+      <div class="table-responsive"><table class="table align-middle mb-0 table-sm">
+        <thead><tr><th>درس</th><th>معلم</th><th>ساعت</th><% if (isAdmin && enabled('academic.class_subjects')) { %><th></th><% } %></tr></thead>
+        <tbody><% subjects.forEach(function (s) { %>
+          <tr><td class="fw-semibold"><%= s.subject_title %></td><td><%= s.teacher_name || '<span class="text-danger fs-7">تعیین نشده</span>' %></td><td><%= J.toPersianDigits(s.weekly_hours || 0) %></td>
+            <% if (isAdmin && enabled('academic.class_subjects')) { %><td class="text-end"><button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#csModal" data-subject="<%= s.subject_id %>" data-teacher="<%= s.teacher_id || '' %>" data-hours="<%= s.weekly_hours || '' %>"><i class="bi bi-pencil"></i></button> <a href="#" data-post="/academic/classes/<%= cls.id %>/subjects/<%= s.id %>/delete" data-confirm="این درس از کلاس حذف شود؟" class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></a></td><% } %></tr>
+        <% }); if (!subjects.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">درسی تخصیص داده نشده است</td></tr><% } %></tbody>
+      </table></div>
+      <% if (isAdmin && enabled('academic.class_subjects')) { %><div class="card-footer bg-transparent"><button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#csModal"><i class="bi bi-plus-lg me-1"></i>تخصیص درس / معلم</button></div><% } %>
+    </div>
+    <% if (enabled('academic.schedule') && schedule.length) { var todayIdx = J.weekdayIndex(J.todayISO()); var todaySlots = schedule.filter(function (s) { return s.day_of_week === todayIdx; }); %>
+    <div class="card mt-3"><div class="card-header"><h6><i class="bi bi-calendar-day me-1"></i>برنامه امروز (<%= J.WEEKDAYS[todayIdx] %>)</h6><a href="/academic/schedule/class/<%= cls.id %>" class="fs-7">کامل</a></div>
+      <ul class="list-group list-group-flush"><% todaySlots.forEach(function (s) { %><li class="list-group-item d-flex justify-content-between"><span><span class="badge badge-soft-secondary me-1">زنگ <%= J.toPersianDigits(s.period) %></span><%= s.subject_title %></span><span class="text-secondary fs-7 ltr"><%= J.toPersianDigits(s.start_time || '') %></span></li><% }); if (!todaySlots.length) { %><li class="list-group-item text-secondary fs-7">امروز کلاسی ندارد</li><% } %></ul></div>
+    <% } %>
+  </div>
+</div>
+
+<% if (isAdmin && enabled('academic.class_subjects')) { %>
+<div class="modal fade" id="csModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+  <form method="post" action="/academic/classes/<%= cls.id %>/subjects"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="modal-header"><h6 class="modal-title">تخصیص درس و معلم</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="mb-3"><label class="form-label required">درس</label><select class="form-select" name="subject_id" id="csSubject" required><option value="">— انتخاب —</option><% subjectsOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label">معلم</label><select class="form-select" name="teacher_id" id="csTeacher"><option value="">— بعداً تعیین می‌شود —</option><% teachersOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
+    <div class="mb-2"><label class="form-label">ساعت در هفته</label><input class="form-control en-digits" name="weekly_hours" id="csHours" placeholder="پیش‌فرض درس"></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div>
+  </form>
+</div></div></div>
+<script>
+document.getElementById('csModal').addEventListener('show.bs.modal', function (e) {
+  var b = e.relatedTarget || {}; var d = b.dataset || {};
+  document.getElementById('csSubject').value = d.subject || ''; document.getElementById('csTeacher').value = d.teacher || ''; document.getElementById('csHours').value = d.hours || '';
+});
+</script>
+<% } %>

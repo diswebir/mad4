@@ -1,0 +1,34 @@
+<%- include('partials/page-header', { title: 'پشتیبان‌گیری', icon: 'bi-cloud-arrow-down', breadcrumbs: [{ title: 'پشتیبان‌گیری' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header"><h6>ایجاد نسخهٔ پشتیبان</h6></div>
+      <div class="card-body">
+        <p class="fs-7 text-secondary">پایگاه داده: <strong class="ltr"><%= dbInfo.driver %></strong><% if (dbInfo.filename) { %> — <span class="ltr"><%= dbInfo.filename %></span><% } %></p>
+        <div class="info-list mb-3"><% Object.keys(counts).forEach(function (k) { %><div class="item"><div class="k"><%= k %></div><div class="v"><%= J.toPersianDigits(counts[k]) %></div></div><% }); %></div>
+        <form method="post" action="/system/backup/create" class="d-flex gap-2 flex-wrap">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-primary" name="type" value="json"><i class="bi bi-filetype-json me-1"></i>پشتیبان JSON (همهٔ جدول‌ها)</button>
+          <% if (dbInfo.client === 'sqlite') { %><button class="btn btn-outline-primary" name="type" value="file"><i class="bi bi-file-earmark-binary me-1"></i>کپی فایل SQLite</button><% } %>
+        </form>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h6>بازیابی از فایل JSON</h6></div>
+      <form method="post" action="/system/backup/restore" enctype="multipart/form-data" class="card-body" data-confirm="هشدار: داده‌های فعلی با محتوای فایل جایگزین می‌شوند. ادامه می‌دهید؟">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="file" class="form-control mb-2" name="file" accept=".json" required>
+        <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>بازیابی</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card table-card">
+      <div class="card-header"><h6>فایل‌های پشتیبان</h6><span class="fs-7 text-secondary">storage/backups/</span></div>
+      <table class="table table-hover"><thead><tr><th>نام فایل</th><th>حجم</th><th>زمان</th><th class="actions"></th></tr></thead><tbody>
+        <% if (!files.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">هنوز نسخهٔ پشتیبانی ساخته نشده است</td></tr><% } %>
+        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>"><i class="bi bi-download"></i></a> <a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟"><i class="bi bi-trash"></i></a></td></tr><% }); %>
+      </tbody></table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<%- include('partials/page-header', { title: 'آمار تیکت‌ها', icon: 'bi-bar-chart', breadcrumbs: [{ title: 'تیکت‌ها', href: '/tickets' }, { title: 'آمار' }] }) %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card text-primary"><div class="card-body"><div class="value"><%= J.toPersianDigits(total) %></div><div class="label">کل تیکت‌ها</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-danger"><div class="card-body"><div class="value"><%= J.toPersianDigits(byStatus.open || 0) %></div><div class="label">باز (نیازمند پاسخ)</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-success"><div class="card-body"><div class="value"><%= avgHours != null ? J.toPersianDigits(avgHours) + ' ساعت' : '—' %></div><div class="label">میانگین زمان اولین پاسخ</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-warning"><div class="card-body"><div class="value"><%= rating && rating.n ? J.toPersianDigits(Math.round(rating.avg * 10) / 10) + ' / ۵' : '—' %></div><div class="label">میانگین رضایت (<%= J.toPersianDigits(rating ? rating.n : 0) %> رأی)</div></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header"><h6>وضعیت</h6></div><div class="card-body"><canvas id="cStatus" height="200"></canvas></div></div></div>
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><h6>تیکت‌های ۳۰ روز اخیر</h6></div><div class="card-body"><canvas id="cDaily" height="90"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card table-card h-100"><div class="card-header"><h6>به تفکیک دسته</h6></div><table class="table table-sm mb-0"><tbody><% byCategory.forEach(function (c) { %><tr><td><%= CATEGORIES[c.category] || c.category || '—' %></td><td class="text-end" style="width:40%"><div class="d-flex align-items-center gap-2 justify-content-end"><div class="progress flex-grow-1" style="height:6px"><div class="progress-bar" style="width:<%= total ? Math.round(c.c / total * 100) : 0 %>%"></div></div><span class="fs-7"><%= J.toPersianDigits(c.c) %></span></div></td></tr><% }); %></tbody></table></div></div>
+  <div class="col-lg-6"><div class="card table-card h-100"><div class="card-header"><h6>عملکرد پاسخ‌دهندگان</h6></div><table class="table table-sm mb-0"><thead><tr><th>کاربر</th><th>ارجاع‌شده</th><th>بسته‌شده</th><th>رضایت</th></tr></thead><tbody><% byAssignee.forEach(function (a) { %><tr><td><%= a.name %></td><td><%= J.toPersianDigits(a.c) %></td><td><%= J.toPersianDigits(a.closed || 0) %></td><td><%= a.rating ? J.toPersianDigits(Math.round(a.rating * 10) / 10) : '—' %></td></tr><% }); if (!byAssignee.length) { %><tr><td colspan="4" class="text-center text-secondary">—</td></tr><% } %></tbody></table></div></div>
+</div>
+<script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = 'Vazirmatn';
+new Chart(document.getElementById('cStatus'), { type: 'doughnut', data: { labels: <%- JSON.stringify(Object.keys(STATUSES).map(function (k) { return STATUSES[k]; })) %>, datasets: [{ data: <%- JSON.stringify(Object.keys(STATUSES).map(function (k) { return byStatus[k] || 0; })) %>, backgroundColor: ['#dc2626', '#16a34a', '#f59e0b', '#9ca3af'] }] }, options: { plugins: { legend: { position: 'bottom', rtl: true } } } });
+new Chart(document.getElementById('cDaily'), { type: 'line', data: { labels: <%- JSON.stringify(daily.map(function (d) { return J.formatDate(d.d).slice(5); })) %>, datasets: [{ label: 'تیکت', data: <%- JSON.stringify(daily.map(function (d) { return Number(d.c); })) %>, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.15)', fill: true, tension: .3 }] }, options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } } });
+</script>

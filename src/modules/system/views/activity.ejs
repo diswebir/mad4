@@ -1,0 +1,29 @@
+<%- include('partials/page-header', { title: 'گزارش فعالیت', icon: 'bi-clock-history', breadcrumbs: [{ title: 'گزارش فعالیت' }], actions: [{ post: '/system/activity/clear', label: 'پاک‌سازی قدیمی‌ها', icon: 'bi-trash', confirm: 'گزارش‌های قدیمی‌تر از ۳۰ روز حذف شوند؟' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card table-card">
+      <div class="card-header">
+        <form class="toolbar" data-auto-submit>
+          <input type="search" class="form-control form-control-sm" name="q" value="<%= query.q || '' %>" placeholder="جستجو…">
+          <select class="form-select form-select-sm" name="action"><option value="">همهٔ اقدامات</option><% Object.keys(actions).forEach(function (k) { %><option value="<%= k %>" <%= query.action === k ? 'selected' : '' %>><%= actions[k] %></option><% }); %></select>
+        </form>
+      </div>
+      <div class="table-responsive"><table class="table table-hover"><thead><tr><th>زمان</th><th>کاربر</th><th>اقدام</th><th>شرح</th><th>IP</th></tr></thead><tbody>
+        <% if (!result.data.length) { %><tr><td colspan="5" class="text-center text-secondary py-4">موردی ثبت نشده است</td></tr><% } %>
+        <% result.data.forEach(function (r) { %>
+        <tr><td class="fs-7 text-nowrap"><%= J.formatDateTime(r.created_at) %></td><td><%= r.user_name || 'سیستم' %> <% if (r.user_role) { %><span class="text-secondary fs-7">(<%= utils.ROLES[r.user_role] %>)</span><% } %></td><td><span class="badge badge-soft-<%= { create: 'success', delete: 'danger', update: 'info', login: 'secondary', logout: 'secondary' }[r.action] || 'primary' %>"><%= actions[r.action] || r.action %></span></td><td class="fs-7"><%= r.description %></td><td class="ltr fs-7 text-secondary"><%= r.ip %></td></tr>
+        <% }); %>
+      </tbody></table></div>
+      <%- include('partials/pagination', { result: result }) %>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-door-open me-1"></i>آخرین ورودها</h6></div>
+      <ul class="list-group list-group-flush">
+        <% logins.forEach(function (l) { %><li class="list-group-item d-flex justify-content-between align-items-center fs-7"><span><i class="bi <%= Number(l.success) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' %> me-1"></i><%= l.user_name || l.username %></span><span class="text-secondary"><%= J.timeAgo(l.created_at) %></span></li><% }); %>
+        <% if (!logins.length) { %><li class="list-group-item text-secondary fs-7">موردی نیست</li><% } %>
+      </ul>
+    </div>
+  </div>
+</div>

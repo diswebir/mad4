@@ -1,0 +1,14 @@
+<% if (!print) { %>
+<%- include('partials/page-header', { title: 'برنامه هفتگی ' + teacher.name, subtitle: J.toPersianDigits(totalHours) + ' زنگ در هفته', icon: 'bi-table', breadcrumbs: [{ title: 'برنامه هفتگی', href: '/academic/schedule' }, { title: teacher.name }], actions: [
+  ...(enabled('academic.schedule_print') ? [{ href: '/academic/schedule/teacher/' + teacher.id + '?print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-outline-secondary', target: '_blank' }] : [])
+] }) %>
+<% } else { %><h5 class="mb-3">برنامهٔ هفتگی <%= teacher.name %> (<%= J.toPersianDigits(totalHours) %> زنگ در هفته)</h5><% } %>
+<div class="card"><div class="table-responsive"><table class="table table-bordered schedule-table mb-0 text-center align-middle">
+  <thead><tr><th style="width:90px">روز / زنگ</th><% for (var p = 1; p <= periods; p++) { %><th>زنگ <%= J.toPersianDigits(p) %><div class="fs-7 fw-normal text-secondary ltr"><%= J.toPersianDigits(times[p-1] || '') %></div></th><% } %></tr></thead>
+  <tbody><% days.forEach(function (d) { %>
+    <tr><th class="bg-light"><%= J.WEEKDAYS[d] %></th>
+    <% for (var p = 1; p <= periods; p++) { var s = grid[d] && grid[d][p]; %>
+      <td class="<%= s ? 'has-slot' : '' %>"><% if (s) { %><div class="fw-semibold"><%= s.subject_title %></div><div class="fs-7"><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a></div><% if (s.room_title) { %><div class="fs-7 text-muted"><%= s.room_title %></div><% } %><% } %></td>
+    <% } %></tr>
+  <% }); %></tbody>
+</table></div></div>
