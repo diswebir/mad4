@@ -1,0 +1,56 @@
+<%- include('partials/page-header', { title: 'درخواست ' + app.code, subtitle: app.first_name + ' ' + app.last_name + ' — ' + (app.grade_title || ''), icon: 'bi-person-plus', breadcrumbs: [{ title: 'پیش‌ثبت‌نام', href: '/admissions' }, { title: app.code }], actions: [
+  ...(app.student_id ? [{ href: '/students/' + app.student_id, label: 'پروندهٔ دانش‌آموز', icon: 'bi-folder2-open', class: 'btn-primary' }] : []),
+  ...(app.file_path ? [{ href: '/files/' + app.file_path, label: 'پیوست', icon: 'bi-paperclip', class: 'btn-light', target: '_blank' }] : [])
+] }) %>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header d-flex align-items-center justify-content-between"><span><i class="bi bi-person me-1"></i>مشخصات دانش‌آموز</span><span class="badge text-bg-<%= STATUS_COLORS[app.status] %>"><%= STATUSES[app.status] %></span></div>
+      <div class="card-body"><div class="row g-2 fs-7">
+        <% [['نام و نام خانوادگی', app.first_name + ' ' + app.last_name], ['کد ملی', app.national_id], ['تاریخ تولد', app.birth_date ? J.formatDate(app.birth_date) : ''], ['محل تولد', app.birth_place], ['جنسیت', GENDERS[app.gender]], ['پایهٔ درخواستی', app.grade_title], ['سال تحصیلی', app.year_title], ['مدرسهٔ قبلی', app.previous_school], ['معدل سال قبل', app.previous_average], ['ایمیل', app.email], ['نشانی', app.address], ['کد پستی', app.postal_code], ['تلفن ثابت', app.home_phone]].forEach(function (p) { %>
+          <div class="col-md-6 d-flex gap-2"><span class="text-secondary" style="min-width:120px"><%= p[0] %>:</span><span class="fw-semibold"><%= p[1] == null || p[1] === '' ? '—' : J.toPersianDigits(String(p[1])) %></span></div>
+        <% }); %>
+        <% if (app.notes) { %><div class="col-12 d-flex gap-2"><span class="text-secondary" style="min-width:120px">توضیحات:</span><span><%= app.notes %></span></div><% } %>
+      </div></div></div>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-people me-1"></i>اولیا</div>
+      <div class="card-body"><div class="row g-2 fs-7">
+        <% [['نام پدر', app.father_name], ['موبایل پدر', app.father_phone], ['کد ملی پدر', app.father_national_id], ['شغل پدر', app.father_job], ['تحصیلات پدر', EDUCATIONS[app.father_education]], ['نام مادر', app.mother_name], ['موبایل مادر', app.mother_phone], ['شغل مادر', app.mother_job], ['تحصیلات مادر', EDUCATIONS[app.mother_education]]].forEach(function (p) { %>
+          <div class="col-md-6 d-flex gap-2"><span class="text-secondary" style="min-width:120px"><%= p[0] %>:</span><span class="fw-semibold <%= /موبایل|کد ملی/.test(p[0]) ? 'ltr' : '' %>"><%= p[1] == null || p[1] === '' ? '—' : p[1] %></span></div>
+        <% }); %>
+      </div></div></div>
+    <div class="card"><div class="card-header"><i class="bi bi-clock-history me-1"></i>تاریخچه</div>
+      <ul class="list-group list-group-flush fs-7">
+        <li class="list-group-item d-flex justify-content-between"><span>ثبت درخواست توسط خانواده<%= app.ip ? ' (IP: ' + app.ip + ')' : '' %></span><span class="text-secondary"><%= J.formatDateTime(app.created_at) %></span></li>
+        <% logs.forEach(function (l) { %><li class="list-group-item d-flex justify-content-between"><span><%= l.description %><% if (l.user_name) { %> <span class="text-secondary">— <%= l.user_name %></span><% } %></span><span class="text-secondary text-nowrap"><%= J.formatDateTime(l.created_at) %></span></li><% }); %>
+      </ul></div>
+  </div>
+  <div class="col-lg-4">
+    <% if (existing && app.status !== 'enrolled') { %><div class="alert alert-warning fs-7"><i class="bi bi-exclamation-triangle me-1"></i>دانش‌آموزی با همین کد ملی در سامانه وجود دارد: <a href="/students/<%= existing.id %>"><%= existing.first_name %> <%= existing.last_name %></a></div><% } %>
+    <% if (app.status === 'enrolled') { %>
+      <div class="card mb-3"><div class="card-body text-center"><i class="bi bi-check-circle-fill text-success fs-2"></i><div class="fw-bold mt-2">ثبت‌نام قطعی شده</div><div class="fs-7 text-secondary">کلاس <%= app.class_title || '' %> — <%= app.reviewer_name || '' %> — <%= app.reviewed_at ? J.formatDateTime(app.reviewed_at) : '' %></div><% if (app.student_id) { %><a href="/students/<%= app.student_id %>" class="btn btn-sm btn-primary mt-2">پروندهٔ دانش‌آموز</a><% } %></div></div>
+    <% } else { %>
+      <% if (enabled('admissions.review')) { %>
+      <div class="card mb-3"><div class="card-header"><i class="bi bi-clipboard-check me-1"></i>بررسی درخواست</div>
+        <form method="post" action="/admissions/<%= app.id %>/status" class="card-body">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="mb-2"><label class="form-label">وضعیت</label><select class="form-select form-select-sm" name="status"><% Object.keys(STATUSES).filter(function (s) { return s !== 'enrolled'; }).forEach(function (s) { %><option value="<%= s %>" <%= app.status === s ? 'selected' : '' %>><%= STATUSES[s] %></option><% }); %></select></div>
+          <div class="mb-2"><label class="form-label">یادداشت / پیام به خانواده</label><textarea class="form-control form-control-sm" name="review_note" rows="3" placeholder="در صفحهٔ پیگیری به خانواده نمایش داده می‌شود"><%= app.review_note || '' %></textarea></div>
+          <% if (enabled('admissions.notify') && app.father_phone) { %><div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="notify" value="1" id="notify1" checked><label class="form-check-label fs-7" for="notify1">پیامک به <span class="ltr"><%= app.father_phone %></span></label></div><% } %>
+          <button class="btn btn-sm btn-primary w-100">ثبت وضعیت</button>
+          <% if (app.reviewer_name) { %><div class="fs-7 text-secondary mt-2">آخرین بررسی: <%= app.reviewer_name %> — <%= app.reviewed_at ? J.formatDateTime(app.reviewed_at) : '' %></div><% } %>
+        </form></div>
+      <% } %>
+      <% if (enabled('admissions.enroll')) { %>
+      <div class="card mb-3 <%= app.status === 'accepted' ? 'border-success' : '' %>"><div class="card-header"><i class="bi bi-mortarboard me-1"></i>ثبت‌نام قطعی</div>
+        <form method="post" action="/admissions/<%= app.id %>/enroll" class="card-body" data-confirm="پروندهٔ دانش‌آموز و حساب کاربری ساخته شود؟">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% if (app.status !== 'accepted') { %><div class="alert alert-light border fs-7 py-2 mb-2">برای ثبت‌نام قطعی ابتدا وضعیت را به «پذیرفته‌شده» تغییر دهید.</div><% } %>
+          <div class="mb-2"><label class="form-label">کلاس</label><select class="form-select form-select-sm" name="class_id" <%= app.status !== 'accepted' ? 'disabled' : '' %>><option value="">— انتخاب کلاس (<%= app.grade_title || 'پایه' %>) —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %> (<%= J.toPersianDigits(counts[c.id] || 0) %><%= c.capacity ? '/' + J.toPersianDigits(c.capacity) : '' %> نفر)</option><% }); %></select><% if (!classes.length) { %><div class="form-text text-danger">کلاس فعالی برای این پایه تعریف نشده است.</div><% } %></div>
+          <div class="mb-2"><label class="form-label">رمز ورود (اختیاری)</label><input class="form-control form-control-sm ltr" name="password" placeholder="پیش‌فرض: رمز پیش‌فرض یا کد ملی" <%= app.status !== 'accepted' ? 'disabled' : '' %>></div>
+          <% if (enabled('admissions.notify') && app.father_phone) { %><div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="notify" value="1" id="notify2" checked <%= app.status !== 'accepted' ? 'disabled' : '' %>><label class="form-check-label fs-7" for="notify2">پیامک نام کاربری و رمز به خانواده</label></div><% } %>
+          <button class="btn btn-sm btn-success w-100" <%= app.status !== 'accepted' || !classes.length ? 'disabled' : '' %>><i class="bi bi-person-check me-1"></i>ساخت پرونده و حساب کاربری</button>
+        </form></div>
+      <% } %>
+      <form method="post" action="/admissions/<%= app.id %>/delete" data-confirm="درخواست حذف شود؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>حذف درخواست</button></form>
+    <% } %>
+  </div>
+</div>

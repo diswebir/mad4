@@ -40,6 +40,7 @@ const TABS = [
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
   { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
+  { key: 'admissions', title: 'پیش‌ثبت‌نام', icon: 'bi-person-plus', feature: 'admissions.public_form' },
   { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
 ];
 const FIELDS = {
@@ -48,13 +49,16 @@ const FIELDS = {
   appearance: ['primary_color', 'default_theme', 'sidebar_style'],
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
+  admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure']
 };
 
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
   const tab = TABS.find((t) => t.key === req.query.tab && (!t.feature || modules.isEnabled(t.feature))) || TABS[0];
-  res.render(v('settings'), { title: 'تنظیمات مدرسه', tabs: TABS.filter((t) => !t.feature || modules.isEnabled(t.feature)), tab: tab.key, s: settings.all() });
+  const extra = {};
+  if (tab.key === 'admissions') { extra.gradeLevels = await db.table('grade_levels').orderBy('sort_order').all(); extra.years = await db.table('academic_years').orderBy('id', 'desc').all(); extra.appCount = await db.table('applications').count(); }
+  res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter((t) => !t.feature || modules.isEnabled(t.feature)), tab: tab.key, s: settings.all() }, extra));
 });
 
 router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'school_logo', maxCount: 1 }, { name: 'signature_image', maxCount: 1 }, { name: 'stamp_image', maxCount: 1 }], { images: true, maxMb: 2, maxFiles: 3 }), async (req, res) => {
@@ -80,6 +84,7 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
       if (req.body['remove_' + k] === '1') { removeFile(settings.get(k)); data[k] = ''; }
     }
   }
+  if (tab === 'admissions') { data.admissions_open = req.body.admissions_open === '1' ? '1' : '0'; data.admissions_grades = [].concat(req.body.admissions_grades || []).map((x) => parseInt(x, 10)).filter(Boolean).join(','); }
   if (data.timezone_offset) J.setTimezoneOffset(data.timezone_offset);
   await settings.setMany(data);
   await activity.log(req, 'settings', 'settings', null, 'به‌روزرسانی تنظیمات: ' + tab);

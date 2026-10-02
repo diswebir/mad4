@@ -1,0 +1,20 @@
+<div class="card"><div class="card-body">
+  <h5 class="mb-1"><i class="bi bi-search me-1"></i>پیگیری پیش‌ثبت‌نام</h5>
+  <p class="text-secondary fs-7 mb-3">کد رهگیری (مانند AP-1405-00001) و کد ملی دانش‌آموز را وارد کنید.</p>
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-5"><input class="form-control ltr" name="code" value="<%= code %>" placeholder="AP-1405-00001" required></div>
+    <div class="col-md-5"><input class="form-control ltr" name="national_id" value="<%= nid %>" placeholder="کد ملی دانش‌آموز" required inputmode="numeric" data-digits maxlength="10"></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i></button></div>
+  </form>
+  <% if (notFound) { %><div class="alert alert-danger py-2 mb-0">درخواستی با این مشخصات یافت نشد. کد رهگیری و کد ملی را بررسی کنید.</div><% } %>
+  <% if (app) { %>
+    <div class="alert alert-<%= STATUS_COLORS[app.status] || 'secondary' %> py-2"><div class="fw-bold">وضعیت: <%= STATUSES[app.status] || app.status %></div><% if (app.review_note && app.status !== 'pending') { %><div class="fs-7 mt-1"><%= app.review_note %></div><% } %></div>
+    <table class="table table-sm fs-7 mb-0"><tbody>
+      <tr><td class="text-secondary" style="width:150px">دانش‌آموز</td><td><%= app.first_name %> <%= app.last_name %></td></tr>
+      <tr><td class="text-secondary">پایهٔ درخواستی</td><td><%= app.grade_title || '—' %></td></tr>
+      <tr><td class="text-secondary">تاریخ ثبت</td><td><%= J.formatDateTime(app.created_at) %></td></tr>
+      <% if (app.status === 'enrolled') { %><tr><td class="text-secondary">کلاس</td><td><%= app.class_title || '—' %></td></tr><% } %>
+      <% if (app.status === 'accepted' || app.status === 'docs_requested') { %><tr><td class="text-secondary">مدارک لازم</td><td><%= docs || '—' %></td></tr><% } %>
+    </tbody></table>
+  <% } %>
+</div></div>

@@ -170,8 +170,13 @@ function createApp() {
     app.use(mod.mount || '/' + mod.key, wrapper);
   }
 
+  // نشانی‌های کوتاه عمومی برای پیش‌ثبت‌نام
+  app.get('/apply', (req, res) => res.redirect('/admissions/apply'));
+  app.get('/apply/track', (req, res) => res.redirect('/admissions/track' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '')));
   // فایل‌های بارگذاری‌شده (فقط برای کاربران واردشده)
-  app.get('/files/{*rel}', auth.requireAuth, (req, res) => {
+  // فایل‌های بارگذاری‌شده: فقط برای کاربران واردشده (به‌جز لوگوی مدرسه که در صفحات عمومی نمایش داده می‌شود)
+  const publicFile = (req, res, next) => { const rel = Array.isArray(req.params.rel) ? req.params.rel.join('/') : String(req.params.rel || ''); if (rel && rel === settings.get('school_logo')) return next(); return auth.requireAuth(req, res, next); };
+  app.get('/files/{*rel}', publicFile, (req, res) => {
     const rel = Array.isArray(req.params.rel) ? req.params.rel.join('/') : String(req.params.rel || '');
     const safe = path.normalize(rel).replace(/^(\.\.(\/|\\|$))+/, '');
     const file = path.join(config.get().uploads.dir, safe);

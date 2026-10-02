@@ -660,6 +660,29 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
         await insert('documents', row);
       }
     }
+    // --- پیش‌ثبت‌نام (درخواست‌های خانواده‌ها با وضعیت‌های مختلف) ---
+    {
+      const APP_STATUS = ['pending', 'pending', 'pending', 'pending', 'reviewing', 'reviewing', 'docs_requested', 'accepted', 'accepted', 'rejected', 'pending', 'reviewing', 'accepted', 'pending'];
+      const notes = { reviewing: null, docs_requested: 'لطفاً تصویر کارنامهٔ سال قبل و عکس ۳×۴ را به دفتر مدرسه تحویل دهید.', accepted: 'برای ثبت‌نام قطعی تا پایان هفته با مدارک به دفتر مدرسه مراجعه کنید.', rejected: 'ظرفیت پایهٔ درخواستی تکمیل شده است.', pending: null };
+      for (let i = 0; i < APP_STATUS.length; i++) {
+        const status = APP_STATUS[i];
+        const gender = chance(0.5) ? 'male' : 'female';
+        const first = pick(gender === 'male' ? MALE : FEMALE); const last = pick(LAST);
+        const g = status === 'rejected' ? 2 : pick([0, 0, 0, 1, 2]);
+        let nid; do { nid = nationalId(); } while (usedNid.has(nid)); usedNid.add(nid);
+        const created = J.addDays(J.todayISO(), -ri(1, 25));
+        const reviewed = status === 'pending' ? null : J.addDays(created, ri(0, 3));
+        await insert('applications', {
+          code: `AP-${jy}-${String(i + 1).padStart(5, '0')}`, academic_year_id: yearId, grade_level_id: gradeIds[g], first_name: first, last_name: last, national_id: nid,
+          birth_date: J.toGregorian(`${jy - 13 - g}/${ri(1, 12)}/${ri(1, 29)}`), birth_place: pick(CITIES), gender, previous_school: pick(['دبستان شهید رجایی', 'دبستان امام رضا', 'دبستان فرهنگ', 'مدرسهٔ نمونهٔ فردوسی', 'دبستان شهدا']),
+          previous_average: Math.round((15 + rnd() * 5) * 100) / 100, father_name: `${pick(['محمد', 'علی', 'حسین', 'رضا', 'مهدی', 'سعید', 'جواد'])} ${last}`, father_phone: mobile(), father_national_id: nationalId(), father_job: pick(FATHER_JOBS), father_education: pick(['diploma', 'bachelor', 'master', 'associate']),
+          mother_name: `${pick(['فاطمه', 'زهرا', 'مریم', 'لیلا', 'سمیه', 'الهام'])} ${pick(LAST)}`, mother_phone: mobile(), mother_job: pick(MOTHER_JOBS), mother_education: pick(['diploma', 'bachelor', 'associate']),
+          address: `${pick(CITIES)}، ${pick(STREETS)}، پلاک ${ri(1, 150)}`, postal_code: digits(10), home_phone: '021' + digits(8), email: chance(0.4) ? `parent${i + 1}@example.com` : null,
+          notes: chance(0.2) ? 'علاقه‌مند به کلاس‌های فوق‌برنامهٔ رباتیک' : null, status, review_note: notes[status], reviewed_by: reviewed ? adminId : null, reviewed_at: reviewed ? reviewed + ' 10:30:00' : null,
+          ip: `5.${ri(1, 250)}.${ri(1, 250)}.${ri(1, 250)}`, created_at: created + ` ${String(ri(8, 22)).padStart(2, '0')}:${String(ri(0, 59)).padStart(2, '0')}:00`, updated_at: reviewed ? reviewed + ' 10:30:00' : null
+        });
+      }
+    }
     // --- فعالیت‌ها ---
     await insert('activity_logs', { user_id: adminId, action: 'seed', entity: 'system', description: 'بارگذاری دادهٔ نمونه', ip: '127.0.0.1', created_at: now });
     for (let i = 0; i < 20; i++) await insert('activity_logs', { user_id: pick([adminId].concat(teacherUserIds)), action: pick(['login', 'update', 'create']), entity: pick(['students', 'attendance', 'exams', 'tickets']), entity_id: ri(1, 200), description: pick(['ورود به سامانه', 'ویرایش پرونده', 'ثبت حضور و غیاب', 'ثبت نمره', 'پاسخ به تیکت']), ip: '192.168.1.' + ri(2, 250), created_at: J.addDays(today, -ri(0, 10)) + ' ' + pad(ri(7, 15), 2) + ':' + pad(ri(0, 59), 2) + ':00' });
@@ -667,7 +690,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     for (let i = 0; i < 30; i++) { const ok = chance(0.85); const u = pick([{ id: adminId, u: adminUsername || 'admin' }].concat(teacherUserIds.map((id, k) => ({ id, u: 'teacher' + (k + 1) })))); await insert('login_logs', { user_id: ok ? u.id : null, username: u.u, ip: '192.168.1.' + ri(2, 250), user_agent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', success: ok ? 1 : 0, created_at: J.addDays(today, -ri(0, 7)) + ' ' + pad(ri(7, 15), 2) + ':' + pad(ri(0, 59), 2) + ':00' }); }
 
     // --- تنظیمات نمایشی ---
-    const setRows = { demo_mode: '1', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
+    const setRows = { demo_mode: '1', admissions_open: '1', admissions_text: 'پیش‌ثبت‌نام پایه‌های هفتم تا نهم سال تحصیلی آینده. پس از بررسی اولیه، نتیجه از طریق پیامک اعلام می‌شود.', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
     for (const [k, v] of Object.entries(setRows)) {
       const ex = await tx.findOne('settings', { key: k });
       if (ex) await tx.update('settings', { value: v, updated_at: now }, { key: k }); else await tx.insert('settings', { key: k, value: v, updated_at: now });

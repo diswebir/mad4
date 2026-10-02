@@ -41,22 +41,7 @@ async function canView(req, student) {
   const scope = await teacherScope(req);
   return scope && scope.includes(student.class_id);
 }
-async function nextStudentNumber() {
-  const prefix = settings.get('student_number_prefix', '') || '';
-  const start = settings.getInt('student_number_next', 1001) || 1001;
-  const recent = await db.table('students').select('student_number').orderBy('id', 'desc').limit(50).all();
-  let n = start;
-  for (const r of recent) {
-    const sn = String(r.student_number || '');
-    if (prefix && !sn.startsWith(prefix)) continue;
-    const num = parseInt(sn.slice(prefix.length), 10);
-    if (!Number.isNaN(num) && num >= n) n = num + 1;
-  }
-  // اطمینان از یکتایی
-  while (await db.exists('students', { student_number: prefix + n })) n++;
-  await settings.set('student_number_next', String(n + 1));
-  return prefix + n;
-}
+const { nextStudentNumber } = require('./service');
 const baseQuery = () => db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').leftJoin('users as u', 'u.id', 's.user_id')
   .select('s.*', 'c.title as class_title', 'g.title as grade_title', 'u.username', 'u.last_login_at', 'u.status as user_status');
 
