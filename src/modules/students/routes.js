@@ -68,7 +68,8 @@ function validateStudent(data, isNew) {
 // ---------- مسیرهای ثابت (قبل از :id) ----------
 router.get('/me', auth.requireRole('student', 'parent'), modules.requireEnabled('students.panel'), async (req, res) => {
   const s = await people.studentOf(req);
-  res.redirect(s ? '/students/' + s.id : '/dashboard');
+  const qs = Object.entries(req.query).filter(([k]) => k !== 'child').map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+  res.redirect(s ? '/students/' + s.id + (qs ? '?' + qs : '') : '/dashboard');
 });
 
 router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {

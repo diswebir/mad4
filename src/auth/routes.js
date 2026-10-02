@@ -27,7 +27,7 @@ function makeCaptcha(req) {
 }
 function demoInfo() {
   if (!settings.getBool('demo_mode')) return null;
-  return { admin: settings.get('demo_admin_username', 'admin'), adminPass: settings.get('demo_admin_password', 'admin123'), teacher: settings.get('demo_teacher_username', 'teacher1'), student: settings.get('demo_student_username', '40001'), pass: settings.get('demo_user_password', '123456') };
+  return { admin: settings.get('demo_admin_username', 'admin'), adminPass: settings.get('demo_admin_password', 'admin123'), teacher: settings.get('demo_teacher_username', 'teacher1'), student: settings.get('demo_student_username', '40001'), staff: settings.get('demo_staff_username', ''), parent: settings.get('demo_parent_username', ''), pass: settings.get('demo_user_password', '123456') };
 }
 
 router.get('/login', auth.requireGuest, (req, res) => {

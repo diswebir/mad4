@@ -31,7 +31,7 @@
       <ul class="dropdown-menu dropdown-menu-start">
         <li><a class="dropdown-item" href="/auth/profile"><i class="bi bi-person"></i>پروفایل من</a></li>
         <li><a class="dropdown-item" href="/auth/password"><i class="bi bi-key"></i>تغییر رمز عبور</a></li>
-        <% if (currentUser.role === 'admin') { %><li><a class="dropdown-item" href="/system/settings"><i class="bi bi-gear"></i>تنظیمات</a></li><% } %>
+        <% if (currentUser.role === 'admin' || can('system.settings')) { %><li><a class="dropdown-item" href="/system/settings"><i class="bi bi-gear"></i>تنظیمات</a></li><% } %>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item text-danger" href="#" data-post="/auth/logout"><i class="bi bi-box-arrow-right"></i>خروج</a></li>
       </ul>

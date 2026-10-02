@@ -111,12 +111,12 @@ router.get('/canned', auth.requireRoleOrPermission(['admin', 'teacher'], 'ticket
 router.post('/canned', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.canned'), async (req, res) => {
   const title = utils.normalizePersian(req.body.title || '').trim(), body = utils.normalizePersian(req.body.body || '').trim();
   if (!title || !body) { req.flash('danger', 'عنوان و متن الزامی است'); return res.redirect('/tickets/canned'); }
-  await db.insert('canned_responses', { user_id: req.body.shared === '1' && req.user.role === 'admin' ? null : req.user.id, title, body, created_at: db.now() });
+  await db.insert('canned_responses', { user_id: req.body.shared === '1' && (req.user.role === 'admin' || req.can('tickets.assign')) ? null : req.user.id, title, body, created_at: db.now() });
   req.flash('success', 'پاسخ آماده ذخیره شد.'); res.redirect('/tickets/canned');
 });
 router.post('/canned/:id/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'tickets.manage'), modules.requireEnabled('tickets.canned'), async (req, res) => {
   const row = await db.findById('canned_responses', req.params.id);
-  if (row && (row.user_id === req.user.id || req.user.role === 'admin')) await db.remove('canned_responses', { id: row.id });
+  if (row && (row.user_id === req.user.id || req.user.role === 'admin' || req.can('tickets.assign'))) await db.remove('canned_responses', { id: row.id });
   res.redirect('/tickets/canned');
 });
 

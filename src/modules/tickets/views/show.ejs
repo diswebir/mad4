@@ -1,5 +1,5 @@
 <%- include('partials/page-header', { title: t.subject, subtitle: '<span class="ltr d-inline-block font-monospace">' + t.code + '</span> · ' + J.formatDateTime(t.created_at) + (t.class_title ? ' · کلاس ' + t.class_title : ''), icon: 'bi-chat-left-text', breadcrumbs: [{ title: 'تیکت‌ها', href: '/tickets' }, { title: t.code }], actions: [
-  ...(currentUser.role === 'admin' ? [{ post: '/tickets/' + t.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-outline-danger', confirm: 'این تیکت و همهٔ پاسخ‌ها حذف شود؟' }] : [])
+  ...(currentUser.role === 'admin' || can('tickets.assign') ? [{ post: '/tickets/' + t.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-outline-danger', confirm: 'این تیکت و همهٔ پاسخ‌ها حذف شود؟' }] : [])
 ] }) %>
 <div class="row g-3">
   <div class="col-lg-8">

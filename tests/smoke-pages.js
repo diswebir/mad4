@@ -1,11 +1,12 @@
 'use strict';
 /** باز کردن فهرستی از صفحات با نقش‌های مختلف و گزارش کدهای غیر ۲۰۰/۳۰۲ به همراه خطا */
 const { Client } = require('./client');
-const roles = { admin: ['admin', 'admin123'], teacher: ['teacher1', '123456'], student: ['40001', '123456'] };
+const roles = { admin: ['admin', 'admin123'], teacher: ['teacher1', '123456'], student: ['40001', '123456'], staff: ['staff1', '123456'], parent: [null, '123456'] };
 async function main() {
   const role = process.argv[2] || 'admin';
   const paths = process.argv.slice(3);
   const c = new Client();
+  if (role === 'parent' && !roles.parent[0]) { const lp = await c.get('/auth/login'); roles.parent[0] = (lp.text.match(/data-u="(09\d{9})"/) || [])[1] || process.env.PARENT_USER; }
   const r = await c.login(roles[role][0], roles[role][1]);
   if (r.status !== 302 || !/dashboard/.test(r.location || '')) { console.log('LOGIN FAILED', r.status, r.location, r.text.slice(0, 300)); process.exit(1); }
   let bad = 0;

@@ -31,8 +31,10 @@
     <a href="#" class="badge badge-soft-primary demo-login" data-u="<%= demo.admin %>" data-p="<%= demo.adminPass %>">مدیر: <%= demo.admin %></a>
     <a href="#" class="badge badge-soft-success demo-login" data-u="<%= demo.teacher %>" data-p="<%= demo.pass %>">معلم: <%= demo.teacher %></a>
     <a href="#" class="badge badge-soft-info demo-login" data-u="<%= demo.student %>" data-p="<%= demo.pass %>">دانش‌آموز: <%= demo.student %></a>
+    <% if (demo.staff) { %><a href="#" class="badge badge-soft-warning demo-login" data-u="<%= demo.staff %>" data-p="<%= demo.pass %>">معاون: <%= demo.staff %></a><% } %>
+    <% if (demo.parent) { %><a href="#" class="badge badge-soft-secondary demo-login" data-u="<%= demo.parent %>" data-p="<%= demo.pass %>">ولی: <%= demo.parent %></a><% } %>
   </div>
-  <div class="text-secondary mt-1">رمز حساب‌های معلم و دانش‌آموز: 123456</div>
+  <div class="text-secondary mt-1">رمز حساب‌های معلم، دانش‌آموز، معاون و ولی: 123456</div>
 </div>
 <script>document.querySelectorAll('.demo-login').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();document.querySelector('[name=username]').value=a.dataset.u;document.querySelector('[name=password]').value=a.dataset.p;});});</script>
 <% } %>

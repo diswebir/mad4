@@ -214,6 +214,16 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
 
     // --- کارمند دفتر ---
     const staffUid = await ensureUser('staff1', { password: passHash, role: 'staff', name: 'معصومه نیکنام', phone: mobile(), status: 'active', created_at: now });
+    { // سمت «معاون آموزشی» برای کارمند نمونه (سمت‌های پیش‌فرض اگر هنوز ساخته نشده‌اند، ایجاد می‌شوند)
+      const perms = require('../../src/core/permissions');
+      if (!(await tx.table('positions').exists())) for (const p of perms.DEFAULT_POSITIONS) await tx.insert('positions', { title: p.title, description: p.description, permissions: JSON.stringify(p.permissions), is_system: 1, created_at: now, updated_at: now });
+      const pos = await tx.findOne('positions', { title: 'معاون آموزشی' });
+      if (pos) await tx.update('users', { position_id: pos.id }, { id: staffUid });
+      // کارمند دوم: دفتردار و مسئول ثبت‌نام (برای پذیرش و گواهی‌ها)
+      const clerkUid = await ensureUser('staff2', { password: passHash, role: 'staff', name: 'سمیه رستگار', phone: mobile(), status: 'active', created_at: now });
+      const pos2 = await tx.findOne('positions', { title: 'دفتردار و مسئول ثبت‌نام' });
+      if (pos2) await tx.update('users', { position_id: pos2.id }, { id: clerkUid });
+    }
 
     // --- مسیرهای سرویس ---
     const routeIds = [];
@@ -311,7 +321,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
           insurance_number: chance(0.8) ? digits(10) : null, special_needs: chance(0.03) ? 'نیاز به نشستن در ردیف جلو' : null, previous_school: g === 0 ? pick(['دبستان شهید بهشتی', 'دبستان امام رضا (ع)', 'دبستان فرهنگ', 'دبستان سعدی', 'دبستان نور']) : null,
           transport_route_id: routeId, notes: null, created_at: now
         });
-        students.push({ id: sid, uid, classIdx: ci, ability, gender, name: `${first} ${last}`, routeId });
+        students.push({ id: sid, uid, classIdx: ci, ability, gender, name: `${first} ${last}`, routeId, sn, fatherName: `${fatherFirst} ${last}`, motherName: `${motherFirst} ${pick(LAST)}` });
       }
     }
     stats.students = students.length;
@@ -328,6 +338,33 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     await tx.update('students', { status: 'suspended' }, { id: inactive[3].id });
     for (const s of inactive.slice(0, 4)) { s.inactive = true; await tx.update('users', { status: 'inactive' }, { id: s.uid }); }
     const active = students.filter((s) => !s.inactive);
+    // --- حساب‌های اولیا (برای ۴۰ دانش‌آموز اول؛ نام کاربری = موبایل پدر، رمز ۱۲۳۴۵۶) ---
+    {
+      let parentCount = 0;
+      const usedPhones = new Set();
+      for (const st of active.slice(0, 40)) {
+        const full = await tx.findOne('students', { id: st.id });
+        if (!full) continue;
+        let phone = full.father_phone; if (!phone || usedPhones.has(phone)) { phone = mobile(); while (usedPhones.has(phone)) phone = mobile(); await tx.update('students', { father_phone: phone }, { id: st.id }); }
+        usedPhones.add(phone);
+        const puid = await ensureUser(phone, { password: passHash, role: 'parent', name: full.father_name, phone, status: 'active', must_change_password: 0, created_at: now });
+        const pid = await insert('parents', { user_id: puid, name: full.father_name, national_id: full.father_national_id, phone, relation: 'father', job: full.father_job, education: full.father_education, address: full.address, created_at: now, updated_at: now });
+        await insert('student_parents', { student_id: st.id, parent_id: pid, relation: 'father', is_primary: 1, created_at: now });
+        parentCount++;
+        if (parentCount <= 6 && full.mother_phone && !usedPhones.has(full.mother_phone)) { // چند مادر هم حساب دارند
+          usedPhones.add(full.mother_phone);
+          const muid = await ensureUser(full.mother_phone, { password: passHash, role: 'parent', name: full.mother_name, phone: full.mother_phone, status: 'active', must_change_password: 0, created_at: now });
+          const mid = await insert('parents', { user_id: muid, name: full.mother_name, national_id: full.mother_national_id, phone: full.mother_phone, relation: 'mother', job: full.mother_job, education: full.mother_education, address: full.address, created_at: now, updated_at: now });
+          await insert('student_parents', { student_id: st.id, parent_id: mid, relation: 'mother', is_primary: 0, created_at: now });
+          parentCount++;
+        }
+      }
+      // یک ولی با دو فرزند (دانش‌آموزان ۱ و ۲ هم‌خانواده فرض می‌شوند)
+      if (active.length > 1) { const p1 = await tx.table('student_parents as sp').join('parents as p', 'p.id', 'sp.parent_id').select('p.id as pid').where('sp.student_id', active[0].id).where('sp.relation', 'father').first(); if (p1 && !(await tx.table('student_parents').where({ student_id: active[1].id, parent_id: p1.pid }).exists())) await insert('student_parents', { student_id: active[1].id, parent_id: p1.pid, relation: 'guardian', is_primary: 0, created_at: now }); }
+      stats.parents = parentCount;
+      const firstParent = await tx.findOne('students', { id: active[0].id });
+      stats.demoParent = firstParent ? firstParent.father_phone : null;
+    }
     // انتقال بین کلاس‌ها
     for (let i = 0; i < 5; i++) {
       const s = pick(active); const from = pick(classIds.filter((c) => c !== classIds[s.classIdx]));
@@ -750,14 +787,14 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     for (let i = 0; i < 30; i++) { const ok = chance(0.85); const u = pick([{ id: adminId, u: adminUsername || 'admin' }].concat(teacherUserIds.map((id, k) => ({ id, u: 'teacher' + (k + 1) })))); await insert('login_logs', { user_id: ok ? u.id : null, username: u.u, ip: '192.168.1.' + ri(2, 250), user_agent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', success: ok ? 1 : 0, created_at: J.addDays(today, -ri(0, 7)) + ' ' + pad(ri(7, 15), 2) + ':' + pad(ri(0, 59), 2) + ':00' }); }
 
     // --- تنظیمات نمایشی ---
-    const setRows = { demo_mode: '1', admissions_open: '1', admissions_text: 'پیش‌ثبت‌نام پایه‌های هفتم تا نهم سال تحصیلی آینده. پس از بررسی اولیه، نتیجه از طریق پیامک اعلام می‌شود.', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
+    const setRows = { demo_mode: '1', demo_staff_username: 'staff1', demo_parent_username: stats.demoParent || '', admissions_open: '1', admissions_text: 'پیش‌ثبت‌نام پایه‌های هفتم تا نهم سال تحصیلی آینده. پس از بررسی اولیه، نتیجه از طریق پیامک اعلام می‌شود.', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
     for (const [k, v] of Object.entries(setRows)) {
       const ex = await tx.findOne('settings', { key: k });
       if (ex) await tx.update('settings', { value: v, updated_at: now }, { key: k }); else await tx.insert('settings', { key: k, value: v, updated_at: now });
     }
   });
   try { await settingsStore.load(); } catch (e) { /* ignore */ }
-  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب، ${stats.lessonLogs} گزارش تدریس`);
+  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب، ${stats.lessonLogs} گزارش تدریس، ${stats.parents} حساب ولی`);
   return stats;
 }
 
