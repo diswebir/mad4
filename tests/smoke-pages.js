@@ -16,7 +16,7 @@ async function main() {
     const ms = Date.now() - t;
     let note = '';
     if (res.status >= 400 || res.status === 500) {
-      bad++;
+      if (!(res.status === 403 && role !== 'admin')) bad++; // ۴۰۳ برای نقش‌های محدود پاسخ درست است
       const m = /<pre[^>]*>([\s\S]*?)<\/pre>/.exec(res.text) || /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(res.text);
       note = m ? m[1].replace(/\s+/g, ' ').slice(0, 400) : res.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 300);
     } else if (res.status === 302) note = '-> ' + res.location;
