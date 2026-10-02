@@ -39,6 +39,7 @@ const TABS = [
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
   { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
+  { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
   { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
 ];
 const FIELDS = {
@@ -46,6 +47,7 @@ const FIELDS = {
   academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
   appearance: ['primary_color', 'default_theme', 'sidebar_style'],
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length'],
+  documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure']
 };
@@ -55,7 +57,8 @@ router.get('/settings', (req, res) => {
   res.render(v('settings'), { title: 'تنظیمات مدرسه', tabs: TABS.filter((t) => !t.feature || modules.isEnabled(t.feature)), tab: tab.key, s: settings.all() });
 });
 
-router.post('/settings/:tab', ...upload.form('branding', 'single', 'school_logo', { images: true, maxMb: 2, maxFiles: 1 }), async (req, res) => {
+router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'school_logo', maxCount: 1 }, { name: 'signature_image', maxCount: 1 }, { name: 'stamp_image', maxCount: 1 }], { images: true, maxMb: 2, maxFiles: 3 }), async (req, res) => {
+  const file = (n) => (req.files && req.files[n] && req.files[n][0]) || null;
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/system/settings?tab=' + req.params.tab); }
   const tab = req.params.tab;
   const keys = FIELDS[tab];
@@ -69,8 +72,14 @@ router.post('/settings/:tab', ...upload.form('branding', 'single', 'school_logo'
     if (/_(score|attempts|minutes|days|periods|threshold|next|page|port|loans|length|keep|year)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
     data[k] = val;
   }
-  if (tab === 'school' && req.file) { removeFile(settings.get('school_logo')); data.school_logo = relPath(req.file); }
+  if (tab === 'school' && file('school_logo')) { removeFile(settings.get('school_logo')); data.school_logo = relPath(file('school_logo')); }
   if (tab === 'school' && req.body.remove_logo === '1') { removeFile(settings.get('school_logo')); data.school_logo = ''; }
+  if (tab === 'documents') {
+    for (const k of ['signature_image', 'stamp_image']) {
+      if (file(k)) { removeFile(settings.get(k)); data[k] = relPath(file(k)); }
+      if (req.body['remove_' + k] === '1') { removeFile(settings.get(k)); data[k] = ''; }
+    }
+  }
   if (data.timezone_offset) J.setTimezoneOffset(data.timezone_offset);
   await settings.setMany(data);
   await activity.log(req, 'settings', 'settings', null, 'به‌روزرسانی تنظیمات: ' + tab);

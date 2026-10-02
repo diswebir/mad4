@@ -51,6 +51,20 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('login_max_attempts', 'حداکثر تلاش ناموفق', { col: 4, ltr: true }) %><%- inp('login_lock_minutes', 'مدت قفل (دقیقه)', { col: 4, ltr: true }) %><%- inp('session_days', 'طول نشست «مرا به خاطر بسپار» (روز)', { col: 4, ltr: true }) %>
         <%- sw('password_reset_enabled', 'بازیابی رمز عبور توسط خود کاربر (کد یک‌بارمصرف پیامکی/ایمیلی)') %><%- inp('password_min_length', 'حداقل طول رمز عبور', { col: 4, ltr: true, help: 'بین ۴ تا ۳۲' }) %>
         <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>توکن CSRF، هدرهای امنیتی (helmet)، هش رمز عبور (bcrypt) و بازسازی نشست پس از ورود همیشه فعال هستند. بازیابی رمز نیازمند فعال بودن قابلیت «بازیابی رمز عبور» در ماژول احراز هویت و یک کانال ارسال (پیامک یا ایمیل) است؛ در حالت درگاه «لاگ»، کد در «لاگ پیامک» قابل مشاهده است تا مدیر آن را به کاربر اعلام کند.</div></div>
+      <% } else if (tab === 'documents') { %>
+        <div class="col-12"><h6 class="text-brand">سربرگ رسمی</h6></div>
+        <%- inp('school_district', 'ادارهٔ آموزش و پرورش / منطقه', { col: 6, placeholder: 'مثال: ادارهٔ آموزش و پرورش ناحیهٔ ۲ شیراز' }) %>
+        <%- inp('signatory_title', 'عنوان امضاکننده', { col: 6, help: 'نام امضاکننده از «نام مدیر» در تب مدرسه خوانده می‌شود' }) %>
+        <%- inp('letterhead_header', 'سطرهای بالای سربرگ', { col: 6, type: 'textarea', help: 'هر سطر در یک خط (مثال: جمهوری اسلامی ایران / وزارت آموزش و پرورش)' }) %>
+        <%- inp('letterhead_footer', 'پاورقی سربرگ', { col: 6, type: 'textarea', help: 'در صورت خالی بودن، آدرس و تلفن مدرسه چاپ می‌شود' }) %>
+        <div class="col-md-6"><label class="form-label">تصویر امضای مدیر</label><input class="form-control" type="file" name="signature_image" accept="image/*">
+          <% if (s.signature_image) { %><div class="d-flex align-items-center gap-2 mt-2"><img src="/files/<%= s.signature_image %>" style="height:48px" class="rounded border"><div class="form-check"><input type="checkbox" class="form-check-input" name="remove_signature_image" value="1" id="rmsig"><label for="rmsig" class="form-check-label fs-7">حذف امضا</label></div></div><% } %>
+          <div class="form-text">PNG با پس‌زمینهٔ شفاف توصیه می‌شود (حداکثر ۲ مگابایت)</div></div>
+        <div class="col-md-6"><label class="form-label">تصویر مهر مدرسه</label><input class="form-control" type="file" name="stamp_image" accept="image/*">
+          <% if (s.stamp_image) { %><div class="d-flex align-items-center gap-2 mt-2"><img src="/files/<%= s.stamp_image %>" style="height:48px" class="rounded border"><div class="form-check"><input type="checkbox" class="form-check-input" name="remove_stamp_image" value="1" id="rmstamp"><label for="rmstamp" class="form-check-label fs-7">حذف مهر</label></div></div><% } %></div>
+        <div class="col-12"><h6 class="text-brand mt-2">قالب گواهی اشتغال به تحصیل</h6></div>
+        <%- inp('certificate_template', 'متن پیش‌فرض گواهی', { col: 12, type: 'textarea', help: 'متغیرها: {student} {father} {student_number} {national_id} {birth_date} {class} {grade} {year} {school} {date} {principal} {recipient}' }) %>
+        <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>برای درج نشانی استعلام روی اسناد، «نشانی عمومی سامانه» را در تب پیامک تنظیم کنید. پیش‌نمایش سربرگ: <a href="/documents/new?type=certificate" target="_blank">صدور گواهی</a>.</div></div>
       <% } else if (tab === 'sms') { %>
         <%- sw('sms_enabled', 'فعال‌سازی ارسال پیامک') %>
         <%- sel('sms_provider', 'درگاه', { log: 'فقط ثبت در لاگ (آزمایشی، بدون هزینه)', kavenegar: 'کاوه‌نگار', webhook: 'وب‌هوک سفارشی (POST JSON)' }) %>

@@ -66,7 +66,7 @@ crud(router, {
   query: (q) => q.leftJoin('academic_years as y', 'y.id', 't.academic_year_id').select('t.*', 'y.title as year_title'),
   fields: [
     { name: 'academic_year_id', label: 'سال تحصیلی', type: 'select', required: true, options: optYears, list: true, filter: true, format: (v, r) => utils.escapeHtml(r.year_title || '') },
-    { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, placeholder: 'نوبت اول' },
+    { name: 'title', label: 'عنوان', type: 'text', required: true, list: true, search: true, placeholder: 'نوبت اول' },
     { name: 'number', label: 'شماره نوبت', type: 'number', required: true, min: 1, max: 4, list: true, col: 3 },
     { name: 'start_date', label: 'شروع', type: 'date', required: true, list: true },
     { name: 'end_date', label: 'پایان', type: 'date', required: true, list: true },
@@ -77,6 +77,7 @@ crud(router, {
     ? { post: '/academic/terms/' + r.id + '/unlock', label: 'بازکردن قفل نمرات', icon: 'bi-unlock', class: 'btn-light text-warning', confirm: 'قفل نمرات این نوبت برداشته شود؟ معلمان دوباره می‌توانند نمرات را تغییر دهند.' }
     : { post: '/academic/terms/' + r.id + '/lock', label: 'نهایی‌سازی و قفل نمرات', icon: 'bi-lock', class: 'btn-light text-success', confirm: 'نمرات این نوبت نهایی و قفل شود؟ پس از آن تغییر نمره فقط توسط مدیر و با ثبت دلیل ممکن است.' }] : [],
   defaults: async () => ({ academic_year_id: await currentYearId(), number: 1 }),
+  beforeDelete: async (row) => (await db.exists('exams', { term_id: row.id }) ? 'برای این نوبت آزمون ثبت شده است؛ ابتدا آزمون‌ها را حذف یا منتقل کنید' : Number(row.is_locked) ? 'نوبت نهایی‌شده قابل حذف نیست' : true),
   afterSave: async (id, data) => { if (Number(data.is_current)) await db.table('terms').where('id', '!=', id).update({ is_current: 0 }); }
 });
 

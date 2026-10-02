@@ -18,6 +18,8 @@ var guardianName = s.guardian_type === 'mother' ? s.mother_name : (s.guardian_ty
   ...(enabled('students.id_card') ? [{ href: '/students/' + s.id + '/card', label: 'کارت', icon: 'bi-person-badge', class: 'btn-light', target: '_blank' }] : []),
   ...(enabled('students.profile_print') && !isStudent ? [{ href: '/students/' + s.id + '?print=1', label: 'چاپ پرونده', icon: 'bi-printer', class: 'btn-light', target: '_blank' }] : []),
   ...(enabled('tickets') && !isStudent && canManage ? [{ href: '/tickets/new?student_id=' + s.id, label: 'تیکت', icon: 'bi-chat-left-text', class: 'btn-light' }] : []),
+  ...(enabled('documents.certificates') && !isStudent && can('documents.issue') ? [{ href: '/documents/new?type=certificate&student_id=' + s.id, label: 'گواهی', icon: 'bi-patch-check', class: 'btn-light' }] : []),
+  ...(enabled('documents.report_card') && enabled('exams') && !isStudent && can('documents.issue') ? [{ href: '/documents/report-card/' + s.id, label: 'کارنامهٔ رسمی', icon: 'bi-file-earmark-text', class: 'btn-light' }] : []),
   ...(canManage ? [{ href: '/students/' + s.id + '/edit', label: 'ویرایش پرونده', icon: 'bi-pencil', class: 'btn-primary' }] : [])
 ] }) %>
 

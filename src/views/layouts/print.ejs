@@ -21,13 +21,13 @@
   <span class="text-secondary fs-7 ms-auto">برای حذف سربرگ/پاورقی مرورگر، در پنجرهٔ چاپ گزینهٔ «Headers and footers» را غیرفعال کنید.</span>
 </div>
 <div class="print-wrap p-4">
-  <div class="print-header d-flex align-items-center justify-content-between">
+  <% if (typeof letterhead === 'undefined' || !letterhead) { %><div class="print-header d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-3">
       <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" style="height:52px"><% } else { %><img src="/assets/img/favicon.svg" alt="" style="height:44px"><% } %>
       <div><div class="fw-bold fs-5"><%= school('school_name', 'سامانه مدیریت مدرسه') %></div><div class="text-secondary fs-7"><%= school('school_slogan', '') %></div></div>
     </div>
     <div class="text-end fs-7 text-secondary"><div><%= title %></div><div>تاریخ چاپ: <%= J.formatLong(J.todayISO()) %></div></div>
-  </div>
+  </div><% } %>
   <%- body %>
 </div>
 </body>

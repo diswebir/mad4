@@ -1,0 +1,37 @@
+<%- include('partials/page-header', { title: title, icon: TYPES[type].icon, breadcrumbs: [{ title: 'اسناد و گواهی‌ها', href: '/documents' }, { title: TYPES[type].title }] }) %>
+<form method="post" action="/documents" class="row g-3">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="type" value="<%= type %>">
+  <div class="col-lg-8">
+    <div class="card"><div class="card-body">
+      <% if (errors.length) { %><div class="alert alert-danger py-2"><ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e %></li><% }); %></ul></div><% } %>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label <%= type === 'certificate' ? 'required' : '' %>">دانش‌آموز</label>
+          <select class="form-select" name="student_id" id="student_id" onchange="var u = new URL(location.href); u.searchParams.set('student_id', this.value); u.searchParams.set('type', '<%= type %>'); location.href = u.toString();">
+            <option value="">— <%= type === 'certificate' ? 'انتخاب کنید' : 'بدون دانش‌آموز (نامهٔ عمومی)' %> —</option>
+            <% students.forEach(function (o) { %><option value="<%= o.value %>" <%= String(data.student_id || (student ? student.id : '')) === String(o.value) ? 'selected' : '' %>><%= o.label %></option><% }); %>
+          </select></div>
+        <div class="col-md-6"><label class="form-label required">عنوان سند</label><input class="form-control" name="title" value="<%= data.title %>" required maxlength="200"></div>
+        <div class="col-md-6"><label class="form-label">گیرنده / مرجع ارائه</label><input class="form-control" name="recipient" value="<%= data.recipient %>" maxlength="200" placeholder="مثال: ادارهٔ بیمه، سفارت، باشگاه ورزشی"><div class="form-text">به‌جای <code>{recipient}</code> در متن قرار می‌گیرد.</div></div>
+        <div class="col-md-6"><label class="form-label">موضوع / هدف صدور</label><input class="form-control" name="purpose" value="<%= data.purpose %>" maxlength="200"></div>
+        <div class="col-12"><label class="form-label required">متن سند</label><textarea class="form-control" name="body" rows="9" required><%= data.body %></textarea>
+          <div class="form-text">متغیرهای قابل استفاده: <code>{student}</code> <code>{father}</code> <code>{student_number}</code> <code>{national_id}</code> <code>{birth_date}</code> <code>{class}</code> <code>{grade}</code> <code>{year}</code> <code>{school}</code> <code>{date}</code> <code>{principal}</code> <code>{recipient}</code> — هنگام صدور با مقادیر واقعی جایگزین می‌شوند.</div></div>
+      </div>
+    </div>
+    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center"><span class="fs-7 text-secondary">پس از صدور، شمارهٔ سریال و کد استعلام به‌صورت خودکار تولید می‌شود و متن سند قابل تغییر نیست.</span><button class="btn btn-primary"><i class="bi bi-printer me-1"></i>صدور و چاپ</button></div></div>
+  </div>
+  <div class="col-lg-4">
+    <% if (student) { %><div class="card mb-3"><div class="card-header"><h6><i class="bi bi-person-vcard me-1"></i>اطلاعات دانش‌آموز</h6></div><ul class="list-group list-group-flush fs-7">
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">نام</span><a href="/students/<%= student.id %>"><%= vars.student %></a></li>
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">نام پدر</span><span><%= vars.father %></span></li>
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">شمارهٔ دانش‌آموزی</span><span class="ltr"><%= vars.student_number %></span></li>
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">کد ملی</span><span class="ltr"><%= vars.national_id %></span></li>
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">پایه / کلاس</span><span><%= vars.grade %> / <%= vars.class %></span></li>
+      <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">سال تحصیلی</span><span><%= vars.year %></span></li>
+    </ul></div><% } %>
+    <div class="card"><div class="card-header"><h6><i class="bi bi-info-circle me-1"></i>راهنما</h6></div><div class="card-body fs-7 text-secondary">
+      <p class="mb-2">سند با سربرگ رسمی مدرسه (آرم، عنوان اداره، نام مدرسه)، شمارهٔ سریال، تاریخ، امضا و مهر مدیر چاپ می‌شود.</p>
+      <p class="mb-2">قالب پیش‌فرض گواهی و تصاویر امضا/مهر از <a href="/system/settings?tab=documents">تنظیمات → اسناد و سربرگ</a> قابل تغییر است.</p>
+      <p class="mb-0">در صورت اشتباه، سند را از بایگانی «ابطال» کنید؛ در استعلام عمومی به‌صورت «باطل» نمایش داده می‌شود.</p>
+    </div></div>
+  </div>
+</form>

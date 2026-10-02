@@ -1,0 +1,16 @@
+<div class="no-print mb-3 d-flex gap-2 align-items-center fs-7"><form method="get" class="d-flex gap-2 align-items-center"><label class="text-secondary">نوبت:</label><select class="form-select form-select-sm w-auto" name="term_id" onchange="this.form.submit()"><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select></form></div>
+<div class="official-doc" style="max-width:1000px;margin:0 auto">
+  <%- include('partials/letterhead', { lh: lh, serial: serial, date: J.todayISO() }) %>
+  <h5 class="text-center fw-bold mb-1">ریزنمرات درس <%= cs.subject_title %> — کلاس <%= cs.class_title %></h5>
+  <div class="text-center fs-7 text-secondary mb-3"><%= term ? term.title + ' · سال تحصیلی ' + J.toPersianDigits(term.year_title) : '' %> · دبیر: <%= cs.teacher_name || '—' %><% if (term && Number(term.is_locked)) { %> · <span class="badge text-bg-success">نهایی</span><% } %></div>
+  <% if (!exams.length) { %><div class="alert alert-light border text-center">برای این درس در نوبت انتخاب‌شده آزمونی ثبت نشده است.</div><% } else { %>
+  <table class="table table-bordered table-sm" style="font-size:12px">
+    <thead><tr><th style="width:30px">#</th><th>دانش‌آموز</th><th style="width:80px">ش. دانش‌آموزی</th><% exams.forEach(function (e) { %><th class="text-center" style="min-width:60px"><div><%= e.title %></div><div class="fw-normal text-secondary"><%= J.formatDate(e.date) %> · از <%= J.toPersianDigits(e.max_score) %><%= Number(e.weight) !== 1 ? ' · ضریب ' + J.toPersianDigits(e.weight) : '' %></div></th><% }); %><th class="text-center" style="width:80px">نمرهٔ نهایی (از ۲۰)</th></tr></thead>
+    <tbody><% rows.forEach(function (r, i) { %><tr><td class="text-center"><%= J.toPersianDigits(i + 1) %></td><td><%= r.s.first_name %> <%= r.s.last_name %></td><td class="ltr text-end"><%= J.toPersianDigits(r.s.student_number || '') %></td>
+      <% r.cells.forEach(function (g) { %><td class="text-center"><% if (!g) { %>—<% } else if (g.score != null) { %><%= J.toPersianDigits(Number(g.score)) %><% } else if (g.descriptive) { %><%= utils.DESCRIPTIVE_GRADES[g.descriptive] || '' %><% } else if (g.note && /^غایب/.test(g.note)) { %><span class="text-danger">غ</span><% } else { %>—<% } %></td><% }); %>
+      <td class="text-center fw-bold"><%= r.final != null ? J.toPersianDigits(r.final) : '—' %></td></tr><% }); %></tbody>
+  </table>
+  <% } %>
+  <div class="d-flex justify-content-between fs-7 mt-4"><div class="text-center" style="min-width:180px"><div class="fw-bold">دبیر درس</div><div class="text-secondary"><%= cs.teacher_name || '' %></div><div style="height:50px"></div></div>
+    <div style="min-width:220px"><%- include('partials/signature', { lh: lh, verifyCode: null }) %></div></div>
+</div>

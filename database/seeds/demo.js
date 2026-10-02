@@ -625,6 +625,41 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
       const pid = await insert('polls', { question: p[0], description: null, options: JSON.stringify(p[1]), audience: p[2], class_id: null, is_active: 1, multiple: p[3], ends_at: J.addDays(today, ri(5, 20)), created_by: adminId, created_at: J.addDays(today, -ri(1, 8)) + ' 09:00:00' });
       for (const s of shuffle(active).slice(0, ri(40, 120))) await insert('poll_votes', { poll_id: pid, user_id: s.uid, option_index: ri(0, p[1].length - 1), created_at: now });
     }
+    // --- اسناد رسمی (گواهی اشتغال به تحصیل، نامه، کارنامهٔ رسمی) ---
+    {
+      const jy = J.toJalaliParts(today).jy;
+      const yearRow = await tx.table('academic_years').where('is_current', 1).first();
+      const yearTitle = yearRow ? yearRow.title : '';
+      const recipients = ['ادارهٔ بیمهٔ سلامت', 'باشگاه فرهنگی ورزشی', 'سفارت', 'بانک ملی', 'ادارهٔ گذرنامه', 'کانون پرورش فکری', 'شرکت بیمهٔ ایران', 'فدراسیون شطرنج'];
+      const docStudents = shuffle(active).slice(0, 14);
+      let cnt = { 'گ': 0, 'ن': 0, 'ک': 0 };
+      const codeOf = () => Array.from({ length: 10 }, () => '0123456789ABCDEF'[ri(0, 15)]).join('');
+      for (let i = 0; i < docStudents.length; i++) {
+        const st = docStudents[i];
+        const full = await tx.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').select('s.*', 'c.title as class_title', 'g.title as grade_title').where('s.id', st.id).first();
+        const issuedAt = J.addDays(today, -ri(1, 40));
+        const type = i < 9 ? 'certificate' : i < 11 ? 'letter' : 'report_card';
+        const prefix = type === 'certificate' ? 'گ' : type === 'letter' ? 'ن' : 'ک';
+        cnt[prefix]++;
+        const serial = `${prefix}-${jy}-${String(cnt[prefix]).padStart(4, '0')}`;
+        const recipient = pick(recipients);
+        let row = { type, serial, student_id: st.id, issued_at: issuedAt, issued_by: adminId, verify_code: codeOf(), status: i === 2 ? 'revoked' : 'valid', revoked_at: i === 2 ? now : null, revoke_reason: i === 2 ? 'اشتباه در نام گیرنده؛ نسخهٔ جدید صادر شد' : null, class_id: full.class_id, created_at: now };
+        if (type === 'certificate') {
+          row.title = 'گواهی اشتغال به تحصیل'; row.recipient = recipient; row.purpose = 'ارائه به ' + recipient;
+          row.body = `بدین‌وسیله گواهی می‌شود ${full.first_name} ${full.last_name} فرزند ${full.father_name || '—'} به شمارهٔ دانش‌آموزی ${J.toPersianDigits(full.student_number)} و کد ملی ${J.toPersianDigits(full.national_id || '')}، در سال تحصیلی ${J.toPersianDigits(yearTitle)} در پایهٔ ${full.grade_title || ''} کلاس ${full.class_title || ''} این آموزشگاه مشغول به تحصیل است.\nاین گواهی بنا به درخواست نامبرده جهت ارائه به ${recipient} صادر گردیده و فاقد هرگونه ارزش دیگری است.`;
+        } else if (type === 'letter') {
+          row.title = 'معرفی‌نامه برای شرکت در مسابقات'; row.recipient = 'ادارهٔ تربیت بدنی'; row.purpose = 'معرفی دانش‌آموز';
+          row.body = `با سلام و احترام\nبدین‌وسیله دانش‌آموز ${full.first_name} ${full.last_name} از کلاس ${full.class_title || ''} این آموزشگاه جهت شرکت در مسابقات ورزشی منطقه معرفی می‌گردد. خواهشمند است همکاری لازم را مبذول فرمایید.\nبا تشکر`;
+        } else {
+          row.title = `کارنامهٔ نوبت اول — ${full.first_name} ${full.last_name}`; row.term_id = term1;
+          const subjRows = await tx.table('class_subjects as cs').join('subjects as sb', 'sb.id', 'cs.subject_id').select('sb.title', 'cs.weekly_hours', 'sb.id as sid').where('cs.class_id', full.class_id).all();
+          const subjects = subjRows.map((r) => ({ title: r.title, hours: r.weekly_hours, score: Math.round((11 + rnd() * 9) * 100) / 100, desc: null, classAvg: Math.round((12 + rnd() * 5) * 100) / 100 }));
+          const gpa = subjects.length ? Math.round(subjects.reduce((a, b) => a + b.score, 0) / subjects.length * 100) / 100 : null;
+          row.data = JSON.stringify({ student: { id: full.id, name: `${full.first_name} ${full.last_name}`, father: full.father_name, student_number: full.student_number, national_id: full.national_id, class: full.class_title, grade: full.grade_title, class_id: full.class_id }, term: { id: term1, title: 'نوبت اول', year: yearTitle, is_locked: 0 }, subjects, gpa, rank: ri(1, 20), classSize: 20, classAvg: 15.2, attendance: { absent: ri(0, 3), late: ri(0, 2), excused: ri(0, 1), leave: 0 }, remark: 'عملکرد خوب؛ با تلاش بیشتر می‌تواند بهتر شود.', pass: 10, descriptive: false });
+        }
+        await insert('documents', row);
+      }
+    }
     // --- فعالیت‌ها ---
     await insert('activity_logs', { user_id: adminId, action: 'seed', entity: 'system', description: 'بارگذاری دادهٔ نمونه', ip: '127.0.0.1', created_at: now });
     for (let i = 0; i < 20; i++) await insert('activity_logs', { user_id: pick([adminId].concat(teacherUserIds)), action: pick(['login', 'update', 'create']), entity: pick(['students', 'attendance', 'exams', 'tickets']), entity_id: ri(1, 200), description: pick(['ورود به سامانه', 'ویرایش پرونده', 'ثبت حضور و غیاب', 'ثبت نمره', 'پاسخ به تیکت']), ip: '192.168.1.' + ri(2, 250), created_at: J.addDays(today, -ri(0, 10)) + ' ' + pad(ri(7, 15), 2) + ':' + pad(ri(0, 59), 2) + ':00' });
@@ -632,7 +667,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     for (let i = 0; i < 30; i++) { const ok = chance(0.85); const u = pick([{ id: adminId, u: adminUsername || 'admin' }].concat(teacherUserIds.map((id, k) => ({ id, u: 'teacher' + (k + 1) })))); await insert('login_logs', { user_id: ok ? u.id : null, username: u.u, ip: '192.168.1.' + ri(2, 250), user_agent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', success: ok ? 1 : 0, created_at: J.addDays(today, -ri(0, 7)) + ' ' + pad(ri(7, 15), 2) + ':' + pad(ri(0, 59), 2) + ':00' }); }
 
     // --- تنظیمات نمایشی ---
-    const setRows = { demo_mode: '1', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه' };
+    const setRows = { demo_mode: '1', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
     for (const [k, v] of Object.entries(setRows)) {
       const ex = await tx.findOne('settings', { key: k });
       if (ex) await tx.update('settings', { value: v, updated_at: now }, { key: k }); else await tx.insert('settings', { key: k, value: v, updated_at: now });

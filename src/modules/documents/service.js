@@ -17,7 +17,7 @@ const TYPES = {
 /** سریال یکتا به شکل «گ-1405-0001» (شمارنده به ازای نوع و سال شمسی) */
 async function nextSerial(type) {
   const t = TYPES[type] || { prefix: 'س' };
-  const jy = J.toJalali(J.todayISO()).jy;
+  const jy = J.toJalaliParts(J.todayISO()).jy;
   const base = `${t.prefix}-${jy}-`;
   const last = await db.table('documents').where('serial', 'like', base + '%').orderBy('id', 'desc').first();
   let n = last ? (parseInt(String(last.serial).slice(base.length), 10) || 0) : 0;
@@ -39,20 +39,7 @@ async function newVerifyCode() {
 function fill(template, vars) {
   return String(template || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] == null || vars[k] === '' ? '—' : String(vars[k])));
 }
-/** متغیرهای قالب برای یک دانش‌آموز */
-async function studentVars(studentId, extra) {
-  const s = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id')
-    .select('s.*', 'c.title as class_title', 'g.title as grade_title').where('s.id', studentId).first();
-  if (!s) return null;
-  const year = await db.table('academic_years').where('is_current', 1).first();
-  return Object.assign({
-    student: `${s.first_name} ${s.last_name}`, first_name: s.first_name, last_name: s.last_name,
-    father: s.father_name || '—', student_number: J.toPersianDigits(s.student_number || ''), national_id: J.toPersianDigits(s.national_id || ''),
-    birth_date: s.birth_date ? J.formatDate(s.birth_date) : '—', class: s.class_title || '—', grade: s.grade_title || '—',
-    year: year ? J.toPersianDigits(year.title) : '—', school: settings.get('school_name', ''), date: J.formatDate(J.todayISO()),
-    principal: settings.get('principal_name', ''), recipient: '—'
-  }, extra || {}), s;
-}
+/** دانش‌آموز + متغیرهای قالب */
 async function studentContext(studentId, extra) {
   const s = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id')
     .select('s.*', 'c.title as class_title', 'g.title as grade_title').where('s.id', studentId).first();
@@ -93,4 +80,4 @@ function letterhead() {
     signatory: settings.get('principal_name', ''), signatoryTitle: settings.get('signatory_title', 'مدیر مدرسه'), school: settings.get('school_name', '')
   };
 }
-module.exports = { TYPES, nextSerial, newVerifyCode, fill, studentVars, studentContext, issue, baseQuery, parseData, verifyUrl, letterhead, utils };
+module.exports = { TYPES, nextSerial, newVerifyCode, fill, studentContext, issue, baseQuery, parseData, verifyUrl, letterhead, utils };

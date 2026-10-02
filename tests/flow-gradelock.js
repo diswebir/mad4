@@ -1,6 +1,7 @@
 'use strict';
 /** جریان قفل نمرات نوبت: ایجاد آزمون، قفل نوبت، منع معلم، ویرایش مدیر با دلیل، تاریخچه، کارنامهٔ نهایی، بازکردن قفل، غیرفعال کردن قابلیت */
 const { Client } = require('./client');
+const J = require('../src/core/jalali');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
@@ -14,7 +15,8 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   assert(yearId, 'academic year id found: ' + yearId);
   r = await a.post('/academic/terms', { academic_year_id: yearId, title: termTitle, number: 3, start_date: '۱۴۰۵/۱۲/۰۱', end_date: '۱۴۰۵/۱۲/۲۹', is_current: '0' }); assert(r.status === 302, 'create test term');
   r = await a.get('/academic/terms?q=' + encodeURIComponent('نوبت تست قفل'));
-  const termId = (r.text.match(/\/academic\/terms\/(\d+)\/edit/) || [])[1]; assert(termId, 'term id: ' + termId);
+  const termId = (r.text.match(new RegExp(J.toPersianDigits(termTitle) + '[\\s\\S]*?/academic/terms/(\\d+)/edit')) || [])[1]; assert(termId, 'term id: ' + termId);
+  assert(!/نوبت اول/.test(r.text.slice(r.text.indexOf('<tbody'))), 'search filters terms list to the test term only');
   assert(/باز<\/span>/.test(r.text) && /\/lock"/.test(r.text), 'terms list shows open status + lock action');
 
   // آزمون معلم در این نوبت

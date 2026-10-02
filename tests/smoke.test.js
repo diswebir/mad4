@@ -8,9 +8,9 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
 const PAGES = {
-  admin: ['/dashboard', '/users', '/academic/classes', '/academic/schedule', '/teachers', '/students', '/students/1', '/attendance', '/attendance/report/daily', '/exams', '/exams/analytics', '/homework', '/tickets', '/tickets/stats', '/messages', '/announcements', '/notifications', '/discipline', '/discipline/report', '/health', '/health/alerts', '/counseling', '/calendar', '/polls', '/finance', '/finance/invoices', '/finance/reports', '/library', '/library/loans', '/library/overdue', '/transport', '/hr/leaves', '/reports', '/reports/students', '/reports/attendance', '/reports/grades', '/reports/teachers', '/search?q=%D8%B9%D9%84%DB%8C', '/system/settings', '/system/modules', '/system/backup', '/system/activity', '/system/jobs', '/system/sms-log', '/users/positions', '/parents', '/academic/years', '/academic/terms', '/exams/changes', '/enrollments', '/enrollments/promote', '/students/1?tab=enrollments'],
+  admin: ['/dashboard', '/users', '/academic/classes', '/academic/schedule', '/teachers', '/students', '/students/1', '/attendance', '/attendance/report/daily', '/exams', '/exams/analytics', '/homework', '/tickets', '/tickets/stats', '/messages', '/announcements', '/notifications', '/discipline', '/discipline/report', '/health', '/health/alerts', '/counseling', '/calendar', '/polls', '/finance', '/finance/invoices', '/finance/reports', '/library', '/library/loans', '/library/overdue', '/transport', '/hr/leaves', '/reports', '/reports/students', '/reports/attendance', '/reports/grades', '/reports/teachers', '/search?q=%D8%B9%D9%84%DB%8C', '/system/settings', '/system/modules', '/system/backup', '/system/activity', '/system/jobs', '/system/sms-log', '/users/positions', '/parents', '/academic/years', '/academic/terms', '/exams/changes', '/enrollments', '/enrollments/promote', '/students/1?tab=enrollments', '/documents', '/documents/new?type=certificate&student_id=1', '/documents/report-card/1', '/documents/roster/1', '/system/settings?tab=documents'],
   teacher: ['/dashboard', '/teachers/me', '/attendance', '/exams', '/exams/changes', '/homework', '/tickets', '/messages', '/announcements', '/calendar', '/discipline', '/health/alerts', '/library', '/hr/leaves', '/polls'],
-  student: ['/dashboard', '/students/me', '/attendance/my', '/exams/my', '/homework', '/tickets', '/messages', '/announcements', '/notifications', '/calendar', '/polls', '/finance/my', '/library/my', '/transport/my', '/discipline/my', '/health/my']
+  student: ['/dashboard', '/students/me', '/attendance/my', '/exams/my', '/homework', '/tickets', '/messages', '/announcements', '/notifications', '/calendar', '/polls', '/finance/my', '/library/my', '/transport/my', '/discipline/my', '/health/my', '/documents/my']
 };
 (async () => {
   try { const r = await fetch(BASE + '/healthz'); const j = await r.json(); if (!j.installed) throw new Error('not installed'); console.log(`سرور در دسترس است (${j.db}, v${j.version})`); }
@@ -22,7 +22,7 @@ const PAGES = {
     console.log(`[pages:${role}] ${paths.length} صفحه، ${bad.length} خطا`); bad.forEach((l) => console.log('   ' + l.slice(0, 160)));
     if (bad.length || r.status) failed++;
   }
-  for (const f of ['flow-academic', 'flow-attendance', 'flow-tickets', 'flow-exams', 'flow-homework', 'flow-comm', 'flow-records', 'flow-ops', 'flow-parents', 'flow-permissions', 'flow-scheduler', 'flow-gradelock', 'flow-recovery']) {
+  for (const f of ['flow-academic', 'flow-attendance', 'flow-tickets', 'flow-exams', 'flow-homework', 'flow-comm', 'flow-records', 'flow-ops', 'flow-parents', 'flow-permissions', 'flow-scheduler', 'flow-gradelock', 'flow-recovery', 'flow-documents']) {
     const r = spawnSync(process.execPath, [path.join(__dirname, f + '.js')], { encoding: 'utf8', env: Object.assign({}, process.env, { BASE_URL: BASE }) });
     const fails = (r.stdout || '').split('\n').filter((l) => l.startsWith('FAIL'));
     const oks = (r.stdout || '').split('\n').filter((l) => l.startsWith('ok')).length;
