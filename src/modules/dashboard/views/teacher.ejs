@@ -32,10 +32,11 @@
   <div class="col-xl-5">
     <% if (typeof schedule !== 'undefined') { %>
     <div class="card mb-3">
-      <div class="card-header"><h6><i class="bi bi-table me-1 text-brand"></i>برنامهٔ امروز (<%= todayName %>)</h6><a href="/academic/schedule/teacher/<%= teacher.id %>" class="fs-7">برنامهٔ هفتگی</a></div>
+      <div class="card-header"><h6><i class="bi bi-table me-1 text-brand"></i>برنامهٔ امروز (<%= todayName %>)</h6><span class="d-flex gap-2 fs-7"><% if (typeof lessonsLogged !== 'undefined' && enabled('lessons.today')) { %><a href="/lessons/today" class="<%= lessonsLogged < schedule.length ? 'text-warning' : 'text-success' %>"><i class="bi bi-journal-check me-1"></i>گزارش تدریس <%= J.toPersianDigits(lessonsLogged) %>/<%= J.toPersianDigits(schedule.length) %></a><% } %><a href="/academic/schedule/teacher/<%= teacher.id %>">برنامهٔ هفتگی</a></span></div>
       <ul class="list-group list-group-flush">
         <% if (!schedule.length) { %><li class="list-group-item text-secondary fs-7">امروز کلاسی ندارید</li><% } %>
-        <% schedule.forEach(function (s) { %><li class="list-group-item d-flex justify-content-between align-items-center"><span><span class="badge badge-soft-primary me-2">زنگ <%= J.toPersianDigits(s.period) %></span><%= s.subject_title %> — <%= s.class_title %></span><span class="fs-7 text-secondary ltr"><%= J.formatTime(s.start_time) %>–<%= J.formatTime(s.end_time) %></span></li><% }); %>
+        <% schedule.forEach(function (s) { %><li class="list-group-item d-flex justify-content-between align-items-center"><span><span class="badge badge-soft-primary me-2">زنگ <%= J.toPersianDigits(s.period) %></span><%= s.subject_title %> — <%= s.class_title %><% if (s.logged) { %> <i class="bi bi-check-circle-fill text-success fs-7" title="گزارش تدریس ثبت شده"></i><% } else if (typeof lessonsLogged !== 'undefined') { %> <a href="/lessons/today" class="fs-7 text-secondary" title="ثبت گزارش تدریس"><i class="bi bi-plus-circle"></i></a><% } %></span><span class="fs-7 text-secondary ltr"><%= J.formatTime(s.start_time) %>–<%= J.formatTime(s.end_time) %></span></li><% }); %>
+        <% if (typeof lessonsMissing !== 'undefined' && lessonsMissing > 0) { %><li class="list-group-item fs-7 text-warning-emphasis bg-warning-subtle"><i class="bi bi-exclamation-circle me-1"></i><%= J.toPersianDigits(lessonsMissing) %> جلسهٔ هفتهٔ گذشته بدون گزارش تدریس است — <a href="/lessons/missing">مشاهده و تکمیل</a></li><% } %>
       </ul>
     </div>
     <% } %>

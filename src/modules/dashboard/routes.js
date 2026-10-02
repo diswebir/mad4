@@ -108,6 +108,17 @@ async function teacherDashboard(req, res, { today, year }) {
     const dow = J.weekdayIndex(today);
     d.schedule = await db.table('schedule_slots as ss').select('ss.*', 'c.title as class_title', 's.title as subject_title').join('class_subjects as cs', 'ss.class_subject_id', 'cs.id').join('classes as c', 'ss.class_id', 'c.id').join('subjects as s', 'cs.subject_id', 's.id').where('cs.teacher_id', teacher.id).where('ss.day_of_week', dow).orderBy('ss.period').all();
     d.todayName = J.weekdayName(today);
+    if (on('lessons.today') && d.schedule.length) { // وضعیت ثبت گزارش تدریس امروز
+      const logs = await db.table('lesson_logs').select('class_subject_id', 'period').where('teacher_id', teacher.id).where('date', today).all();
+      const set = new Set(logs.map((l) => l.class_subject_id + '|' + l.period));
+      d.schedule.forEach((s) => { s.logged = set.has(s.class_subject_id + '|' + s.period); });
+      d.lessonsLogged = d.schedule.filter((s) => s.logged).length;
+    }
+    if (on('lessons.missing')) { // جلسات ثبت‌نشدهٔ ۷ روز اخیر
+      const lessonsSvc = require('../lessons/service');
+      const exp = await lessonsSvc.expectedSessions(J.addDays(today, -7), J.addDays(today, -1), { teacherId: teacher.id });
+      d.lessonsMissing = exp.filter((e) => !e.log).length;
+    }
   }
   if (on('homework.grade')) d.toGrade = await db.table('homework_submissions as hs').join('homework as h', 'hs.homework_id', 'h.id').where('h.created_by', req.user.id).where('hs.status', 'submitted').count();
   if (on('tickets')) d.tickets = await db.table('tickets as t').select('t.*', 'u.name as creator').leftJoin('users as u', 't.created_by', 'u.id').where('t.assigned_to', req.user.id).whereIn('t.status', ['open', 'pending']).orderBy('t.updated_at', 'desc').limit(5).all();

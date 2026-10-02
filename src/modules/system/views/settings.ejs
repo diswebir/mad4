@@ -34,6 +34,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- sel('attendance_sms_mode', 'زمان ارسال پیامک غیبت به ولی', { scheduled: 'تجمیعی روزانه با زمان‌بند (پیش‌فرض ۰۹:۳۰)', immediate: 'بلافاصله پس از ثبت' }) %>
         <div class="col-12"><h6 class="text-brand mt-2">نمرات</h6></div>
         <%- inp('grading_max_score', 'نمرهٔ کامل', { col: 4, ltr: true }) %><%- inp('grading_pass_score', 'نمرهٔ قبولی', { col: 4, ltr: true }) %>
+        <% if (enabled('lessons.edit_window')) { %><%- inp('lesson_log_edit_days', 'مهلت ویرایش گزارش تدریس توسط معلم (روز)', { col: 4, ltr: true, help: 'پس از این مدت فقط مدیر می‌تواند گزارش را ویرایش کند' }) %><% } %>
         <div class="col-12"><h6 class="text-brand mt-2">دانش‌آموزان و تیکت‌ها</h6></div>
         <%- inp('student_number_prefix', 'پیشوند شماره دانش‌آموزی', { col: 4, ltr: true }) %><%- inp('student_number_next', 'شمارهٔ بعدی', { col: 4, ltr: true }) %><%- inp('items_per_page', 'تعداد در هر صفحه', { col: 4, ltr: true }) %>
         <%- inp('ticket_categories', 'دسته‌بندی تیکت‌ها', { col: 8, help: 'با کاما جدا کنید' }) %><%- inp('ticket_auto_close_days', 'بستن خودکار تیکت پاسخ‌داده‌شده پس از (روز)', { col: 4, ltr: true }) %>

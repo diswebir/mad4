@@ -249,6 +249,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
 
     // --- برنامهٔ هفتگی (حریصانه، بدون تداخل معلم) ---
     const busy = {}; // teacherIdx -> Set('d-p')
+    const slotRows = []; // برای دفتر کلاسی
     let slotCount = 0;
     for (let ci = 0; ci < CLASSES.length; ci++) {
       const need = []; // لیست درس‌ها به تعداد ساعت
@@ -268,7 +269,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
           used.add(key); busy[cs.teacherIdx].add(key); perDay[`${d}-${cs.code}`] = (perDay[`${d}-${cs.code}`] || 0) + 1;
           const [st, en] = PERIOD_TIMES[p - 1].split('-');
           await insert('schedule_slots', { class_id: classIds[ci], class_subject_id: cs.id, day_of_week: d, period: p, start_time: st, end_time: en, room_id: cs.code === 'SCI' && chance(0.5) ? roomIds[10] : cs.code === 'TEC' ? roomIds[11] : roomIds[ci], created_at: now });
-          slotCount++; placed = true; break;
+          slotRows.push({ ci, cs, d, p }); slotCount++; placed = true; break;
         }
         if (!placed) { /* ظرفیت پر — نادیده */ }
       }
@@ -660,6 +661,65 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
         await insert('documents', row);
       }
     }
+    // --- سرفصل‌ها و دفتر کلاسی (گزارش تدریس بر اساس برنامهٔ هفتگی) ---
+    {
+      const CHAPTERS = {
+        MATH: ['عددهای صحیح و گویا', 'جبر و معادله', 'هندسه و استدلال', 'توان و جذر', 'نسبت و تناسب', 'آمار و احتمال', 'بردار و مختصات', 'چندضلعی‌ها و مساحت', 'حجم و سطح'],
+        SCI: ['ماده و تغییرات آن', 'اتم‌ها و الفبای مواد', 'منابع انرژی', 'گرما و بهینه‌سازی مصرف', 'سفر آب روی زمین', 'سلول و سازمان‌بندی آن', 'گوارش و تبادل مواد', 'الکتریسیته و مغناطیس'],
+        LIT: ['ستایش و زیبایی آفرینش', 'شکفتن و ادبیات تعلیمی', 'سبک زندگی و اخلاق', 'نام‌ها و یادها', 'اسلام و انقلاب اسلامی', 'ادبیات بومی و جهان', 'نگارش و انشای توصیفی', 'دستور زبان: جمله و اجزای آن'],
+        SOC: ['حقوق و تکالیف شهروندی', 'مصرف و تولید', 'جغرافیای ایران: ناهمواری‌ها', 'آب و هوای ایران', 'جمعیت و شهرنشینی', 'تاریخ ایران باستان', 'ایران در عصر اسلامی', 'میراث فرهنگی'],
+        ARB: ['قواعد: اسم اشاره و ضمایر', 'فعل ماضی و مضارع', 'جملهٔ اسمیه و فعلیه', 'ترجمهٔ متن و واژگان', 'اعداد و زمان', 'مرور و تمرین جامع'],
+        ENG: ['My Name / Greetings', 'My Family', 'My Age and Numbers', 'My Address and Places', 'My Appearance', 'Review and Speaking Practice'],
+        QRN: ['روخوانی و تجوید: مد و تنوین', 'سورهٔ یس: آیات ۱ تا ۳۰', 'پیام قرآنی: احسان', 'ترجمهٔ عبارات پرکاربرد', 'حفظ سوره‌های کوتاه', 'مرور و ارزشیابی قرائت'],
+        REL: ['خدای مهربان و نعمت‌ها', 'پیامبران و رسالت', 'نماز و راز و نیاز', 'اخلاق فردی: راست‌گویی', 'خانواده و احترام', 'مرور و پرسش کلاسی'],
+        THK: ['خودشناسی و توانمندی‌ها', 'تصمیم‌گیری و حل مسئله', 'مدیریت زمان و برنامه‌ریزی', 'ارتباط مؤثر و همدلی'],
+        TEC: ['ایمنی و ابزارشناسی', 'کار با رایانه و اسناد', 'پروژهٔ ساخت و فناوری', 'کسب‌وکار و کارآفرینی'],
+        ART: ['طراحی با خط و نقطه', 'رنگ‌شناسی و ترکیب رنگ', 'خوشنویسی و نگارگری', 'پروژهٔ هنری پایان نوبت'],
+        PE: ['آمادگی جسمانی و گرم‌کردن', 'دو و میدانی', 'بازی‌های گروهی: والیبال', 'بازی‌های گروهی: فوتسال']
+      };
+      const ACTS = ['تدریس مفاهیم با مثال و حل تمرین پای تابلو', 'کار گروهی و ارائهٔ دانش‌آموزان', 'پرسش کلاسی از درس جلسهٔ قبل و رفع اشکال', 'استفاده از فیلم آموزشی و بحث کلاسی', 'آزمونک ۱۰ دقیقه‌ای و حل تمرین', 'مرور درس و پاسخ به سؤالات دانش‌آموزان'];
+      const HW = (code) => (code === 'PE' ? null : code === 'ART' ? 'تکمیل طرح شروع‌شده در کلاس' : code === 'ENG' ? 'Workbook: exercises of this lesson' : `حل تمرین‌های صفحهٔ ${ri(12, 90)} تا ${ri(91, 140)}`);
+      const sylIds = {}; // `${g}-${code}` -> [ids]
+      const yStart = ay.startDate; const yEnd = J.toGregorian(`${jy + 1}/02/31`);
+      const spanDays = Math.max(1, Math.round((new Date(yEnd) - new Date(yStart)) / 86400000));
+      for (let g = 0; g < GRADES.length; g++) {
+        for (const sub of SUBJECTS) {
+          const chapters = CHAPTERS[sub.code] || ['فصل ۱', 'فصل ۲', 'فصل ۳', 'فصل ۴'];
+          const ids = [];
+          for (let k = 0; k < chapters.length; k++) {
+            const from = J.addDays(yStart, Math.floor(spanDays * k / chapters.length)); const to = J.addDays(yStart, Math.floor(spanDays * (k + 1) / chapters.length) - 1);
+            ids.push(await insert('syllabus_items', { academic_year_id: yearId, subject_id: subjectIds[g][sub.code], grade_level_id: gradeIds[g], title: `فصل ${J.toPersianDigits(k + 1)}: ${chapters[k]}`, description: k === 0 ? 'یادآوری پیش‌نیازها و ورود به مبحث' : null, sort_order: k + 1, planned_hours: Math.max(2, Math.round(sub.hours * 30 / chapters.length)), planned_from: from, planned_to: to, created_at: now }));
+          }
+          sylIds[`${g}-${sub.code}`] = ids;
+        }
+      }
+      stats.syllabus = Object.values(sylIds).reduce((a, b) => a + b.length, 0);
+      // گزارش تدریس برای روزهای گذشته: اکثر معلمان منظم‌اند، چند نفر کمتر ثبت می‌کنند
+      const diligence = TEACHERS.map(() => pick([0.95, 0.92, 0.9, 0.88, 0.8, 0.7]));
+      const slotsByDay = {}; slotRows.forEach((r) => { (slotsByDay[r.d] = slotsByDay[r.d] || []).push(r); });
+      let logCount = 0;
+      const todayPeriodLimit = 2; // امروز فقط زنگ‌های اول ثبت شده‌اند
+      for (let di = 0; di < demoDays.length; di++) {
+        const date = demoDays[di];
+        const w = J.weekdayIndex(date);
+        for (const r of slotsByDay[w] || []) {
+          if (date === today && r.p > todayPeriodLimit) continue;
+          if (!chance(diligence[r.cs.teacherIdx])) continue;
+          const g = CLASSES[r.ci].grade;
+          const ids = sylIds[`${g}-${r.cs.code}`];
+          const chapters = CHAPTERS[r.cs.code] || [];
+          const progress = Math.min(ids.length - 1, Math.floor((di / demoDays.length) * Math.max(1, Math.round(ids.length * 0.35)) + (chance(0.15) ? 1 : 0)));
+          const chapterTitle = chapters[progress] || `فصل ${progress + 1}`;
+          await insert('lesson_logs', {
+            class_id: classIds[r.ci], class_subject_id: r.cs.id, subject_id: r.cs.subjectId, teacher_id: teacherIds[r.cs.teacherIdx], date, period: r.p,
+            topic: `${chapterTitle} — ${pick(['بخش اول', 'بخش دوم', 'ادامهٔ مبحث', 'حل تمرین', 'جمع‌بندی', 'مثال‌های کاربردی'])}`, description: chance(0.7) ? pick(ACTS) : null, homework: chance(0.55) ? HW(r.cs.code) : null,
+            syllabus_item_id: ids[progress], created_by: teacherUserIds[r.cs.teacherIdx], created_at: `${date} ${pick(['12:35', '13:05', '13:40', '18:20'])}:00`
+          });
+          logCount++;
+        }
+      }
+      stats.lessonLogs = logCount;
+    }
     // --- پیش‌ثبت‌نام (درخواست‌های خانواده‌ها با وضعیت‌های مختلف) ---
     {
       const APP_STATUS = ['pending', 'pending', 'pending', 'pending', 'reviewing', 'reviewing', 'docs_requested', 'accepted', 'accepted', 'rejected', 'pending', 'reviewing', 'accepted', 'pending'];
@@ -697,7 +757,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     }
   });
   try { await settingsStore.load(); } catch (e) { /* ignore */ }
-  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب`);
+  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب، ${stats.lessonLogs} گزارش تدریس`);
   return stats;
 }
 
