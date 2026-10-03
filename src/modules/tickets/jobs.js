@@ -29,7 +29,7 @@ module.exports = [
       if (!days) return 'بستن خودکار غیرفعال است (۰ روز)';
       const before = J.addDays(J.todayISO(), -days) + ' 23:59:59';
       const rows = await db.table('tickets').where('status', 'answered').where('last_reply_at', '<', before).all();
-      for (const t of rows) await db.update('tickets', { status: 'closed', closed_at: J.nowISO(), updated_at: J.nowISO() }, { id: t.id });
+      for (const t of rows) await db.update('tickets', { status: 'closed', closed_at: db.now(), updated_at: db.now() }, { id: t.id });
       return `${rows.length} تیکت بسته شد`;
     }
   }

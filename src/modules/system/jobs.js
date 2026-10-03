@@ -14,7 +14,7 @@ module.exports = [
   {
     key: 'cleanup', name: 'پاک‌سازی داده‌های موقت', description: 'حذف نشست‌های منقضی، کدهای بازیابی منقضی، لاگ اجرای کارهای قدیمی‌تر از ۳۰ روز، اعلان‌های خوانده‌شدهٔ قدیمی‌تر از ۹۰ روز و لاگ ورود قدیمی‌تر از ۱۸۰ روز', schedule: 'daily', defaultTime: '03:00',
     async run({ db, J }) {
-      const now = J.nowISO();
+      const now = db.now();
       const r = {};
       r.sessions = await db.table('sessions').where('expires_at', '<', Date.now()).delete().catch(() => 0);
       r.resets = await db.table('password_resets').where('expires_at', '<', now).delete();

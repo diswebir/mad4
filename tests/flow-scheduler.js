@@ -36,5 +36,12 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   try { const out = execSync('node scripts/cron.js --list', { cwd: process.cwd() + '', encoding: 'utf8', timeout: 60000 }); assert(/backup_auto/.test(out), 'scripts/cron.js --list works'); } catch (e) { assert(false, 'scripts/cron.js --list: ' + (e.stdout || e.message).slice(0, 200)); }
   // دسترسی: معلم ۴۰۳
   r = await t.get('/system/jobs'); assert(r.status === 403, 'teacher cannot open jobs');
+  // زمان آخرین اجرا باید به وقت محلی (نه UTC) نمایش داده شود — رگرسیون ناسازگاری منطقهٔ زمانی
+  const J = require('../src/core/jalali'); const db = require('../src/core/db');
+  r = await a.post('/system/jobs/cleanup', { action: 'run' }); r = await a.get('/system/jobs');
+  const txt = r.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const shown = (/cleanup[^۰-۹]*([۰-۹\/]+ [۰-۹:]+)/.exec(txt) || [])[1] || '';
+  const expect = J.formatDateTime(db.now()).slice(0, -1); // تا دقیقه (بدون آخرین رقم برای تحمل اختلاف یک دقیقه)
+  assert(shown.startsWith(expect.slice(0, 11)) && Math.abs(Number(J.toEnglishDigits(shown.slice(-5)).replace(':', '')) - Number(J.toEnglishDigits(J.formatDateTime(db.now()).slice(-5)).replace(':', ''))) <= 2, 'last run shown in local time: ' + shown);
   console.log(process.exitCode ? 'SOME FAILED' : 'ALL PASSED');
 })().catch((e) => { console.error(e); process.exit(1); });

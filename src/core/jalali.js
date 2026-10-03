@@ -106,6 +106,21 @@ function formatDateTime(iso) {
   const j = jalaali.toJalaali(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
   return toPersianDigits(`${j.jy}/${pad(j.jm)}/${pad(j.jd)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`);
 }
+/** datetime ذخیره‌شده (UTC) → رشتهٔ datetime محلی `YYYY-MM-DD HH:mm:ss` */
+function utcToLocal(iso) {
+  const p = parseISO(iso);
+  if (!p) return '';
+  const d = new Date(Date.UTC(p.gy, p.gm - 1, p.gd, p.h || 0, p.i || 0, p.s || 0) + tzOffsetMinutes * 60000);
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+}
+/** datetime ذخیره‌شده (UTC) → تاریخ محلی `YYYY-MM-DD` (برای مقایسه با todayISO) */
+function localDateOf(iso) { const s = utcToLocal(iso); return s ? s.slice(0, 10) : ''; }
+/** datetime محلی (ورودی کاربر) → UTC برای ذخیره */
+function localToUtc(iso) {
+  const p = parseISO(iso);
+  if (!p) return '';
+  return new Date(Date.UTC(p.gy, p.gm - 1, p.gd, p.h || 0, p.i || 0, p.s || 0) - tzOffsetMinutes * 60000).toISOString().slice(0, 19).replace('T', ' ');
+}
 /** زمان نسبی: «۵ دقیقه پیش» */
 function timeAgo(iso) {
   const p = parseISO(iso);
@@ -158,6 +173,6 @@ function jalaliMonth(iso) { const p = toJalaliParts(iso); return p ? p.jm : null
 module.exports = {
   MONTHS, WEEKDAYS, WEEKDAYS_SHORT, setTimezoneOffset, toEnglishDigits, toPersianDigits,
   nowLocal, todayISO, nowISO, nowTime, parseISO, toJalali, toJalaliParts, toGregorian, weekdayIndex, weekdayName,
-  formatLong, formatDate, formatTime, formatDateTime, timeAgo, addDays, diffDays, age, jalaliMonthRange, currentJalali, currentAcademicYear,
+  formatLong, formatDate, formatTime, formatDateTime, utcToLocal, localDateOf, localToUtc, timeAgo, addDays, diffDays, age, jalaliMonthRange, currentJalali, currentAcademicYear,
   jalaliYear, jalaliMonth, isValid: (jy, jm, jd) => jalaali.isValidJalaaliDate(jy, jm, jd), monthLength: (jy, jm) => jalaali.jalaaliMonthLength(jy, jm)
 };
