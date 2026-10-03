@@ -72,7 +72,8 @@ function wantsJson(req) { return req.xhr || (req.get('accept') || '').includes('
 
 function requireAuth(req, res, next) {
   if (req.user) {
-    if (req.user.must_change_password && !req.path.startsWith('/auth/password') && !req.path.startsWith('/auth/logout')) {
+    const full = (req.baseUrl || '') + req.path; // req.path داخل روترهای mount‌شده نسبی است
+    if (req.user.must_change_password && !full.startsWith('/auth/password') && !full.startsWith('/auth/logout')) {
       return res.redirect('/auth/password?force=1');
     }
     return next();

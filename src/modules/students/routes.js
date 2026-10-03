@@ -72,25 +72,30 @@ router.get('/me', auth.requireRole('student', 'parent'), modules.requireEnabled(
   res.redirect(s ? '/students/' + s.id + (qs ? '?' + qs : '') : '/dashboard');
 });
 
-router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
-  const q = baseQuery();
-  const scope = await teacherScope(req);
-  if (scope) q.whereIn('s.class_id', scope);
-  const search = utils.normalizePersian(req.query.q || '');
+/** اعمال فیلترهای فهرست (مشترک بین فهرست، خروجی و عملیات گروهی «همهٔ نتایج») */
+function applyFilters(q, params) {
+  const search = utils.normalizePersian(params.q || '');
   if (search) {
     const cols = E('students.search') ? ['s.first_name', 's.last_name', 's.student_number', 's.national_id', 's.father_name', 's.father_phone', 's.mother_phone', 's.mobile', 's.guardian_phone'] : ['s.first_name', 's.last_name', 's.student_number'];
     const parts = search.split(' ').filter(Boolean);
     if (parts.length > 1) q.where((b) => b.whereRaw("(s.first_name || ' ' || s.last_name) LIKE ?", ['%' + search + '%']).orWhereRaw("(s.last_name || ' ' || s.first_name) LIKE ?", ['%' + search + '%']));
     else q.search(J.toEnglishDigits(search), cols);
   }
-  const f = { class_id: req.query.class_id, grade_level_id: req.query.grade_level_id, status: req.query.status || (req.query.all ? '' : 'active'), gender: req.query.gender };
+  const f = { class_id: params.class_id, grade_level_id: params.grade_level_id, status: params.status || (params.all ? '' : 'active'), gender: params.gender };
   if (f.class_id) q.where('s.class_id', f.class_id);
   if (f.grade_level_id) q.where('s.grade_level_id', f.grade_level_id);
   if (f.status) q.where('s.status', f.status);
   if (f.gender) q.where('s.gender', f.gender);
-  if (req.query.no_class) q.whereNull('s.class_id');
-  const sort = ['last_name', 'student_number', 'class_title', 'birth_date', 'id'].includes(req.query.sort) ? req.query.sort : 'last_name';
-  q.orderBy(sort === 'class_title' ? 'c.title' : 's.' + sort, req.query.dir === 'desc' ? 'desc' : 'asc').orderBy('s.first_name');
+  if (params.no_class) q.whereNull('s.class_id');
+  const sort = ['last_name', 'student_number', 'class_title', 'birth_date', 'id'].includes(params.sort) ? params.sort : 'last_name';
+  q.orderBy(sort === 'class_title' ? 'c.title' : 's.' + sort, params.dir === 'desc' ? 'desc' : 'asc').orderBy('s.first_name');
+  return { f, search, sort };
+}
+router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
+  const q = baseQuery();
+  const scope = await teacherScope(req);
+  if (scope) q.whereIn('s.class_id', scope);
+  const { f, search, sort } = applyFilters(q, req.query);
   if (req.query.export === '1' && E('students.export')) {
     const rows = await q.limit(10000).all();
     await activity.log(req, 'export', 'students', null, 'خروجی دانش‌آموزان');
@@ -100,7 +105,117 @@ router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.vie
   const result = await q.paginate(req.query.page, req.query.per || PER_PAGE);
   const classes = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.id', 'c.title', 'g.title as grade_title').where('c.is_active', 1).when(scope, (qq) => qq.whereIn('c.id', scope)).orderBy('g.sort_order').orderBy('c.title').all();
   const grades = await db.table('grade_levels').orderBy('sort_order').all();
-  res.render(v('index'), { title: 'دانش‌آموزان', result, classes, grades, f, search, sort, dir: req.query.dir || 'asc', canManage: canManage(req), query: req.query });
+  res.render(v('index'), { title: 'دانش‌آموزان', result, classes, grades, f, search, sort, dir: req.query.dir || 'asc', canManage: canManage(req), query: req.query, canBulk: canManage(req) && E('students.bulk') && req.user.role !== 'teacher' });
+});
+
+// ---------- عملیات گروهی ----------
+const BULK_ACTIONS = { transfer: 'انتقال به کلاس', status: 'تغییر وضعیت تحصیلی', notify: 'اعلان درون‌برنامه‌ای به دانش‌آموزان', sms: 'پیامک به اولیا', export: 'خروجی CSV منتخب', cards: 'چاپ کارت‌های منتخب', reset_password: 'بازنشانی رمز عبور' };
+router.post('/bulk', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.bulk'), async (req, res) => {
+  const action = String(req.body.action || '');
+  const back = '/students' + (req.body.filter_qs ? '?' + String(req.body.filter_qs).replace(/^\?/, '') : '');
+  if (!BULK_ACTIONS[action]) { req.flash('danger', 'عملیات نامعتبر است.'); return res.redirect(back); }
+  let ids = [].concat(req.body.ids || []).map(Number).filter(Boolean);
+  if (req.body.select_all === '1') {
+    const params = Object.fromEntries(new URLSearchParams(String(req.body.filter_qs || '')));
+    const q = db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id as sid');
+    applyFilters(q, params);
+    ids = (await q.limit(2000).all()).map((r) => r.sid);
+  }
+  ids = [...new Set(ids)];
+  if (!ids.length) { req.flash('warning', 'هیچ دانش‌آموزی انتخاب نشده است.'); return res.redirect(back); }
+  const students = await baseQuery().whereIn('s.id', ids).orderBy('s.last_name').orderBy('s.first_name').all();
+  const now = db.now();
+  const note = utils.normalizePersian(req.body.note || req.body.reason || '').trim();
+  let done = 0, skipped = 0;
+  if (action === 'transfer') {
+    if (!E('students.transfer')) { req.flash('danger', 'قابلیت انتقال غیرفعال است.'); return res.redirect(back); }
+    const cls = await db.findById('classes', req.body.class_id);
+    if (!cls) { req.flash('danger', 'کلاس مقصد را انتخاب کنید.'); return res.redirect(back); }
+    for (const row of students) {
+      if (row.class_id === cls.id) { skipped++; continue; }
+      await db.update('students', { class_id: cls.id, grade_level_id: cls.grade_level_id, updated_at: now }, { id: row.id });
+      await enrollments.ensureActive(row.id, cls.id, { userId: req.user.id, note: note || null });
+      await db.insert('student_transfers', { student_id: row.id, from_class_id: row.class_id, to_class_id: cls.id, reason: note || 'انتقال گروهی', transferred_by: req.user.id, created_at: now });
+      done++;
+    }
+    const uids = students.filter((r) => r.user_id && r.class_id !== cls.id).map((r) => r.user_id);
+    if (uids.length && E('notifications.inapp')) await notify.push(uids, { title: 'انتقال کلاس', body: `شما به کلاس «${cls.title}» منتقل شدید.`, link: '/students/me', type: 'info' });
+    await activity.log(req, 'bulk_transfer', 'students', cls.id, `انتقال گروهی ${done} دانش‌آموز به ${cls.title}`);
+    req.flash('success', `${J.toPersianDigits(done)} دانش‌آموز به کلاس «${cls.title}» منتقل شدند${skipped ? ` (${J.toPersianDigits(skipped)} نفر از قبل در این کلاس بودند)` : ''}.`);
+    return res.redirect(back);
+  }
+  if (action === 'status') {
+    if (!E('students.status')) { req.flash('danger', 'قابلیت وضعیت تحصیلی غیرفعال است.'); return res.redirect(back); }
+    const status = utils.STUDENT_STATUS[req.body.status] ? req.body.status : null;
+    if (!status) { req.flash('danger', 'وضعیت نامعتبر است.'); return res.redirect(back); }
+    for (const row of students) {
+      if (row.status === status) { skipped++; continue; }
+      await db.update('students', { status, updated_at: now }, { id: row.id });
+      if (row.user_id) await db.update('users', { status: status === 'active' ? 'active' : 'inactive' }, { id: row.user_id });
+      await enrollments.onStatusChange(row.id, status, { userId: req.user.id, note: note || null });
+      if (note && E('students.notes')) await db.insert('student_notes', { student_id: row.id, author_id: req.user.id, content: `تغییر وضعیت گروهی به «${utils.STUDENT_STATUS[status]}»: ${note}`, type: 'status', is_private: 1, created_at: now });
+      done++;
+    }
+    await activity.log(req, 'bulk_status', 'students', null, `تغییر وضعیت گروهی ${done} دانش‌آموز → ${utils.STUDENT_STATUS[status]}`);
+    req.flash('success', `وضعیت ${J.toPersianDigits(done)} دانش‌آموز به «${utils.STUDENT_STATUS[status]}» تغییر کرد${skipped ? ` (${J.toPersianDigits(skipped)} نفر بدون تغییر)` : ''}.`);
+    return res.redirect(back);
+  }
+  if (action === 'notify') {
+    const title = utils.normalizePersian(req.body.title || '').trim(), body = utils.normalizePersian(req.body.message || '').trim();
+    if (!title) { req.flash('danger', 'عنوان اعلان الزامی است.'); return res.redirect(back); }
+    if (!E('notifications.inapp')) { req.flash('danger', 'اعلان درون‌برنامه‌ای غیرفعال است.'); return res.redirect(back); }
+    const uids = students.map((r) => r.user_id).filter(Boolean);
+    done = await notify.push(uids, { title, body: body || null, link: req.body.link || null, type: 'info' });
+    if (req.body.to_parents === '1' && E('parents')) {
+      const pids = await db.table('student_parents as sp').join('parents as p', 'p.id', 'sp.parent_id').whereIn('sp.student_id', ids).whereNotNull('p.user_id').pluck('p.user_id');
+      done += await notify.push(pids, { title, body: body || null, link: req.body.link || null, type: 'info' });
+    }
+    await activity.log(req, 'bulk_notify', 'students', null, `اعلان گروهی «${title}» برای ${students.length} دانش‌آموز`);
+    req.flash('success', `اعلان برای ${J.toPersianDigits(done)} کاربر ارسال شد.`);
+    return res.redirect(back);
+  }
+  if (action === 'sms') {
+    const text = utils.normalizePersian(req.body.message || '').trim();
+    if (!text) { req.flash('danger', 'متن پیامک الزامی است.'); return res.redirect(back); }
+    if (!E('notifications.sms') || !settings.getBool('sms_enabled')) { req.flash('danger', 'ارسال پیامک در تنظیمات فعال نیست.'); return res.redirect(back); }
+    const phones = new Set();
+    for (const r of students) { const ph = r.guardian_phone || r.father_phone || r.mother_phone || r.mobile; if (ph) phones.add(ph); else skipped++; }
+    const prefix = settings.get('school_name', 'مدرسه');
+    const result = await notify.sms([...phones], `${prefix}\n${text}`, 'students_bulk');
+    done = result && result.ok !== false ? phones.size : 0;
+    await activity.log(req, 'bulk_sms', 'students', null, `پیامک گروهی به اولیای ${students.length} دانش‌آموز (${phones.size} شماره)`);
+    if (result && result.ok === false) req.flash('danger', 'ارسال پیامک ناموفق بود: ' + (result.error || ''));
+    else req.flash('success', `پیامک برای ${J.toPersianDigits(done)} شماره ارسال شد${skipped ? ` (${J.toPersianDigits(skipped)} دانش‌آموز بدون شمارهٔ ولی)` : ''}.`);
+    return res.redirect(back);
+  }
+  if (action === 'export') {
+    if (!E('students.export')) { req.flash('danger', 'خروجی CSV غیرفعال است.'); return res.redirect(back); }
+    await activity.log(req, 'export', 'students', null, `خروجی ${students.length} دانش‌آموز منتخب`);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="students-selected-${J.todayISO()}.csv"`);
+    return res.send(utils.toCSV(students, fields.exportColumns()));
+  }
+  if (action === 'cards') {
+    if (!E('students.id_card')) { req.flash('danger', 'کارت دانش‌آموزی غیرفعال است.'); return res.redirect(back); }
+    const year = await db.table('academic_years').where('is_current', 1).first();
+    return res.render(v('card'), { title: 'کارت‌های دانش‌آموزی منتخب', layout: 'layouts/print', students, year });
+  }
+  if (action === 'reset_password') {
+    if (!E('students.user_account')) { req.flash('danger', 'حساب کاربری دانش‌آموزان غیرفعال است.'); return res.redirect(back); }
+    const mode = req.body.pw_mode === 'national' ? 'national' : req.body.pw_mode === 'custom' ? 'custom' : 'student_number';
+    const custom = String(req.body.password || '');
+    if (mode === 'custom' && custom.length < 6) { req.flash('danger', 'رمز دلخواه باید حداقل ۶ کاراکتر باشد.'); return res.redirect(back); }
+    for (const row of students) {
+      if (!row.user_id) { skipped++; continue; }
+      const pw = mode === 'custom' ? custom : mode === 'national' ? String(row.national_id || row.student_number) : String(row.student_number);
+      if (!pw || pw.length < 4) { skipped++; continue; }
+      await db.update('users', { password: await auth.hashPassword(pw), must_change_password: 1, updated_at: now }, { id: row.user_id });
+      done++;
+    }
+    await activity.log(req, 'bulk_password', 'users', null, `بازنشانی گروهی رمز ${done} دانش‌آموز (${mode})`);
+    req.flash('success', `رمز عبور ${J.toPersianDigits(done)} دانش‌آموز بازنشانی شد (${mode === 'custom' ? 'رمز دلخواه' : mode === 'national' ? 'کد ملی' : 'شماره دانش‌آموزی'}؛ در ورود بعدی باید تغییر دهند)${skipped ? ` — ${J.toPersianDigits(skipped)} نفر بدون حساب` : ''}.`);
+    return res.redirect(back);
+  }
+  res.redirect(back);
 });
 
 router.get('/new', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {

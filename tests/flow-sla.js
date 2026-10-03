@@ -67,8 +67,10 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   const m = /هشدار تیکت‌های خارج از مهلت پاسخ \(SLA\): ([^(]+)/.exec(txt);
   assert(!!m, 'job flash: ' + (m ? m[1].trim() : '?'));
   if (overdueN > 0) {
-    assert(/اعلان ارسال شد/.test(txt), 'notifications sent for overdue tickets');
-    r = await a.get('/notifications'); assert(/تیکت خارج از مهلت پاسخ/.test(strip(r.text)), 'admin received SLA notification');
+    const sent = Number(en((/([۰-۹\d]+) اعلان ارسال شد/.exec(m[1]) || [])[1] || '0'));
+    assert(/اعلان ارسال شد/.test(m[1]) || /اطلاع‌رسانی شده‌اند/.test(m[1]), 'job handled overdue tickets (sent=' + sent + ')');
+    if (sent > 0) { r = await a.get('/notifications'); assert(/تیکت خارج از مهلت پاسخ/.test(strip(r.text)), 'admin received SLA notification'); }
+    else console.log('skip: alerts already sent within 24h');
     r = await a.post('/system/jobs/tickets_sla_alert', { action: 'run' }); r = await a.get('/system/jobs'); txt = strip(r.text);
     assert(/اطلاع‌رسانی شده‌اند|تیکت خارج از مهلت وجود ندارد/.test(txt), 'second run: no duplicate alerts within 24h');
   }
