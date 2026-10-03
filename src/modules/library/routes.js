@@ -43,6 +43,22 @@ router.post('/overdue/remind', ...staffOnly, modules.requireEnabled('library.ove
   req.flash('success', `${J.toPersianDigits(n)} یادآوری ارسال شد.`); res.redirect('/library/overdue');
 });
 
+// جستجوی سریع برای اسکن بارکد: شمارهٔ دانش‌آموزی یا شابک/شناسهٔ کتاب
+router.get('/api/lookup', auth.requireRoleOrPermission(['admin', 'teacher'], 'library.manage'), modules.requireEnabled('library.scan'), async (req, res) => {
+  const code = J.toEnglishDigits(String(req.query.code || '')).replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
+  if (!code) return res.json({ error: 'کد خالی است' });
+  const st = await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id', 's.first_name', 's.last_name', 's.status', 'c.title as class_title').where('s.student_number', code).first();
+  if (st) {
+    if (st.status !== 'active') return res.json({ error: 'این دانش‌آموز فعال نیست' });
+    const open = await db.table('book_loans').where({ student_id: st.id, status: 'loaned' }).count();
+    return res.json({ student: { id: st.id, name: st.first_name + ' ' + st.last_name, class_title: st.class_title, open_loans: open } });
+  }
+  const isbn = code.replace(/-/g, '');
+  const book = await db.table('books').whereRaw("REPLACE(COALESCE(isbn,''), '-', '') = ?", [isbn]).first() || (/^\d{1,9}$/.test(code) ? await db.findById('books', Number(code)) : null);
+  if (book) return res.json({ book: { id: book.id, title: book.title, available_copies: Number(book.available_copies) } });
+  res.json({ error: 'دانش‌آموز یا کتابی با این کد یافت نشد' });
+});
+
 crud(router, {
   path: '', table: 'books', alias: 'b', title: 'کتاب', plural: 'کتابخانه', icon: 'bi-book', feature: 'library.books', orderBy: 'title', roles: ['admin'], viewRoles: ['admin', 'teacher'], permission: 'library.manage', exportFeature: 'library.export',
   fields: [
@@ -83,6 +99,8 @@ crud(router, {
     { name: 'status', label: 'وضعیت', type: 'select', list: true, filter: true, hideInForm: true, options: { loaned: 'در امانت', returned: 'بازگشتی' }, format: (val) => utils.statusBadge(val) },
     { name: 'note', label: 'یادداشت', type: 'text' }
   ],
+  formIntro: () => (E('library.scan') ? `<div class="scan-box d-flex align-items-center gap-2 p-2 rounded border bg-body-tertiary mb-2"><i class="bi bi-upc-scan fs-4 text-primary"></i><div class="flex-grow-1"><input class="form-control form-control-sm ltr" id="loanScan" placeholder="اسکن بارکد کارت دانش‌آموزی یا شابک کتاب…" autocomplete="off" autofocus data-lookup="/library/api/lookup"><div class="fs-7 text-secondary mt-1" id="loanScanMsg">بارکدخوان را روی کارت بگیرید یا شمارهٔ دانش‌آموزی/شابک را تایپ و Enter بزنید.</div></div></div>
+<script>(function(){var i=document.getElementById('loanScan'),m=document.getElementById('loanScanMsg');if(!i)return;var t;function go(){var v=(i.value||'').trim();if(!v)return;fetch(i.getAttribute('data-lookup')+'?code='+encodeURIComponent(v),{headers:{accept:'application/json'}}).then(function(r){return r.json()}).then(function(d){if(d.student){var s=document.querySelector('select[name=student_id]');if(s){s.value=String(d.student.id);s.dispatchEvent(new Event('change'))}m.className='fs-7 text-success mt-1';m.textContent='دانش‌آموز: '+d.student.name+(d.student.class_title?' — '+d.student.class_title:'')+(d.student.open_loans?' · امانت باز: '+d.student.open_loans:'')}else if(d.book){var b=document.querySelector('select[name=book_id]');if(b){b.value=String(d.book.id);b.dispatchEvent(new Event('change'))}m.className='fs-7 text-success mt-1';m.textContent='کتاب: '+d.book.title+' · موجود: '+d.book.available_copies}else{m.className='fs-7 text-danger mt-1';m.textContent=d.error||'موردی یافت نشد'}i.select()}).catch(function(){m.className='fs-7 text-danger mt-1';m.textContent='خطا در جستجو'})}i.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();go()}});i.addEventListener('input',function(){clearTimeout(t);t=setTimeout(go,400)});})()</script>` : ''),
   defaults: (req) => ({ loaned_at: J.todayISO(), due_at: J.addDays(J.todayISO(), settings.getInt('library_loan_days', 14)), book_id: req.query.book_id || '', student_id: req.query.student_id || '' }),
   validate: (val, d) => { if (!d.student_id && !d.user_id) val.custom(false, 'دانش‌آموز یا همکار امانت‌گیرنده را مشخص کنید'); if (d.due_at && d.loaned_at && d.due_at < d.loaned_at) val.custom(false, 'مهلت بازگشت باید بعد از تاریخ امانت باشد'); },
   beforeSave: async (d, req, isNew, row) => {

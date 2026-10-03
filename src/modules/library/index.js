@@ -8,7 +8,8 @@ module.exports = {
     { key: 'limits', name: 'سقف امانت', description: 'محدودیت تعداد کتاب هم‌زمان برای هر نفر (تنظیمات)' },
     { key: 'student_view', name: 'امانت‌های من', description: 'دانش‌آموز کتاب‌های امانتی و تاریخ بازگشت خود را می‌بیند' },
     { key: 'catalog', name: 'جستجوی کتاب برای دانش‌آموز', description: 'مشاهدهٔ فهرست کتاب‌ها و موجودی' },
-    { key: 'export', name: 'خروجی CSV', description: 'دانلود فهرست کتاب‌ها و امانت‌ها' }
+    { key: 'export', name: 'خروجی CSV', description: 'دانلود فهرست کتاب‌ها و امانت‌ها' },
+    { key: 'scan', name: 'امانت سریع با اسکن بارکد', description: 'در فرم امانت، با اسکن بارکد کارت دانش‌آموزی (یا تایپ شمارهٔ دانش‌آموزی/شابک کتاب + Enter) امانت‌گیرنده و کتاب خودکار انتخاب می‌شوند' }
   ],
   menu: [
     { title: 'کتابخانه', href: '/library', icon: 'bi-book', roles: ['admin', 'teacher'], permission: 'library.manage' },

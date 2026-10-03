@@ -7,12 +7,23 @@
   .id-card .info { font-size: 11px; line-height: 1.7; flex: 1; }
   .id-card .info b { font-size: 13px; }
   .id-card .bottom { font-size: 9px; color: #475569; padding: 3px 10px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; }
-  .barcode { font-family: monospace; letter-spacing: 2px; background: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px); height: 14px; width: 60px; }
+  .id-card .barcode svg { height: 9mm; width: auto; max-width: 34mm; display: block; }
+  .id-card .qr { position: absolute; left: 3mm; top: 8mm; width: 13mm; height: 13mm; background: #fff; padding: 1px; border-radius: 3px; border: 1px solid #e2e8f0; }
+  .id-card .qr svg { width: 100%; height: 100%; display: block; }
+  .id-card.has-qr .info { padding-left: 14mm; }
   @media print { .print-header { display: none !important; } .id-cards { gap: 6mm; } }
 </style>
+<% if (enabled('students.card_qr') && students.length === 1 && currentUser && (currentUser.role === 'admin' || can('students.manage'))) { %>
+<div class="no-print d-flex align-items-center gap-2 mb-3 fs-7">
+  <span class="text-secondary"><i class="bi bi-qr-code me-1"></i>کد یکتای کارت: <code><%= students[0].card_token %></code> · <a href="<%= verifyUrl(students[0].card_token) %>" target="_blank" rel="noopener">صفحهٔ استعلام</a></span>
+  <form method="post" action="/students/<%= students[0].id %>/card/reissue" class="ms-auto" onsubmit="return confirm('کارت فعلی باطل می‌شود و QR کارت‌های چاپ‌شدهٔ قبلی دیگر معتبر نیست. ادامه می‌دهید؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-repeat me-1"></i>ابطال و صدور مجدد</button></form>
+</div>
+<% } %>
 <div class="id-cards">
 <% students.forEach(function (s) { %>
-  <div class="id-card">
+  <% var qrOn = enabled('students.card_qr') && s.card_token; %>
+  <div class="id-card<%= qrOn ? ' has-qr' : '' %>">
+    <% if (qrOn) { %><div class="qr" title="استعلام اصالت کارت"><%- barcode.qr(verifyUrl(s.card_token), { level: 'M' }) %></div><% } %>
     <div class="top"><span><%= school('school_name', 'مدرسه') %></span><span>کارت دانش‌آموزی <%= year ? J.toPersianDigits(year.title) : '' %></span></div>
     <div class="body">
       <% if (s.photo) { %><img class="photo" src="/files/<%= s.photo %>" alt=""><% } else { %><div class="photo" style="background:<%= utils.colorFor(s.first_name + s.last_name) %>"><%= utils.initials(s.first_name + ' ' + s.last_name) %></div><% } %>
@@ -25,7 +36,7 @@
         <% if (enabled('students.medical') && s.blood_type) { %><div>گروه خونی: <b class="text-danger"><%= s.blood_type %></b></div><% } %>
       </div>
     </div>
-    <div class="bottom"><span><%= school('school_phone') ? 'تلفن مدرسه: ' + J.toPersianDigits(school('school_phone')) : (school('school_address') || '') %></span><span class="barcode" title="<%= s.student_number %>"></span></div>
+    <div class="bottom"><span><%= school('school_phone') ? 'تلفن مدرسه: ' + J.toPersianDigits(school('school_phone')) : (school('school_address') || '') %></span><span class="barcode" title="<%= s.student_number %>"><%- barcode.code128(String(s.student_number || ''), { height: 30, label: false, quiet: 4 }) %></span></div>
   </div>
 <% }); %>
 </div>

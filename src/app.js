@@ -21,6 +21,7 @@ const scheduler = require('./core/scheduler');
 const auth = require('./core/auth');
 const J = require('./core/jalali');
 const utils = require('./core/utils');
+const barcode = require('./core/barcode');
 const csrf = require('./core/csrf');
 const flash = require('./core/flash');
 const DbSessionStore = require('./core/session-store');
@@ -94,6 +95,7 @@ function createApp() {
     res.locals.appVersion = pkg.version;
     res.locals.J = J;
     res.locals.utils = utils;
+    res.locals.barcode = barcode;
     res.locals.e = utils.escapeHtml;
     res.locals.installed = config.get().installed;
     res.locals.currentPath = req.path;

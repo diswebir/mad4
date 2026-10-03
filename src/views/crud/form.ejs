@@ -2,7 +2,7 @@
 <form method="post" action="<%= action %>" enctype="multipart/form-data" class="card" style="max-width:<%= crud.formWidth || '980px' %>">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="card-body">
-    <% if (crud.formIntro) { %><p class="text-secondary"><%- crud.formIntro %></p><% } %>
+    <% var intro = typeof crud.formIntro === 'function' ? crud.formIntro(row, isNew) : crud.formIntro; if (intro) { %><div class="text-secondary mb-2"><%- intro %></div><% } %>
     <div class="row g-3">
       <% fields.filter(function (f) { return !f.hideInForm && !(f.readonly && isNew); }).forEach(function (field) { %>
         <%- include('../partials/field', { field: field, row: row, old: old }) %>

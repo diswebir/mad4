@@ -48,7 +48,7 @@ module.exports = {
     guardian_type: 'string:20 default:father', guardian_name: 'string:80', guardian_phone: 'string:20', guardian_relation: 'string:40',
     emergency_name: 'string:80', emergency_phone: 'string:20', emergency_relation: 'string:40',
     blood_type: 'string:5', height: 'integer', weight: 'integer', allergies: 'text', medical_conditions: 'text', medications: 'text', insurance_number: 'string:30', special_needs: 'text',
-    previous_school: 'string:120', transport_route_id: 'integer index', notes: 'text', created_at: 'datetime', updated_at: 'datetime'
+    previous_school: 'string:120', transport_route_id: 'integer index', notes: 'text', card_token: 'string:32 index', created_at: 'datetime', updated_at: 'datetime'
   },
   student_notes: { id: 'increments', student_id: 'integer index', author_id: 'integer', content: 'text', type: 'string:20 default:general', is_private: 'boolean default:1', created_at: 'datetime' },
   student_documents: { id: 'increments', student_id: 'integer index', title: 'string:120', file_path: 'string:255', file_name: 'string:255', mime: 'string:80', size: 'integer', uploaded_by: 'integer', created_at: 'datetime' },

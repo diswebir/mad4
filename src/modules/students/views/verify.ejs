@@ -1,0 +1,25 @@
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-1"><i class="bi bi-person-vcard me-1"></i>استعلام کارت دانش‌آموزی</h5>
+    <p class="text-secondary fs-7 mb-3">با اسکن QR روی کارت به این صفحه می‌رسید؛ یا کد یکتای کارت را وارد کنید.</p>
+    <form method="get" action="/students/verify" class="d-flex gap-2 mb-3"><input class="form-control ltr text-center" name="code" value="<%= token %>" placeholder="مثال: K7Q2M9ZD4PRT" maxlength="32" required autofocus><button class="btn btn-primary text-nowrap">استعلام</button></form>
+    <% if (token && !s) { %><div class="alert alert-danger py-2 mb-0"><i class="bi bi-x-circle me-1"></i>کارتی با این کد در سامانهٔ <%= school('school_name', 'مدرسه') %> یافت نشد. ممکن است کارت باطل شده یا کد اشتباه وارد شده باشد.</div><% } %>
+    <% if (s) { %>
+      <div class="alert <%= valid ? 'alert-success' : 'alert-warning' %> py-2">
+        <div class="fw-bold"><i class="bi <%= valid ? 'bi-patch-check-fill' : 'bi-exclamation-triangle-fill' %> me-1"></i><%= valid ? 'کارت معتبر است' : 'این دانش‌آموز در حال حاضر فعال نیست' %></div>
+      </div>
+      <div class="d-flex gap-3 align-items-start">
+        <% if (s.photo && enabled('students.photo')) { %><img src="/files/<%= s.photo %>" alt="" class="rounded border" style="width:72px;height:90px;object-fit:cover"><% } else { %><div class="rounded text-white d-flex align-items-center justify-content-center fw-bold" style="width:72px;height:90px;background:<%= utils.colorFor(s.first_name + s.last_name) %>"><%= utils.initials(s.first_name + ' ' + s.last_name) %></div><% } %>
+        <table class="table table-sm fs-7 mb-0"><tbody>
+          <tr><td class="text-secondary" style="width:120px">نام</td><td class="fw-bold"><%= s.first_name %> <%= s.last_name %></td></tr>
+          <tr><td class="text-secondary">شمارهٔ دانش‌آموزی</td><td class="ltr text-end" dir="rtl"><%= J.toPersianDigits(s.student_number) %></td></tr>
+          <tr><td class="text-secondary">کلاس</td><td><%= s.class_title || '—' %> <%= s.grade_title ? '(' + s.grade_title + ')' : '' %></td></tr>
+          <tr><td class="text-secondary">سال تحصیلی</td><td><%= year ? J.toPersianDigits(year.title) : '—' %></td></tr>
+          <tr><td class="text-secondary">وضعیت</td><td><%- utils.statusBadge(s.status, utils.STUDENT_STATUS) %></td></tr>
+          <tr><td class="text-secondary">صادرکننده</td><td><%= school('school_name', '') %></td></tr>
+        </tbody></table>
+      </div>
+    <% } %>
+  </div>
+  <div class="card-footer bg-transparent text-center fs-7"><a href="/auth/login">ورود به سامانه</a></div>
+</div>

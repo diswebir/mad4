@@ -29,6 +29,7 @@
     "multer": "^2.4.0",
     "mysql2": "^3.24.5",
     "nodemailer": "^10.0.13",
+    "qrcode": "^1.5.4",
     "sql.js": "^1.14.2"
   },
   "optionalDependencies": {

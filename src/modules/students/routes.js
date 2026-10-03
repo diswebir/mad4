@@ -18,6 +18,21 @@ const fields = require('./fields');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
+
+// ---------- استعلام عمومی کارت دانش‌آموزی (بدون ورود) ----------
+router.get('/verify/:token', modules.requireEnabled('students.card_qr'), async (req, res) => {
+  const token = String(req.params.token || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
+  const s = token ? await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id')
+    .select('s.id', 's.first_name', 's.last_name', 's.student_number', 's.photo', 's.status', 's.class_id', 'c.title as class_title', 'g.title as grade_title').where('s.card_token', token).first() : null;
+  const year = s ? await db.table('academic_years').where('is_current', 1).first() : null;
+  res.status(s ? 200 : 404).render(v('verify'), { layout: 'layouts/auth', title: 'استعلام کارت دانش‌آموزی', s, year, token, valid: !!(s && s.status === 'active') });
+});
+router.get('/verify', modules.requireEnabled('students.card_qr'), (req, res) => {
+  const t = String(req.query.code || '').trim();
+  if (t) return res.redirect('/students/verify/' + encodeURIComponent(J.toEnglishDigits(t)));
+  res.render(v('verify'), { layout: 'layouts/auth', title: 'استعلام کارت دانش‌آموزی', s: null, year: null, token: '', valid: false });
+});
+
 router.use(auth.requireAuth);
 
 const E = modules.isEnabled;
@@ -42,6 +57,18 @@ async function canView(req, student) {
   return scope && scope.includes(student.class_id);
 }
 const { nextStudentNumber } = require('./service');
+/** برای کارت‌های بدون کد یکتا، کد ۱۲ کاراکتری می‌سازد (فقط وقتی قابلیت QR فعال است) */
+async function ensureCardTokens(students) {
+  if (!E('students.card_qr')) return students;
+  for (const s of students) {
+    if (s.card_token) continue;
+    s.card_token = utils.randomString(12, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
+    await db.table('students').where('id', s.id).update({ card_token: s.card_token });
+  }
+  return students;
+}
+const verifyUrl = (token) => `${(settings.get('site_url', '') || '').replace(/\/+$/, '')}/students/verify/${token}`;
+
 const baseQuery = () => db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').leftJoin('users as u', 'u.id', 's.user_id')
   .select('s.*', 'c.title as class_title', 'g.title as grade_title', 'u.username', 'u.last_login_at', 'u.status as user_status');
 
@@ -197,7 +224,8 @@ router.post('/bulk', auth.requireRoleOrPermission(['admin'], 'students.manage'),
   if (action === 'cards') {
     if (!E('students.id_card')) { req.flash('danger', 'کارت دانش‌آموزی غیرفعال است.'); return res.redirect(back); }
     const year = await db.table('academic_years').where('is_current', 1).first();
-    return res.render(v('card'), { title: 'کارت‌های دانش‌آموزی منتخب', layout: 'layouts/print', students, year });
+    await ensureCardTokens(students);
+    return res.render(v('card'), { title: 'کارت‌های دانش‌آموزی منتخب', layout: 'layouts/print', students, year, verifyUrl });
   }
   if (action === 'reset_password') {
     if (!E('students.user_account')) { req.flash('danger', 'حساب کاربری دانش‌آموزان غیرفعال است.'); return res.redirect(back); }
@@ -352,12 +380,25 @@ router.get('/:id/card', modules.requireEnabled('students.id_card'), async (req, 
   if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canView(req, s))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   const year = await db.table('academic_years').where('is_current', 1).first();
-  res.render(v('card'), { title: 'کارت دانش‌آموزی', layout: 'layouts/print', students: [s], year });
+  await ensureCardTokens([s]);
+  res.render(v('card'), { title: 'کارت دانش‌آموزی', layout: 'layouts/print', students: [s], year, verifyUrl });
+});
+// ابطال کارت و صدور مجدد: کد یکتای جدید → QR کارت‌های قبلی بی‌اعتبار می‌شود
+router.post('/:id/card/reissue', modules.requireEnabled('students.card_qr'), async (req, res) => {
+  if (!canManage(req)) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
+  const s = await db.findById('students', req.params.id);
+  if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  await db.table('students').where('id', s.id).update({ card_token: null });
+  await ensureCardTokens([s]);
+  await activity.log(req, 'card_reissue', 'students', s.id, `ابطال و صدور مجدد کارت ${s.first_name} ${s.last_name} (${s.student_number})`);
+  req.flash('success', 'کارت قبلی باطل و کد جدید صادر شد. کارت جدید را چاپ کنید.');
+  res.redirect('/students/' + s.id + '/card');
 });
 router.get('/cards/class/:classId', auth.requireRoleOrPermission(['admin'], 'students.view'), modules.requireEnabled('students.id_card'), async (req, res) => {
   const students = await baseQuery().where('s.class_id', req.params.classId).where('s.status', 'active').orderBy('s.last_name').all();
   const year = await db.table('academic_years').where('is_current', 1).first();
-  res.render(v('card'), { title: 'کارت‌های دانش‌آموزی کلاس', layout: 'layouts/print', students, year });
+  await ensureCardTokens(students);
+  res.render(v('card'), { title: 'کارت‌های دانش‌آموزی کلاس', layout: 'layouts/print', students, year, verifyUrl });
 });
 
 router.get('/:id/edit', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {

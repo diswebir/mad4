@@ -27,7 +27,7 @@ if (require.main !== module) return;
     console.log(`[pages:${role}] ${paths.length} صفحه، ${bad.length} خطا`); bad.forEach((l) => console.log('   ' + l.slice(0, 160)));
     if (bad.length || r.status) failed++;
   }
-  for (const f of ['flow-academic', 'flow-attendance', 'flow-tickets', 'flow-exams', 'flow-homework', 'flow-comm', 'flow-records', 'flow-ops', 'flow-parents', 'flow-permissions', 'flow-scheduler', 'flow-gradelock', 'flow-recovery', 'flow-documents', 'flow-admissions', 'flow-lessons', 'flow-yearclose', 'flow-sla', 'flow-bulk', 'flow-holidays', 'flow-logs', 'flow-help', 'flow-pwa']) {
+  for (const f of ['flow-academic', 'flow-attendance', 'flow-tickets', 'flow-exams', 'flow-homework', 'flow-comm', 'flow-records', 'flow-ops', 'flow-parents', 'flow-permissions', 'flow-scheduler', 'flow-gradelock', 'flow-recovery', 'flow-documents', 'flow-admissions', 'flow-lessons', 'flow-yearclose', 'flow-sla', 'flow-bulk', 'flow-holidays', 'flow-logs', 'flow-help', 'flow-pwa', 'flow-cards']) {
     const r = spawnSync(process.execPath, [path.join(__dirname, f + '.js')], { encoding: 'utf8', env: Object.assign({}, process.env, { BASE_URL: BASE }) });
     const fails = (r.stdout || '').split('\n').filter((l) => l.startsWith('FAIL'));
     const oks = (r.stdout || '').split('\n').filter((l) => l.startsWith('ok')).length;
