@@ -365,6 +365,28 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
       const firstParent = await tx.findOne('students', { id: active[0].id });
       stats.demoParent = firstParent ? firstParent.father_phone : null;
     }
+    // --- سوابق تحصیلی (سال به سال): ردیف فعال سال جاری برای همه + سابقهٔ سال گذشته برای پایه‌های هشتم و نهم ---
+    {
+      const yearRow = await tx.findById('academic_years', yearId);
+      const prevStart = J.toGregorian(`${jy - 1}/07/01`), prevEnd = J.toGregorian(`${jy}/06/31`);
+      let enrollCount = 0;
+      for (const st of students) {
+        const cls = CLASSES[st.classIdx]; const g = cls.grade;
+        const status = st.inactive ? (await tx.findById('students', st.id)).status : 'active';
+        const enrollStatus = status === 'active' ? 'active' : status === 'transferred' ? 'transferred' : status === 'dropped' ? 'dropped' : 'active';
+        await tx.insert('enrollments', { student_id: st.id, academic_year_id: yearId, class_id: classIds[st.classIdx], class_title: cls.title, grade_level_id: gradeIds[g], grade_title: GRADES[g].title, status: enrollStatus, enrolled_at: yearRow ? yearRow.start_date : now, left_at: enrollStatus === 'active' ? null : J.addDays(J.todayISO(), -ri(5, 30)), note: enrollStatus === 'active' ? null : 'ثبت در پروندهٔ دانش‌آموز', created_at: now, updated_at: now });
+        enrollCount++;
+        if (g > 0) {
+          // سال گذشته در پایهٔ پایین‌تر (چند نفر تکرار پایه)
+          const retained = chance(0.03);
+          const pg = retained ? g : g - 1;
+          const prevTitle = cls.title.replace(GRADES[g].title, GRADES[pg].title);
+          await tx.insert('enrollments', { student_id: st.id, academic_year_id: prevYearId, class_id: null, class_title: prevTitle, grade_level_id: gradeIds[pg], grade_title: GRADES[pg].title, status: retained ? 'retained' : 'promoted', enrolled_at: prevStart, left_at: prevEnd, note: retained ? 'تکرار پایه — پایان سال ' + (jy - 1) + '-' + jy : 'ارتقا — پایان سال ' + (jy - 1) + '-' + jy, created_at: now, updated_at: now });
+          enrollCount++;
+        }
+      }
+      stats.enrollments = enrollCount;
+    }
     // انتقال بین کلاس‌ها
     for (let i = 0; i < 5; i++) {
       const s = pick(active); const from = pick(classIds.filter((c) => c !== classIds[s.classIdx]));
@@ -794,7 +816,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     }
   });
   try { await settingsStore.load(); } catch (e) { /* ignore */ }
-  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب، ${stats.lessonLogs} گزارش تدریس، ${stats.parents} حساب ولی`);
+  log(`دادهٔ نمونه: ${stats.teachers} معلم، ${stats.classes} کلاس، ${stats.students} دانش‌آموز، ${stats.attendance} رکورد حضور، ${stats.exams} آزمون، ${stats.grades} نمره، ${stats.homework} تکلیف، ${stats.tickets} تیکت، ${stats.invoices} فاکتور، ${stats.books} کتاب، ${stats.lessonLogs} گزارش تدریس، ${stats.enrollments} سابقهٔ تحصیلی، ${stats.parents} حساب ولی`);
   return stats;
 }
 

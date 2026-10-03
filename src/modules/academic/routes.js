@@ -8,6 +8,7 @@ const modules = require('../../core/modules');
 const activity = require('../../core/activity');
 const utils = require('../../core/utils');
 const J = require('../../core/jalali');
+const enrollments = require('../enrollments/service');
 const crud = require('../../core/crud');
 const settings = require('../../core/settings');
 
@@ -25,6 +26,9 @@ const optRooms = async () => (await db.table('rooms').orderBy('title').all()).ma
 const optSubjects = async () => (await db.table('subjects as s').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id').orderBy('g.sort_order').orderBy('s.title').select('s.id', 's.title', 'g.title as grade').all()).map((r) => ({ value: r.id, label: r.title + (r.grade ? ' — ' + r.grade : '') }));
 const currentYearId = async () => { const y = await db.table('academic_years').where('is_current', 1).first(); return y ? y.id : null; };
 
+// ---------- پایان سال تحصیلی (پیش از مسیرهای /:id) ----------
+router.use('/year-close', require('./yearclose'));
+
 // ---------- سال تحصیلی ----------
 crud(router, {
   path: '/years', table: 'academic_years', title: 'سال تحصیلی', plural: 'سال‌های تحصیلی', icon: 'bi-calendar-range', feature: 'academic.years', orderBy: 'start_date', dir: 'desc',
@@ -38,7 +42,7 @@ crud(router, {
   afterSave: async (id, data) => { if (Number(data.is_current)) { await db.table('academic_years').where('id', '!=', id).update({ is_current: 0 }); await settings.set('current_year_id', id); } },
   beforeDelete: async (row) => (await db.exists('classes', { academic_year_id: row.id }) ? 'برای این سال کلاس تعریف شده است' : true),
   rowActions: (row) => (Number(row.is_current) ? [] : [{ post: '/academic/years/' + row.id + '/current', icon: 'bi-check2-circle', label: 'تعیین به‌عنوان سال جاری', confirm: `«${row.title}» سال جاری شود؟` }]),
-  pageActions: () => [{ href: '/academic/terms', label: 'نوبت‌ها', icon: 'bi-calendar3-range', class: 'btn-outline-primary' }]
+  pageActions: (req) => [{ href: '/academic/terms', label: 'نوبت‌ها', icon: 'bi-calendar3-range', class: 'btn-outline-primary' }].concat(req.user && req.user.role === 'admin' && modules.isEnabled('academic.year_close') ? [{ href: '/academic/year-close', label: 'پایان سال و ارتقای پایه', icon: 'bi-calendar-check', class: 'btn-outline-danger' }] : [])
 });
 router.post('/years/:id/current', auth.requireRoleOrPermission(['admin'], 'academic.manage'), async (req, res) => {
   const y = await db.findById('academic_years', req.params.id);
@@ -158,7 +162,7 @@ crud(router, {
   beforeDelete: async (row) => (await db.exists('students', { class_id: row.id }) ? 'ابتدا دانش‌آموزان این کلاس را منتقل کنید' : true),
   afterDelete: async (row) => { await db.remove('class_subjects', { class_id: row.id }); await db.remove('schedule_slots', { class_id: row.id }); },
   rowActions: (row) => [{ href: '/academic/classes/' + row.id, icon: 'bi-eye', label: 'مشاهده' }, ...(modules.isEnabled('academic.schedule') ? [{ href: '/academic/schedule/class/' + row.id, icon: 'bi-table', label: 'برنامه هفتگی' }] : [])],
-  pageActions: (req) => (req.user.role === 'admin' && modules.isEnabled('academic.promote') ? [{ href: '/academic/promote', label: 'ارتقای گروهی', icon: 'bi-arrow-up-right-square', class: 'btn-outline-primary' }] : [])
+  pageActions: (req) => (req.user.role === 'admin' && modules.isEnabled('academic.promote') ? [{ href: '/academic/promote', label: 'ارتقای گروهی', icon: 'bi-arrow-up-right-square', class: 'btn-outline-primary' }] : []).concat(req.user.role === 'admin' && modules.isEnabled('academic.year_close') ? [{ href: '/academic/year-close', label: 'پایان سال', icon: 'bi-calendar-check', class: 'btn-outline-danger' }] : [])
 });
 
 
@@ -320,6 +324,7 @@ router.post('/promote', auth.requireRoleOrPermission(['admin'], 'academic.manage
   for (const s of students) {
     await db.update('students', { class_id: to, grade_level_id: target.grade_level_id, updated_at: db.now() }, { id: s.id });
     await db.insert('student_transfers', { student_id: s.id, from_class_id: from, to_class_id: to, reason: req.body.reason || 'ارتقای گروهی', transferred_by: req.user.id, created_at: db.now() });
+    await enrollments.ensureActive(s.id, to, { note: req.body.reason || 'ارتقای گروهی' });
   }
   await activity.log(req, 'promote', 'classes', to, `ارتقای ${students.length} دانش‌آموز به ${target.title}`);
   req.flash('success', `${J.toPersianDigits(students.length)} دانش‌آموز به کلاس «${target.title}» منتقل شدند.`);

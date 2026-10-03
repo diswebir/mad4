@@ -52,6 +52,7 @@ module.exports = {
   },
   student_notes: { id: 'increments', student_id: 'integer index', author_id: 'integer', content: 'text', type: 'string:20 default:general', is_private: 'boolean default:1', created_at: 'datetime' },
   student_documents: { id: 'increments', student_id: 'integer index', title: 'string:120', file_path: 'string:255', file_name: 'string:255', mime: 'string:80', size: 'integer', uploaded_by: 'integer', created_at: 'datetime' },
+  year_close_runs: { id: 'increments', source_year_id: 'integer index', target_year_id: 'integer', created_year: 'boolean default:0', summary: 'text', changes: 'text', status: 'string:20 default:done', created_by: 'integer', created_at: 'datetime', reverted_at: 'datetime', reverted_by: 'integer' },
   student_transfers: { id: 'increments', student_id: 'integer index', from_class_id: 'integer', to_class_id: 'integer', reason: 'text', transferred_by: 'integer', created_at: 'datetime' },
 
   attendance: {

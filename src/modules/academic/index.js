@@ -11,7 +11,8 @@ module.exports = {
     { key: 'schedule', name: 'برنامهٔ هفتگی کلاس و معلم', description: 'جدول زنگ‌ها به تفکیک روز' },
     { key: 'schedule_print', name: 'چاپ برنامهٔ هفتگی', description: 'نسخهٔ قابل چاپ' },
     { key: 'class_stats', name: 'آمار و نمای کلی کلاس', description: 'تعداد، جنسیت، میانگین حضور و نمرات در صفحهٔ کلاس' },
-    { key: 'promote', name: 'ارتقای گروهی دانش‌آموزان', description: 'انتقال همهٔ دانش‌آموزان یک کلاس به کلاس دیگر (پایان سال)' }
+    { key: 'promote', name: 'ارتقای گروهی دانش‌آموزان', description: 'انتقال همهٔ دانش‌آموزان یک کلاس به کلاس دیگر (پایان سال)' },
+    { key: 'year_close', name: 'پایان سال تحصیلی و ارتقای پایه', description: 'ویزارد بستن سال: ساخت سال و نوبت‌های جدید، کلاس‌های پایهٔ بالاتر، ارتقا/تکرار پایه/فارغ‌التحصیلی دانش‌آموزان با پیش‌نمایش و قابلیت بازگردانی' },
   ],
   menu: [
     { title: 'کلاس‌ها', href: '/academic/classes', icon: 'bi-door-open', roles: ['admin', 'teacher'], permission: ['academic.manage', 'students.view'] },
