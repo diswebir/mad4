@@ -14,6 +14,8 @@ const PAGES = {
   staff: ['/help', '/dashboard', '/students', '/students/1', '/students/1?tab=parents', '/parents', '/teachers', '/academic/classes', '/academic/schedule', '/attendance', '/attendance/report/daily', '/attendance/alerts', '/exams', '/homework', '/lessons', '/lessons/missing', '/lessons/syllabus', '/tickets', '/messages', '/announcements', '/calendar', '/documents', '/reports', '/users', '/system/settings', '/finance'],
   parent: ['/help', '/dashboard', '/parents/panel', '/students/me', '/students/me?tab=parents', '/attendance/my', '/exams/my', '/homework/my', '/lessons/my', '/tickets', '/messages', '/announcements', '/notifications', '/calendar', '/documents/my', '/finance/my', '/polls', '/lessons', '/students', '/system/settings']
 };
+module.exports = { PAGES };
+if (require.main !== module) return;
 (async () => {
   try { const r = await fetch(BASE + '/healthz'); const j = await r.json(); if (!j.installed) throw new Error('not installed'); console.log(`سرور در دسترس است (${j.db}, v${j.version})`); }
   catch (e) { console.error(`سرور روی ${BASE} در دسترس نیست یا نصب نشده است: ${e.message}`); process.exit(1); }
@@ -31,6 +33,13 @@ const PAGES = {
     const oks = (r.stdout || '').split('\n').filter((l) => l.startsWith('ok')).length;
     console.log(`[${f}] ${oks} موفق، ${fails.length} ناموفق${r.status ? ' (خروج ' + r.status + ')' : ''}`); fails.forEach((l) => console.log('   ' + l)); if (r.status && r.stderr) console.log('   ' + r.stderr.split('\n')[0]);
     if (fails.length || r.status) failed++;
+  }
+  // اسکن آثار باگ در HTML (undefined/NaN/null/[object Object])
+  {
+    const r = spawnSync(process.execPath, [path.join(__dirname, 'scan-artifacts.js')], { encoding: 'utf8', env: Object.assign({}, process.env, { BASE_URL: BASE }) });
+    const out = (r.stdout || '').trim().split('\n').filter((l) => !/ExperimentalWarning|trace-warnings/.test(l));
+    console.log(`[scan-artifacts] ${out[out.length - 1] || ''}${r.status ? ' (خروج ' + r.status + ')' : ''}`);
+    if (r.status) { out.slice(0, -1).forEach((l) => console.log('   ' + l)); failed++; }
   }
   console.log(failed ? `\n${failed} مجموعه ناموفق` : '\nهمهٔ تست‌ها با موفقیت اجرا شدند ✓');
   process.exit(failed ? 1 : 0);
