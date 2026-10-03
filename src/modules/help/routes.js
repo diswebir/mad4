@@ -41,12 +41,12 @@ router.get('/', modules.requireEnabled('help.guide'), (req, res) => {
 });
 
 router.get('/setup', auth.requireAdmin, modules.requireEnabled('help.checklist'), async (req, res) => {
-  const data = await checklist.compute();
+  const data = await checklist.compute(true);
   res.render(v('setup'), Object.assign({ title: 'راه‌اندازی اولیه' }, data));
 });
 router.post('/setup/dismiss', auth.requireAdmin, modules.requireEnabled('help.checklist'), async (req, res) => {
   const on = req.body.state !== '0';
-  await settings.set('setup_checklist_dismissed', on ? '1' : '0');
+  await settings.set('setup_checklist_dismissed', on ? '1' : '0'); checklist.invalidate();
   await activity.log(req, on ? 'checklist_dismiss' : 'checklist_show', 'system', null, on ? 'پنهان‌کردن چک‌لیست راه‌اندازی از داشبورد' : 'نمایش دوبارهٔ چک‌لیست راه‌اندازی');
   req.flash('success', on ? 'چک‌لیست از داشبورد پنهان شد؛ از منوی «راه‌اندازی اولیه» همیشه در دسترس است.' : 'چک‌لیست دوباره در داشبورد نمایش داده می‌شود.');
   res.redirect(on ? '/dashboard' : '/help/setup');

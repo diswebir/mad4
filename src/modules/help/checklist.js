@@ -12,7 +12,17 @@ const on = (k) => modules.isEnabled(k);
 /**
  * @returns {Promise<{items: Array, done: number, total: number, percent: number, requiredLeft: number, dismissed: boolean}>}
  */
-async function compute() {
+let cached = null; let cachedAt = 0;
+const TTL_MS = 30 * 1000;
+/** نتیجهٔ محاسبه برای ۳۰ ثانیه کش می‌شود (داشبورد پربازدید است؛ مقایسهٔ bcrypt هزینه دارد) — با force=true تازه‌سازی می‌شود */
+async function compute(force) {
+  if (!force && cached && Date.now() - cachedAt < TTL_MS) return cached;
+  cached = await computeFresh(); cachedAt = Date.now();
+  return cached;
+}
+function invalidate() { cached = null; }
+
+async function computeFresh() {
   const items = [];
   const add = (it) => items.push(Object.assign({ required: true }, it));
 
@@ -80,4 +90,4 @@ async function compute() {
   };
 }
 
-module.exports = { compute };
+module.exports = { compute, invalidate };
