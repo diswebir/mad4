@@ -810,6 +810,10 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
 
     // --- تنظیمات نمایشی ---
     const setRows = { demo_mode: '1', demo_staff_username: 'staff1', demo_parent_username: stats.demoParent || '', admissions_open: '1', admissions_text: 'پیش‌ثبت‌نام پایه‌های هفتم تا نهم سال تحصیلی آینده. پس از بررسی اولیه، نتیجه از طریق پیامک اعلام می‌شود.', demo_admin_username: adminUsername || 'admin', demo_admin_password: 'admin123', demo_teacher_username: 'teacher1', demo_student_username: '40001', demo_user_password: '123456', weekly_periods: String(PERIOD_TIMES.length), period_times: PERIOD_TIMES.join(','), school_days: SCHOOL_DAYS.join(','), student_number_next: String(num), student_number_prefix: '', school_slogan: 'دانایی، توانایی، شایستگی', principal_name: 'مدیر مدرسه', school_district: 'ادارهٔ آموزش و پرورش ناحیهٔ ۱', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', signatory_title: 'مدیر مدرسه' };
+    // اطلاعات تماس نمونه فقط اگر هنگام نصب وارد نشده باشد
+    for (const [k, v] of Object.entries({ school_phone: '021-22334455', school_address: 'تهران، خیابان شهید بهشتی، کوچهٔ دانش، پلاک ۱۲', school_email: 'info@school.example', school_slogan: 'دانایی، توانایی، شایستگی' })) {
+      const ex = await tx.findOne('settings', { key: k }); if (!ex || !ex.value) setRows[k] = v;
+    }
     for (const [k, v] of Object.entries(setRows)) {
       const ex = await tx.findOne('settings', { key: k });
       if (ex) await tx.update('settings', { value: v, updated_at: now }, { key: k }); else await tx.insert('settings', { key: k, value: v, updated_at: now });

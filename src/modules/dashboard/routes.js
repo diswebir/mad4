@@ -88,6 +88,7 @@ async function adminDashboard(req, res, { today, year }) {
   if (on('system.activity_log')) d.activity = await db.table('activity_logs as a').select('a.*', 'u.name as user_name').leftJoin('users as u', 'a.user_id', 'u.id').orderBy('a.id', 'desc').limit(8).all();
   if (on('discipline')) d.discipline = await db.table('discipline_records').where('date', '>=', J.addDays(today, -7)).count();
   if (on('finance')) d.finance = { collected: await db.table('payments').where('paid_at', '>=', today.slice(0, 7) + '-01').sum('amount'), due: (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('amount')) - (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('paid_amount')) };
+  if (on('help.checklist') && !settings.getBool('setup_checklist_dismissed')) { try { const c = await require('../help/checklist').compute(); if (c.percent < 100) d.setup = c; } catch (e) { /* ignore */ } }
   res.render(v('admin'), Object.assign({ title: 'داشبورد' }, d));
 }
 

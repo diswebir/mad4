@@ -19,6 +19,17 @@
   </div>
 </div>
 
+<% if (typeof setup !== 'undefined' && setup) { var next = setup.items.filter(function (i) { return !i.done; }).slice(0, 4); %>
+<div class="card mb-3 border-warning-subtle" id="setupWidget"><div class="card-body py-2">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="fw-bold fs-7"><i class="bi bi-check2-square me-1 text-brand"></i>راه‌اندازی اولیه: <%= J.toPersianDigits(setup.percent) %>٪</div>
+    <div class="progress flex-grow-1" style="height:8px;min-width:120px"><div class="progress-bar" style="width:<%= setup.percent %>%"></div></div>
+    <div class="d-flex gap-1 flex-wrap"><% next.forEach(function (i) { %><a href="<%= i.href %>" class="badge badge-soft-<%= i.required ? 'warning' : 'secondary' %> fs-7 py-2 px-2 text-decoration-none"><i class="bi <%= i.icon %> me-1"></i><%= i.title %></a><% }); %></div>
+    <a href="/help/setup" class="btn btn-sm btn-outline-primary ms-auto">همهٔ موارد</a>
+    <a href="#" data-post="/help/setup/dismiss" data-params='{"state":"1"}' class="btn btn-sm btn-light" title="پنهان‌کردن"><i class="bi bi-x-lg"></i></a>
+  </div>
+</div></div>
+<% } %>
 <% if (enabled('dashboard.pending') && typeof pending !== 'undefined') { var items = []; if (pending.tickets) items.push({ href: '/tickets?status=open', icon: 'bi-ticket-detailed', label: 'تیکت باز', n: pending.tickets, c: 'danger' }); if (pending.ticketsOverdue) items.push({ href: '/tickets?sla=overdue', icon: 'bi-stopwatch', label: 'تیکت خارج از مهلت پاسخ', n: pending.ticketsOverdue, c: 'danger' }); if (pending.excuses) items.push({ href: '/attendance/excuses', icon: 'bi-file-earmark-medical', label: 'درخواست موجه‌سازی', n: pending.excuses, c: 'warning' }); if (pending.leaves) items.push({ href: '/hr/leaves', icon: 'bi-calendar-x', label: 'درخواست مرخصی', n: pending.leaves, c: 'info' }); if (pending.unpaid) items.push({ href: '/finance/invoices?status=unpaid', icon: 'bi-receipt', label: 'صورتحساب پرداخت‌نشده', n: pending.unpaid, c: 'secondary' }); if (pending.overdue) items.push({ href: '/library/loans?status=overdue', icon: 'bi-book', label: 'کتاب دیرکرد', n: pending.overdue, c: 'purple' }); if (items.length) { %>
 <div class="card mb-3"><div class="card-body py-2 d-flex gap-3 flex-wrap align-items-center"><span class="fw-bold fs-7"><i class="bi bi-bell me-1 text-brand"></i>در انتظار اقدام:</span>
   <% items.forEach(function (it) { %><a href="<%= it.href %>" class="badge badge-soft-<%= it.c %> fs-7 py-2 px-3"><i class="bi <%= it.icon %> me-1"></i><%= J.toPersianDigits(it.n) %> <%= it.label %></a><% }); %>
