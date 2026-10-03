@@ -38,6 +38,11 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-12"><h6 class="text-brand mt-2">دانش‌آموزان و تیکت‌ها</h6></div>
         <%- inp('student_number_prefix', 'پیشوند شماره دانش‌آموزی', { col: 4, ltr: true }) %><%- inp('student_number_next', 'شمارهٔ بعدی', { col: 4, ltr: true }) %><%- inp('items_per_page', 'تعداد در هر صفحه', { col: 4, ltr: true }) %>
         <%- inp('ticket_categories', 'دسته‌بندی تیکت‌ها', { col: 8, help: 'با کاما جدا کنید' }) %><%- inp('ticket_auto_close_days', 'بستن خودکار تیکت پاسخ‌داده‌شده پس از (روز)', { col: 4, ltr: true }) %>
+        <% if (enabled('tickets.sla')) { %>
+        <div class="col-12"><div class="fw-bold fs-7 text-secondary border-bottom pb-1"><i class="bi bi-stopwatch me-1"></i>مهلت پاسخ تیکت (SLA) — ساعت، بر اساس اولویت</div></div>
+        <%- inp('ticket_sla_urgent_hours', 'فوری', { col: 3, ltr: true }) %><%- inp('ticket_sla_high_hours', 'زیاد', { col: 3, ltr: true }) %><%- inp('ticket_sla_hours', 'عادی', { col: 3, ltr: true }) %><%- inp('ticket_sla_low_hours', 'کم', { col: 3, ltr: true }) %>
+        <%- inp('ticket_sla_resolve_days', 'مهلت حل نهایی (روز)', { col: 4, ltr: true }) %><%- inp('ticket_sla_warn_percent', 'هشدار «نزدیک مهلت» از (٪ مهلت)', { col: 4, ltr: true }) %><%- sel('ticket_sla_notify', 'اعلان خودکار خارج از مهلت به مسئول', [['1', 'فعال'], ['0', 'غیرفعال']], { col: 4 }) %>
+        <% } %>
         <%- sw('homework_late_allowed', 'اجازهٔ ارسال تکلیف پس از مهلت') %><%- inp('announcement_days_on_dashboard', 'نمایش اطلاعیه‌های چند روز اخیر در داشبورد', { ltr: true }) %>
         <div class="col-12"><h6 class="text-brand mt-2">کتابخانه و مالی</h6></div>
         <%- inp('library_loan_days', 'مدت امانت کتاب (روز)', { col: 4, ltr: true }) %><%- inp('library_max_loans', 'حداکثر امانت هم‌زمان', { col: 4, ltr: true }) %>

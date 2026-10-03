@@ -70,7 +70,7 @@ async function adminDashboard(req, res, { today, year }) {
   }
   if (on('dashboard.pending')) {
     d.pending = {};
-    if (on('tickets')) d.pending.tickets = await db.table('tickets').whereIn('status', ['open', 'pending']).count();
+    if (on('tickets')) { d.pending.tickets = await db.table('tickets').whereIn('status', ['open', 'pending']).count(); if (on('tickets.sla')) d.pending.ticketsOverdue = (await require('../tickets/sla').classify(db.table('tickets as t'))).overdue.length; }
     if (on('attendance.excuses')) d.pending.excuses = await db.count('absence_excuses', { status: 'pending' });
     if (on('hr.leaves')) d.pending.leaves = await db.count('leave_requests', { status: 'pending' });
     if (on('finance')) d.pending.unpaid = await db.table('invoices').whereIn('status', ['unpaid', 'partial']).count();

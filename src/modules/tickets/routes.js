@@ -11,6 +11,7 @@ const J = require('../../core/jalali');
 const upload = require('../../core/upload');
 const settings = require('../../core/settings');
 const notify = require('../../core/notify');
+const sla = require('./sla');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
@@ -55,13 +56,21 @@ async function assignees() {
   const teachers = await db.table('users as u').join('teachers as t', 't.user_id', 'u.id').select('u.id', 'u.name', 'u.role').where('u.status', 'active').orderBy('u.name').all();
   return staff.concat(teachers);
 }
-const slaHours = () => settings.getInt('ticket_sla_hours', 48) || 48;
+const slaHours = () => sla.targetHours('normal');
+const isEndUser = (req) => req.user.role === 'student' || req.user.role === 'parent';
 
 // ---------- فهرست ----------
 router.get('/', async (req, res) => {
   const q = await scope(req, baseQuery());
-  const f = { status: req.query.status || '', priority: req.query.priority || '', category: req.query.category || '', q: utils.normalizePersian(req.query.q || ''), mine: req.query.mine || '' };
+  const f = { status: req.query.status || '', priority: req.query.priority || '', category: req.query.category || '', q: utils.normalizePersian(req.query.q || ''), mine: req.query.mine || '', sla: req.query.sla || '' };
   if (f.status) q.where('t.status', f.status);
+  let slaCounts = null;
+  if (E('tickets.sla') && isStaff(req)) {
+    slaCounts = await sla.classify(await scope(req, db.table('tickets as t')));
+    if (f.sla === 'overdue') q.whereIn('t.id', slaCounts.overdue.length ? slaCounts.overdue : [-1]);
+    else if (f.sla === 'warning') q.whereIn('t.id', slaCounts.warning.length ? slaCounts.warning : [-1]);
+    else if (f.sla === 'risk') q.whereIn('t.id', slaCounts.overdue.concat(slaCounts.warning).length ? slaCounts.overdue.concat(slaCounts.warning) : [-1]);
+  }
   if (f.priority && E('tickets.priority')) q.where('t.priority', f.priority);
   if (f.category && E('tickets.categories')) q.where('t.category', f.category);
   if (f.mine === '1' && isStaff(req)) q.where('t.assigned_to', req.user.id);
@@ -71,19 +80,17 @@ router.get('/', async (req, res) => {
   q.orderByRaw(`CASE t.status WHEN 'open' THEN 0 WHEN 'pending' THEN 1 WHEN 'answered' THEN 2 ELSE 3 END`).orderBy(sort, 'desc');
   const result = await q.paginate(req.query.page, settings.getInt('items_per_page', 20));
   const counts = Object.fromEntries((await (await scope(req, db.table('tickets as t'))).select('t.status', 'COUNT(*) as c').groupBy('t.status').all()).map((r) => [r.status, Number(r.c)]));
-  let sla = [];
-  if (E('tickets.sla') && isStaff(req)) {
-    const limit = new Date(Date.now() - slaHours() * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
-    sla = await baseQuery().where('t.status', 'open').where('t.last_reply_at', '<', limit).orderBy('t.last_reply_at').limit(5).all();
-  }
-  res.render(v('index'), { title: 'تیکت‌ها', result, f, counts, sla, slaHours: slaHours(), CATEGORIES, STATUSES, isStaff: isStaff(req), query: req.query });
+  let overdue = [];
+  if (slaCounts && slaCounts.overdue.length && !f.sla) overdue = sla.compute(await baseQuery().whereIn('t.id', slaCounts.overdue).orderBy('t.last_reply_at').limit(5).all());
+  if (E('tickets.sla')) sla.compute(result.data);
+  res.render(v('index'), { title: 'تیکت‌ها', result, f, counts, overdue, slaCounts, slaHours: slaHours(), CATEGORIES, STATUSES, isStaff: isStaff(req), query: req.query });
 });
 
 router.get('/export', auth.requireRoleOrPermission(['admin'], 'tickets.manage'), modules.requireEnabled('tickets.export'), async (req, res) => {
   const rows = await baseQuery().orderBy('t.id', 'desc').limit(5000).all();
   await activity.log(req, 'export', 'tickets', null, 'خروجی تیکت‌ها');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="tickets-${J.todayISO()}.csv"`);
-  res.send(utils.toCSV(rows, [{ label: 'کد', value: (r) => r.code }, { label: 'موضوع', value: (r) => r.subject }, { label: 'ایجادکننده', value: (r) => r.creator_name }, { label: 'کلاس', value: (r) => r.class_title || '' }, { label: 'دسته', value: (r) => CATEGORIES[r.category] || r.category }, { label: 'اولویت', value: (r) => utils.PRIORITIES[r.priority] || '' }, { label: 'وضعیت', value: (r) => STATUSES[r.status] }, { label: 'ارجاع به', value: (r) => r.assignee_name || '' }, { label: 'تاریخ', value: (r) => J.formatDateTime(r.created_at) }, { label: 'آخرین پاسخ', value: (r) => J.formatDateTime(r.last_reply_at) }, { label: 'امتیاز', value: (r) => r.rating || '' }]));
+  res.send(utils.toCSV(rows, [{ label: 'کد', value: (r) => r.code }, { label: 'موضوع', value: (r) => r.subject }, { label: 'ایجادکننده', value: (r) => r.creator_name }, { label: 'کلاس', value: (r) => r.class_title || '' }, { label: 'SLA', value: (r) => (E('tickets.sla') ? (r.sla = r.sla || sla.info(r)).state === 'overdue' ? 'خارج از مهلت' : r.sla.state === 'warning' ? 'نزدیک مهلت' : r.sla.state === 'ok' ? 'در مهلت' : '—' : '') }, { label: 'دسته', value: (r) => CATEGORIES[r.category] || r.category }, { label: 'اولویت', value: (r) => utils.PRIORITIES[r.priority] || '' }, { label: 'وضعیت', value: (r) => STATUSES[r.status] }, { label: 'ارجاع به', value: (r) => r.assignee_name || '' }, { label: 'تاریخ', value: (r) => J.formatDateTime(r.created_at) }, { label: 'آخرین پاسخ', value: (r) => J.formatDateTime(r.last_reply_at) }, { label: 'امتیاز', value: (r) => r.rating || '' }]));
 });
 
 // ---------- آمار ----------
@@ -91,16 +98,25 @@ router.get('/stats', auth.requireRoleOrPermission(['admin'], 'tickets.manage'), 
   const byStatus = Object.fromEntries((await db.table('tickets').select('status', 'COUNT(*) as c').groupBy('status').all()).map((r) => [r.status, Number(r.c)]));
   const byCategory = await db.table('tickets').select('category', 'COUNT(*) as c').groupBy('category').orderBy('c', 'desc').all();
   const byPriority = await db.table('tickets').select('priority', 'COUNT(*) as c').groupBy('priority').all();
-  const byAssignee = await db.table('tickets as t').join('users as a', 'a.id', 't.assigned_to').select('a.name', 'COUNT(*) as c', `SUM(CASE WHEN t.status = 'closed' THEN 1 ELSE 0 END) as closed`, 'AVG(t.rating) as rating').groupBy('a.id', 'a.name').orderBy('c', 'desc').all();
+  const byAssignee = await db.table('tickets as t').join('users as a', 'a.id', 't.assigned_to').select('a.id', 'a.name', 'COUNT(*) as c', `SUM(CASE WHEN t.status = 'closed' THEN 1 ELSE 0 END) as closed`, 'AVG(t.rating) as rating').groupBy('a.id', 'a.name').orderBy('c', 'desc').all();
   const rating = await db.table('tickets').select('AVG(rating) as avg', 'COUNT(rating) as n').whereNotNull('rating').first();
   // میانگین زمان اولین پاسخ (ساعت)
-  const firstReplies = await db.all(`SELECT t.created_at, MIN(r.created_at) AS first_reply FROM tickets t JOIN ticket_replies r ON r.ticket_id = t.id AND r.user_id != t.created_by AND r.is_internal = 0 GROUP BY t.id, t.created_at`);
+  const firstReplies = await db.all(`SELECT t.created_at, t.priority, MIN(r.created_at) AS first_reply FROM tickets t JOIN ticket_replies r ON r.ticket_id = t.id AND r.user_id != t.created_by AND r.is_internal = 0 GROUP BY t.id, t.created_at, t.priority`);
   let avgHours = null;
   if (firstReplies.length) { const hrs = firstReplies.map((r) => (new Date(String(r.first_reply).replace(' ', 'T')) - new Date(String(r.created_at).replace(' ', 'T'))) / 36e5).filter((x) => x >= 0); if (hrs.length) avgHours = Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length * 10) / 10; }
+  let slaReport = null;
+  if (E('tickets.sla')) {
+    const cls = await sla.classify(db.table('tickets as t'));
+    const perAssignee = {};
+    if (cls.overdue.length) for (const r of await db.table('tickets').select('assigned_to').whereIn('id', cls.overdue).all()) perAssignee[r.assigned_to || 0] = (perAssignee[r.assigned_to || 0] || 0) + 1;
+    const openRows = await db.table('tickets').select('id', 'created_at', 'status').where('status', '!=', 'closed').all();
+    const unresolved = sla.compute(openRows).filter((r) => r.sla.resolveOverdue).length;
+    slaReport = Object.assign({ open: cls.open, overdue: cls.overdue.length, warning: cls.warning.length, ok: cls.ok.length, perAssignee, unresolved, resolveDays: sla.resolveDays(), targets: { urgent: sla.targetHours('urgent'), high: sla.targetHours('high'), normal: sla.targetHours('normal'), low: sla.targetHours('low') } }, sla.compliance(firstReplies));
+  }
   // ۳۰ روز اخیر
   const since = J.addDays(J.todayISO(), -29);
   const daily = await db.table('tickets').select(`${db.info.dialect === 'mysql' ? 'DATE(created_at)' : 'substr(created_at,1,10)'} as d`, 'COUNT(*) as c').where('created_at', '>=', since).groupBy('d').orderBy('d').all();
-  res.render(v('stats'), { title: 'آمار تیکت‌ها', byStatus, byCategory, byPriority, byAssignee, rating, avgHours, daily, CATEGORIES, STATUSES, total: Object.values(byStatus).reduce((a, b) => a + b, 0) });
+  res.render(v('stats'), { title: 'آمار تیکت‌ها', byStatus, byCategory, byPriority, byAssignee, rating, avgHours, daily, slaReport, CATEGORIES, STATUSES, total: Object.values(byStatus).reduce((a, b) => a + b, 0) });
 });
 
 // ---------- پاسخ‌های آماده ----------
@@ -176,7 +192,8 @@ router.get('/:id', async (req, res) => {
   const rq = db.table('ticket_replies as r').join('users as u', 'u.id', 'r.user_id').select('r.*', 'u.name', 'u.role', 'u.avatar').where('r.ticket_id', t.id).orderBy('r.id');
   if (req.user.role === 'student' || req.user.role === 'parent' || !E('tickets.internal_notes')) rq.where('r.is_internal', 0);
   const replies = await rq.all();
-  const staffUser = req.user.role !== 'student';
+  const staffUser = !isEndUser(req);
+  if (E('tickets.sla')) { t.sla = sla.info(t); const fr = await db.table('ticket_replies').where('ticket_id', t.id).where('user_id', '!=', t.created_by).where('is_internal', 0).orderBy('id').first(); t.first_reply_at = fr ? fr.created_at : null; t.first_reply_hours = fr ? Math.round((new Date(String(fr.created_at).replace(' ', 'T') + 'Z') - new Date(String(t.created_at).replace(' ', 'T') + 'Z')) / 36e4) / 10 : null; }
   const canned = staffUser && E('tickets.canned') ? await db.table('canned_responses').where((b) => b.where('user_id', req.user.id).orWhereNull('user_id')).orderBy('title').all() : [];
   const people = isStaff(req) && E('tickets.assign') ? await assignees() : [];
   const student = t.student_id ? await db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id', 's.first_name', 's.last_name', 's.student_number', 's.photo', 's.father_phone', 's.mother_phone', 's.mobile', 'c.title as class_title').where('s.id', t.student_id).first() : null;
@@ -193,7 +210,7 @@ router.post('/:id/reply', ...upload.form('tickets', 'single', 'file', { maxMb: 5
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect(back); }
   const message = utils.normalizePersian(req.body.message || '').trim();
   if (!message) { req.flash('danger', 'متن پاسخ خالی است'); return res.redirect(back); }
-  const staffUser = req.user.role !== 'student';
+  const staffUser = !isEndUser(req);
   if (t.status === 'closed' && !staffUser) { req.flash('warning', 'این تیکت بسته شده است. لطفاً تیکت جدیدی ثبت کنید.'); return res.redirect(back); }
   const internal = staffUser && E('tickets.internal_notes') && req.body.is_internal === '1' ? 1 : 0;
   const now = db.now();

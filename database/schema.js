@@ -77,7 +77,7 @@ module.exports = {
 
   tickets: {
     id: 'increments', code: 'string:16 unique', subject: 'string:200 notnull', department: 'string:20 default:admin index', created_by: 'integer index', student_id: 'integer index', assigned_to: 'integer index',
-    class_id: 'integer', category: 'string:40', priority: 'string:10 default:normal', status: 'string:20 default:open index', last_reply_at: 'datetime', last_reply_by: 'integer', closed_at: 'datetime', rating: 'integer', created_at: 'datetime', updated_at: 'datetime'
+    class_id: 'integer', category: 'string:40', priority: 'string:10 default:normal', status: 'string:20 default:open index', last_reply_at: 'datetime', last_reply_by: 'integer', closed_at: 'datetime', rating: 'integer', sla_alerted_at: 'datetime', created_at: 'datetime', updated_at: 'datetime'
   },
   ticket_replies: { id: 'increments', ticket_id: 'integer index', user_id: 'integer', message: 'text', file_path: 'string:255', file_name: 'string:255', is_internal: 'boolean default:0', created_at: 'datetime' },
   canned_responses: { id: 'increments', user_id: 'integer index', title: 'string:120', body: 'text', created_at: 'datetime' },

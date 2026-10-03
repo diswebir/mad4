@@ -9,7 +9,7 @@ const DEFAULTS = {
   school_phone: '', school_email: '', school_address: '', school_website: '', school_logo: '', principal_name: '', deputy_name: '',
   primary_color: '#2563eb', sidebar_style: 'dark', default_theme: 'light', items_per_page: '20', timezone_offset: '+03:30',
   attendance_alert_threshold: '3', attendance_absent_notify: '1', attendance_periods: '4', late_threshold_minutes: '15',
-  grading_pass_score: '10', grading_max_score: '20', ticket_categories: 'آموزشی,انضباطی,مالی,فنی,سایر', ticket_auto_close_days: '7',
+  grading_pass_score: '10', grading_max_score: '20', ticket_categories: 'آموزشی,انضباطی,مالی,فنی,سایر', ticket_auto_close_days: '7', ticket_sla_hours: '48', ticket_sla_urgent_hours: '4', ticket_sla_high_hours: '24', ticket_sla_low_hours: '96', ticket_sla_resolve_days: '7', ticket_sla_warn_percent: '75', ticket_sla_notify: '1',
   sms_enabled: '0', sms_provider: 'log', sms_api_key: '', sms_sender: '', sms_template_absent: 'ولی گرامی، دانش‌آموز {name} امروز {date} در مدرسه حضور نداشت. {school}',
   email_enabled: '0', smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', smtp_from: '', smtp_secure: '0',
   login_captcha: '1', login_max_attempts: '5', login_lock_minutes: '15', session_days: '7', demo_mode: '0', allow_student_tickets_to_admin: '1',

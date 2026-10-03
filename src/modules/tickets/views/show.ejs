@@ -35,6 +35,19 @@
     <% } %>
   </div>
   <div class="col-lg-4">
+    <% if (isStaff && enabled('tickets.sla') && t.sla) { %>
+    <div class="card mb-3 border-<%= t.sla.state === 'overdue' ? 'danger' : t.sla.state === 'warning' ? 'warning' : 'light' %>" id="sla"><div class="card-header"><h6><i class="bi bi-stopwatch me-1"></i>مهلت پاسخ (SLA)</h6></div>
+      <ul class="list-group list-group-flush fs-7">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">مهلت پاسخ اول (<%= utils.PRIORITIES[t.priority] || t.priority %>)</span><span><%= t.sla.targetLabel %></span></li>
+        <% if (t.sla.state !== 'na') { %>
+        <li class="list-group-item d-flex justify-content-between align-items-center"><span class="text-secondary">وضعیت</span><span class="badge badge-soft-<%= t.sla.badge %>"><%= t.sla.state === 'overdue' ? 'خارج از مهلت — ' : t.sla.state === 'warning' ? 'نزدیک مهلت — ' : 'در مهلت — ' %><%= t.sla.label %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">در انتظار پاسخ از</span><span><%= J.formatDateTime(t.status === 'open' && t.last_reply_at ? t.last_reply_at : t.created_at) %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">سررسید</span><span class="<%= t.sla.state === 'overdue' ? 'text-danger fw-bold' : '' %>"><%= J.formatDateTime(t.sla.dueAt) %></span></li>
+        <% } %>
+        <% if (t.first_reply_at) { %><li class="list-group-item d-flex justify-content-between"><span class="text-secondary">اولین پاسخ کارکنان</span><span><%= J.toPersianDigits(t.first_reply_hours) %> ساعت پس از ثبت<% if (t.first_reply_hours > t.sla.target) { %> <span class="badge badge-soft-danger">دیرتر از مهلت</span><% } else { %> <span class="badge badge-soft-success">در مهلت</span><% } %></span></li><% } %>
+        <% if (t.sla.resolveOverdue) { %><li class="list-group-item text-danger"><i class="bi bi-clock-history me-1"></i>این تیکت <%= J.toPersianDigits(t.sla.resolveElapsedDays) %> روز است که حل نشده (هدف: <%= J.toPersianDigits(t.sla.resolveDays) %> روز).</li><% } %>
+      </ul></div>
+    <% } %>
     <div class="card mb-3"><div class="card-header"><h6>مشخصات</h6></div>
       <ul class="list-group list-group-flush fs-7">
         <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">وضعیت</span><%- include('_status', { status: t.status }) %></li>
