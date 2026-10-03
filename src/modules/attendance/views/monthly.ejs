@@ -9,10 +9,10 @@
 <% } else { %><h5>دفتر حضور و غیاب <%= cls ? cls.title : '' %> — <%= J.MONTHS[jm - 1] %> <%= J.toPersianDigits(jy) %></h5><div class="fs-7 mb-2">● حاضر · غ غایب · ت تأخیر · م موجه · خ مرخصی</div><% } %>
 <% if (cls) { %>
 <div class="card"><div class="table-responsive"><table class="table table-bordered table-sm mb-0 monthly-grid text-center" style="font-size:11px">
-  <thead><tr><th class="text-start" style="min-width:140px">دانش‌آموز</th><% dayInfo.forEach(function (d) { %><th class="<%= d.school ? '' : 'bg-light text-muted' %>" title="<%= J.WEEKDAYS[d.wd] %>"><%= J.toPersianDigits(d.d) %><div style="font-size:9px"><%= J.WEEKDAYS_SHORT[d.wd] %></div></th><% }); %><th>غ</th><th>ت</th></tr></thead>
+  <thead><tr><th class="text-start" style="min-width:140px">دانش‌آموز</th><% dayInfo.forEach(function (d) { %><th class="<%= d.holiday ? 'bg-danger-subtle text-danger' : d.school ? '' : 'bg-light text-muted' %>" title="<%= J.WEEKDAYS[d.wd] %><%= d.holiday ? ' — تعطیل: ' + d.holiday : '' %>"><%= J.toPersianDigits(d.d) %><div style="font-size:9px"><%= J.WEEKDAYS_SHORT[d.wd] %></div></th><% }); %><th>غ</th><th>ت</th></tr></thead>
   <tbody><% students.forEach(function (s) { var g = grid[s.id] || {}; var ab = 0, la = 0; %>
     <tr><td class="text-start text-nowrap"><a href="/students/<%= s.id %>"><%= s.first_name %> <%= s.last_name %></a></td>
-    <% dayInfo.forEach(function (d) { var st = g[d.d]; if (st === 'absent') ab++; if (st === 'late') la++; %><td class="<%= st ? 'cell-' + st : (d.school ? '' : 'bg-light') %>"><%= st ? sym[st] : '' %></td><% }); %>
+    <% dayInfo.forEach(function (d) { var st = g[d.d]; if (st === 'absent') ab++; if (st === 'late') la++; %><td class="<%= st ? 'cell-' + st : (d.holiday ? 'bg-danger-subtle' : d.school ? '' : 'bg-light') %>" <%- d.holiday ? 'title="تعطیل: ' + d.holiday + '"' : '' %>><%= st ? sym[st] : '' %></td><% }); %>
     <td class="fw-bold text-danger"><%= J.toPersianDigits(ab) %></td><td class="fw-bold text-warning"><%= J.toPersianDigits(la) %></td></tr>
   <% }); %></tbody></table></div></div>
 <% } else { %><%- include('partials/empty', { message: 'کلاسی انتخاب نشده است' }) %><% } %>

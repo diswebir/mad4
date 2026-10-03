@@ -8,7 +8,7 @@
   <%- include('_datenav', { date: date }) %>
   <% if (enabled('attendance.dashboard_stats') && summary.total) { %><div class="d-flex gap-2 fs-7"><span class="badge badge-soft-success py-2">حاضر <%= J.toPersianDigits(summary.present) %></span><span class="badge badge-soft-danger py-2">غایب <%= J.toPersianDigits(summary.absent) %></span><span class="badge badge-soft-warning py-2">تأخیر <%= J.toPersianDigits(summary.late) %></span><span class="badge badge-soft-primary py-2">نرخ حضور <%= J.toPersianDigits(Math.round(summary.present / summary.total * 100)) %>٪</span></div><% } %>
 </div></div>
-<% if (!isSchoolDay) { %><div class="alert alert-warning py-2"><i class="bi bi-info-circle me-1"></i>این روز جزو روزهای کاری مدرسه نیست.</div><% } %>
+<% if (holiday) { %><div class="alert alert-danger py-2"><i class="bi bi-calendar-x me-1"></i>این روز <b>تعطیل رسمی</b> است (<%= holiday %>)؛ ثبت حضور و غیاب برای معلمان بسته است.</div><% } else if (!isSchoolDay) { %><div class="alert alert-warning py-2"><i class="bi bi-info-circle me-1"></i>این روز جزو روزهای کاری مدرسه نیست.</div><% } %>
 <div class="row g-3"><% classes.forEach(function (c) { var st = byClass[c.id]; var daily = st && st.daily; var subs = mySubjects.filter(function (m) { return m.class_id === c.id; }); %>
   <div class="col-md-6 col-xl-4"><div class="card h-100 <%= daily ? 'border-success-subtle' : '' %>"><div class="card-body">
     <div class="d-flex justify-content-between align-items-start mb-2"><div><h6 class="mb-0"><a href="/academic/classes/<%= c.id %>"><%= c.title %></a></h6><div class="fs-7 text-secondary"><%= c.grade_title %> · <%= J.toPersianDigits(c.cnt) %> نفر<%= c.teacher_name ? ' · ' + c.teacher_name : '' %></div></div>

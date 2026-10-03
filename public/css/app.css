@@ -289,6 +289,7 @@ a { text-decoration: none; }
 .att-calendar .cal-day small { font-size: .62rem; color: var(--bs-secondary-color); }
 .att-calendar .cal-day.today { outline: 2px solid var(--brand); }
 .att-calendar .cal-day.off { background: var(--bs-tertiary-bg); color: var(--bs-secondary-color); }
+.att-calendar .cal-day.holiday { background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); border-style: dashed; }
 .st-present, .cell-present { background: #dcfce7 !important; color: #166534 !important; }
 .st-absent, .cell-absent { background: #fee2e2 !important; color: #991b1b !important; }
 .st-late, .cell-late { background: #fef3c7 !important; color: #92400e !important; }

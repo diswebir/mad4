@@ -36,8 +36,9 @@ async function canTake(req, classId, csId) {
 }
 async function canViewClass(req, classId) { return canTake(req, classId, null); }
 function parseDate(q) { if (!q) return J.todayISO(); const g = J.toGregorian(q); return g || (J.parseISO(q) ? q : J.todayISO()); }
-const schoolDays = () => { const n = settings.getList('school_days').map(Number).filter((x) => x >= 0 && x <= 6); return n.length ? n : [0, 1, 2, 3, 4]; };
-const isSchoolDay = (iso) => schoolDays().includes(J.weekdayIndex(iso));
+const schooldays = require('../../core/schooldays');
+const isSchoolDay = schooldays.isSchoolDay;
+const holidayOn = async (iso) => (E('attendance.holidays') ? schooldays.holidayOn(iso) : null);
 const classesQuery = () => db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').leftJoin('teachers as t', 't.id', 'c.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').select('c.*', 'g.title as grade_title', 'u.name as teacher_name', '(SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.status = \'active\') as cnt').where('c.is_active', 1);
 
 // ---------- صفحهٔ اصلی ----------
@@ -58,7 +59,7 @@ router.get('/', async (req, res) => {
     const s = await db.table('attendance').select('status', 'COUNT(*) as c').where('date', date).where('session_key', 'daily').groupBy('status').all();
     s.forEach((r) => { summary.total += Number(r.c); if (['present', 'late'].includes(r.status)) summary.present += Number(r.c); if (r.status === 'absent') summary.absent += Number(r.c); if (r.status === 'late') summary.late += Number(r.c); });
   }
-  res.render(v('index'), { title: 'حضور و غیاب', date, classes, byClass, mySubjects, todaySlots, summary, isSchoolDay: isSchoolDay(date), isTeacher: !!t });
+  res.render(v('index'), { title: 'حضور و غیاب', date, classes, byClass, mySubjects, todaySlots, summary, isSchoolDay: isSchoolDay(date), holiday: await holidayOn(date), isTeacher: !!t });
 });
 
 // ---------- ثبت ----------
@@ -79,9 +80,10 @@ router.get('/take', async (req, res) => {
   // غیبت روزانه برای پیش‌فرض زنگ
   const dailyAbsent = cs ? Object.fromEntries((await db.table('attendance').select('student_id', 'status').where({ date, class_id: classId, session_key: 'daily' }).all()).map((r) => [r.student_id, r.status])) : {};
   const stats30 = Object.fromEntries((await db.table('attendance').select('student_id', 'COUNT(*) as c').where('class_id', classId).where('status', 'absent').where('date', '>=', J.addDays(date, -30)).groupBy('student_id').all()).map((r) => [r.student_id, Number(r.c)]));
-  const locked = req.user.role === 'teacher' && E('attendance.edit_window') && J.diffDays(date, J.todayISO()) > 3;
+  const holiday = await holidayOn(date);
+  const locked = (req.user.role === 'teacher' && E('attendance.edit_window') && J.diffDays(date, J.todayISO()) > 3) || (!!holiday && req.user.role === 'teacher');
   const otherSessions = E('attendance.per_subject') ? await db.table('attendance as a').join('class_subjects as cs', 'cs.id', 'a.class_subject_id').join('subjects as s', 's.id', 'cs.subject_id').select('a.session_key', 's.title', 'COUNT(*) as c').where('a.date', date).where('a.class_id', classId).where('a.session_key', '!=', sessionKey).groupBy('a.session_key', 's.title').all() : [];
-  res.render(v('take'), { title: 'ثبت حضور و غیاب', cls, cs, date, students, map, dailyAbsent, stats30, locked, sessionKey, statuses: STATUSES(), existingCount: existing.length, otherSessions, isSchoolDay: isSchoolDay(date), period: req.query.period || '' });
+  res.render(v('take'), { title: 'ثبت حضور و غیاب', cls, cs, date, students, map, dailyAbsent, stats30, locked, sessionKey, statuses: STATUSES(), existingCount: existing.length, otherSessions, isSchoolDay: isSchoolDay(date), holiday, period: req.query.period || '' });
 });
 
 router.post('/take', async (req, res) => {
@@ -89,6 +91,9 @@ router.post('/take', async (req, res) => {
   const date = parseDate(req.body.date);
   if (!classId || !(await canTake(req, classId, csId))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   if (req.user.role === 'teacher' && E('attendance.edit_window') && J.diffDays(date, J.todayISO()) > 3) { req.flash('danger', 'مهلت ویرایش این تاریخ به پایان رسیده است.'); return res.redirect('/attendance'); }
+  const holidayTitle = await holidayOn(date);
+  if (holidayTitle && req.user.role === 'teacher') { req.flash('danger', `تاریخ ${J.formatDate(date)} تعطیل رسمی است (${holidayTitle}) و ثبت حضور و غیاب در آن مجاز نیست.`); return res.redirect('/attendance?date=' + date); }
+  if (holidayTitle && req.body.confirm_holiday !== '1') { req.flash('warning', `تاریخ ${J.formatDate(date)} تعطیل رسمی است (${holidayTitle}). برای ثبت، گزینهٔ «با وجود تعطیلی ثبت شود» را علامت بزنید.`); return res.redirect('/attendance/take?class_id=' + classId + (csId ? '&class_subject_id=' + csId : '') + '&date=' + date); }
   const sessionKey = csId ? 'cs:' + csId : 'daily';
   const allowed = STATUSES();
   const students = await db.table('students').select('id', 'first_name', 'last_name', 'user_id', 'father_phone', 'mother_phone', 'guardian_phone', 'guardian_type').where('class_id', classId).where('status', 'active').all();
@@ -156,7 +161,7 @@ router.get('/report/student/:id', async (req, res) => {
   for (let i = 5; i >= 0; i--) { let y = jy, m = jm - i; while (m < 1) { m += 12; y--; } const r = J.jalaliMonthRange(y, m); const rows = await db.table('attendance').select('status', 'COUNT(*) as c').where('student_id', s.id).where('session_key', 'daily').whereBetween('date', r.start, r.end).groupBy('status').all(); const o = Object.fromEntries(rows.map((x) => [x.status, Number(x.c)])); trend.push({ label: J.MONTHS[m - 1], absent: o.absent || 0, late: o.late || 0, present: (o.present || 0) + (o.late || 0), total: Object.values(o).reduce((a, b) => a + b, 0) }); }
   const excuses = E('attendance.excuses') ? await db.table('absence_excuses').where('student_id', s.id).orderBy('id', 'desc').limit(10).all() : [];
   const recent = await db.table('attendance as a').leftJoin('class_subjects as cs', 'cs.id', 'a.class_subject_id').leftJoin('subjects as sb', 'sb.id', 'cs.subject_id').select('a.*', 'sb.title as subject_title').where('a.student_id', s.id).where('a.status', '!=', 'present').orderBy('a.date', 'desc').limit(30).all();
-  res.render(v('student'), { title: 'گزارش حضور ' + s.first_name + ' ' + s.last_name, s, jy, jm, range, byDay, totals, total, trend, excuses, recent, isOwner, schoolDays: schoolDays(), monthLen: J.monthLength(jy, jm) });
+  res.render(v('student'), { title: 'گزارش حضور ' + s.first_name + ' ' + s.last_name, s, jy, jm, range, byDay, totals, total, trend, excuses, recent, isOwner, schoolDays: schooldays.schoolDays(), holidays: E('attendance.holidays') ? Object.fromEntries(await schooldays.holidaysBetween(range.start, range.end)) : {}, monthLen: J.monthLength(jy, jm) });
 });
 
 router.get('/report/class/:id', modules.requireEnabled('attendance.class_report'), async (req, res) => {
@@ -170,7 +175,9 @@ router.get('/report/class/:id', modules.requireEnabled('attendance.class_report'
   rows.forEach((r) => { stats[r.student_id] = stats[r.student_id] || {}; stats[r.student_id][r.status] = Number(r.c); });
   const days = (await db.table('attendance').select('date').distinct().where('class_id', cls.id).where('session_key', 'daily').whereBetween('date', from, to).all()).length;
   const threshold = settings.getInt('attendance_alert_threshold', 3);
-  res.render(v('class'), { title: 'گزارش حضور کلاس ' + cls.title, cls, students, stats, from, to, days, threshold });
+  const holidays = E('attendance.holidays') ? await schooldays.holidaysBetween(from, to) : new Map();
+  const schoolDates = (await schooldays.schoolDates(from, to)).filter((d) => !holidays.has(d));
+  res.render(v('class'), { title: 'گزارش حضور کلاس ' + cls.title, cls, students, stats, from, to, days, threshold, schoolDaysCount: schoolDates.length, holidaysCount: E('attendance.holidays') ? [...holidays.keys()].filter((d) => isSchoolDay(d)).length : 0 });
 });
 
 router.get('/report/daily', auth.requireRoleOrPermission(['admin'], 'attendance.view_all', 'attendance.manage_all'), modules.requireEnabled('attendance.daily_report'), async (req, res) => {
@@ -201,7 +208,8 @@ router.get('/report/monthly', modules.requireEnabled('attendance.monthly_report'
     rows.forEach((r) => { grid[r.student_id] = grid[r.student_id] || {}; grid[r.student_id][J.toJalaliParts(r.date).jd] = r.status; });
   }
   const range = J.jalaliMonthRange(jy, jm);
-  const dayInfo = []; for (let d = 1; d <= J.monthLength(jy, jm); d++) { const iso = J.toGregorian(`${jy}/${jm}/${d}`); dayInfo.push({ d, iso, wd: J.weekdayIndex(iso), school: isSchoolDay(iso) }); }
+  const hol = E('attendance.holidays') ? await schooldays.holidaysBetween(range.start, range.end) : new Map();
+  const dayInfo = []; for (let d = 1; d <= J.monthLength(jy, jm); d++) { const iso = J.toGregorian(`${jy}/${jm}/${d}`); const holiday = hol.get(iso) || null; dayInfo.push({ d, iso, wd: J.weekdayIndex(iso), school: isSchoolDay(iso) && !holiday, holiday }); }
   const print = req.query.print === '1';
   res.render(v('monthly'), { title: 'دفتر حضور ماهانه', layout: print ? 'layouts/print' : undefined, print, classes, cls, classId, jy, jm, students, grid, dayInfo, range });
 });

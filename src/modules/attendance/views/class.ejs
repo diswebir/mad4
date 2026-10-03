@@ -1,4 +1,4 @@
-<%- include('partials/page-header', { title: 'گزارش حضور کلاس ' + cls.title, subtitle: J.toPersianDigits(days) + ' روز ثبت‌شده در بازه', icon: 'bi-graph-up', breadcrumbs: [{ title: 'حضور و غیاب', href: '/attendance' }, { title: cls.title }], actions: [
+<%- include('partials/page-header', { title: 'گزارش حضور کلاس ' + cls.title, subtitle: J.toPersianDigits(days) + ' روز ثبت‌شده از ' + J.toPersianDigits(schoolDaysCount) + ' روز آموزشی بازه' + (holidaysCount ? ' (' + J.toPersianDigits(holidaysCount) + ' روز تعطیل رسمی کسر شد)' : ''), icon: 'bi-graph-up', breadcrumbs: [{ title: 'حضور و غیاب', href: '/attendance' }, { title: cls.title }], actions: [
   ...(enabled('attendance.export') ? [{ href: '/attendance/export?class_id=' + cls.id + '&from=' + from + '&to=' + to, label: 'CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : []),
   ...(enabled('attendance.monthly_report') ? [{ href: '/attendance/report/monthly?class_id=' + cls.id, label: 'دفتر ماهانه', icon: 'bi-calendar3', class: 'btn-light' }] : []),
   { print: true, label: 'چاپ' }

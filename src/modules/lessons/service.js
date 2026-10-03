@@ -5,16 +5,11 @@ const settings = require('../../core/settings');
 const modules = require('../../core/modules');
 const J = require('../../core/jalali');
 
-const schoolDays = () => { const n = settings.getList('school_days').map(Number).filter((x) => x >= 0 && x <= 6); return n.length ? n : [0, 1, 2, 3, 4]; };
+const schooldays = require('../../core/schooldays');
+const schoolDays = schooldays.schoolDays;
 
 /** مجموعهٔ روزهای تعطیل (رویدادهای نوع holiday) در بازه */
-async function holidaysBetween(from, to) {
-  const set = new Set();
-  if (!modules.isEnabled('calendar.holidays')) return set;
-  const rows = await db.table('events').select('start_date', 'end_date').where('type', 'holiday').where('start_date', '<=', to).all();
-  for (const r of rows) { let d = r.start_date; const end = r.end_date || r.start_date; let guard = 0; while (d <= end && guard++ < 60) { if (d >= from) set.add(d); d = J.addDays(d, 1); } }
-  return set;
-}
+async function holidaysBetween(from, to) { return new Set((await schooldays.holidaysBetween(from, to)).keys()); }
 /** روزهای مدرسه در بازه (بدون تعطیلات) */
 async function schoolDates(from, to) {
   const days = schoolDays(); const hol = await holidaysBetween(from, to); const out = [];
