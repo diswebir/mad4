@@ -64,7 +64,7 @@ async function runJob(key, trigger, force) {
   const runId = await db.insert('job_runs', { job_key: key, started_at: started, status: 'running', trigger: trigger || 'auto' });
   let status = 'ok'; let message = '';
   try { const r = await job.run({ db, settings, J, trigger, force: !!force }); message = typeof r === 'string' ? r : (r && r.message) || 'انجام شد'; }
-  catch (e) { status = 'failed'; message = e.message || String(e); console.error(`[scheduler] ${key} failed:`, e); }
+  catch (e) { status = 'failed'; message = e.message || String(e); console.error(`[scheduler] ${key} failed:`, e); require('./logger').error(`job ${key} failed`, e, null, { job: key, trigger }); }
   const ms = Date.now() - t0;
   await db.update('job_runs', { finished_at: db.now(), status, message: String(message).slice(0, 2000) }, { id: runId });
   await db.table('scheduled_jobs').where('key', key).update({ last_run_at: started, last_status: status, last_message: String(message).slice(0, 2000), last_duration_ms: ms, lock_token: null, locked_at: null, updated_at: db.now() });

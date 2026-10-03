@@ -10,6 +10,7 @@ module.exports = {
     { key: 'auto_backup', name: 'پشتیبان‌گیری خودکار روزانه', description: 'نسخهٔ پشتیبان شبانه با نگه‌داری N نسخهٔ آخر' },
     { key: 'sms_log', name: 'لاگ پیامک‌ها', description: 'ثبت همهٔ پیامک‌های ارسالی (گیرنده، متن، وضعیت، سرویس‌دهنده) و ارائه‌دهندهٔ «لاگ» برای تست بدون هزینه' },
     { key: 'activity_log', name: 'گزارش فعالیت کاربران', description: 'ثبت ایجاد/ویرایش/حذف و سایر اقدامات' },
+    { key: 'error_log', name: 'گزارش خطاها و لاگ سامانه', description: 'ثبت خطاهای سرور، استثناها، شکست کارهای زمان‌بندی‌شده و پیامک/ایمیل در فایل‌های روزانه (storage/logs) با نمایش، فیلتر، دانلود و پاک‌سازی خودکار' },
     { key: 'sms_settings', name: 'تنظیمات درگاه پیامک', description: 'کاوه‌نگار یا وب‌هوک سفارشی' },
     { key: 'email_settings', name: 'تنظیمات ایمیل (SMTP)', description: 'ارسال ایمیل از طریق سرور SMTP' },
     { key: 'security_settings', name: 'تنظیمات امنیتی', description: 'تعداد تلاش ورود، مدت قفل، کپچا و طول نشست' },
@@ -27,6 +28,7 @@ module.exports = {
     { title: 'پشتیبان‌گیری', href: '/system/backup', icon: 'bi-cloud-arrow-down', roles: ['admin'], permission: 'system.backup', feature: 'backup' },
     { title: 'کارهای زمان‌بندی‌شده', href: '/system/jobs', icon: 'bi-alarm', roles: ['admin'], permission: 'system.jobs', feature: 'scheduler' },
     { title: 'لاگ پیامک', href: '/system/sms-log', icon: 'bi-chat-left-dots', roles: ['admin'], permission: 'system.logs', feature: 'sms_log' },
+    { title: 'گزارش خطاها', href: '/system/logs', icon: 'bi-bug', roles: ['admin'], permission: 'system.logs', feature: 'error_log' },
     { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], permission: ['system.settings', 'system.logs'], feature: 'system_info' }
   ],
   jobs: require('./jobs'),

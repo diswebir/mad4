@@ -44,6 +44,7 @@ async function sms(to, text, context, opts) {
       else { const res = await httpPostJson(url, { apiKey, sender, to: recipients, text }); result = { ok: res.status < 400, status: res.status, error: res.status >= 400 ? 'HTTP ' + res.status : null }; }
     } else result = { ok: false, error: 'درگاه پیامک ناشناخته' };
   } catch (e) { result = { ok: false, error: e.message }; }
+  if (!result.ok && provider !== 'log') require('./logger').warn('sms failed', { provider, to: recipients.length, error: result.error, context });
   try {
     const now = db.now();
     const logText = (provider !== 'log' && opts.logText) ? opts.logText : text;
@@ -63,7 +64,7 @@ async function email(to, subject, html) {
     });
     await transporter.sendMail({ from: settings.get('smtp_from') || settings.get('smtp_user'), to, subject, html });
     return { ok: true };
-  } catch (e) { return { ok: false, error: e.message }; }
+  } catch (e) { require('./logger').warn('email failed', { to, subject, error: e.message }); return { ok: false, error: e.message }; }
 }
 
 function template(str, vars) { return String(str || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)); }

@@ -22,7 +22,7 @@ class Client {
     const text = await res.text();
     const m = /name="_csrf" value="([^"]+)"/.exec(text) || /name="csrf-token" content="([^"]+)"/.exec(text);
     if (m && m[1]) this.csrf = m[1];
-    return { status: res.status, location: res.headers.get('location'), text, json: () => { try { return JSON.parse(text); } catch (e) { return null; } } };
+    return { status: res.status, location: res.headers.get('location'), headers: { 'content-type': res.headers.get('content-type'), 'content-disposition': res.headers.get('content-disposition') }, text, json: () => { try { return JSON.parse(text); } catch (e) { return null; } } };
   }
   get(path, opts) { return this.request('GET', path, null, opts); }
   post(path, body, opts) { return this.request('POST', path, body || {}, opts); }

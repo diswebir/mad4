@@ -25,6 +25,7 @@ const csrf = require('./core/csrf');
 const flash = require('./core/flash');
 const DbSessionStore = require('./core/session-store');
 const pkg = require('../package.json');
+const logger = require('./core/logger');
 
 const ROOT = config.ROOT;
 
@@ -196,7 +197,7 @@ function createApp() {
   app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);
     const status = err.status || err.statusCode || 500;
-    if (status >= 500) console.error('[error]', err);
+    if (status >= 500) { console.error('[error]', err); logger.error('HTTP 500', err, req, { status }); }
     const message = err.code === 'LIMIT_FILE_SIZE' ? 'حجم فایل بیش از حد مجاز است' : (status < 500 || config.get().isDev ? err.message : 'خطای داخلی سرور');
     res.status(status);
     if (auth.wantsJson(req)) return res.json({ ok: false, error: message });

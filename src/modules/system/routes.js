@@ -31,6 +31,8 @@ router.use('/demo', auth.requireAdmin);
 router.use('/info', P('system.settings', 'system.logs'));
 router.use('/jobs', P('system.jobs'), modules.requireEnabled('system.scheduler'));
 router.use('/sms-log', P('system.logs'), modules.requireEnabled('system.sms_log'));
+router.use('/logs', P('system.logs'), modules.requireEnabled('system.error_log'));
+const logger = require('../../core/logger');
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },
@@ -47,7 +49,7 @@ const FIELDS = {
   school: ['school_name', 'school_slogan', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
   academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
   appearance: ['primary_color', 'default_theme', 'sidebar_style'],
-  security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length'],
+  security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
@@ -280,5 +282,36 @@ router.get('/sms-log', async (req, res) => {
   res.render(v('sms-log'), { title: 'لاگ پیامک', rows, total, page, pages: Math.ceil(total / per), stats, contexts, f: { q: req.query.q || '', status: req.query.status || '', context: req.query.context || '' }, provider: settings.get('sms_provider', 'log'), smsEnabled: settings.getBool('sms_enabled') });
 });
 router.post('/sms-log/clear', async (req, res) => { await db.table('sms_log').where('created_at', '<', J.addDays(J.todayISO(), -30)).delete(); req.flash('success', 'لاگ‌های قدیمی‌تر از ۳۰ روز پاک شد'); res.redirect('/system/sms-log'); });
+
+// ---------- گزارش خطاها و لاگ سامانه ----------
+const LOG_LEVELS = { error: 'خطا', warn: 'هشدار', info: 'اطلاع', debug: 'اشکال‌زدایی' };
+router.get('/logs', async (req, res) => {
+  const files = logger.files();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? req.query.date : (files[0] ? files[0].date : J.todayISO());
+  const level = Object.keys(LOG_LEVELS).includes(req.query.level) ? req.query.level : '';
+  const q = String(req.query.q || '').slice(0, 100);
+  const rows = logger.read(date, { limit: 300, level: level || null, q });
+  const counts = { error: 0, warn: 0, info: 0, debug: 0 }; for (const r of logger.read(date, { limit: 5000 })) counts[r.level] = (counts[r.level] || 0) + 1;
+  res.render(v('logs'), { title: 'گزارش خطاها', files, date, level, q, rows, counts, LOG_LEVELS, stats: logger.stats(), logDir: logger.dir() });
+});
+router.get('/logs/download', (req, res) => {
+  const f = logger.pathFor(req.query.date); if (!f || !fs.existsSync(f)) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  res.download(f, path.basename(f));
+});
+router.post('/logs/test', async (req, res) => {
+  logger.error('خطای آزمایشی (ثبت‌شده توسط مدیر برای بررسی عملکرد لاگ)', new Error('TEST_LOG_ENTRY'), req, { test: true });
+  logger.warn('هشدار آزمایشی', { user: req.user.username, test: true });
+  req.flash('success', 'یک خطا و یک هشدار آزمایشی ثبت شد.'); res.redirect('/system/logs?date=' + J.todayISO());
+});
+router.post('/logs/prune', async (req, res) => {
+  const n = logger.prune(settings.getInt('log_keep_days', 14));
+  await activity.log(req, 'prune_logs', 'system', null, `حذف ${n} فایل لاگ قدیمی`);
+  req.flash('success', `${J.toPersianDigits(n)} فایل لاگ قدیمی‌تر از ${J.toPersianDigits(settings.getInt('log_keep_days', 14))} روز حذف شد.`); res.redirect('/system/logs');
+});
+router.post('/logs/delete', async (req, res) => {
+  const ok = logger.remove(req.body.date);
+  if (ok) await activity.log(req, 'delete_log', 'system', null, `حذف فایل لاگ ${req.body.date}`);
+  req.flash(ok ? 'success' : 'danger', ok ? 'فایل لاگ حذف شد.' : 'فایل یافت نشد.'); res.redirect('/system/logs');
+});
 
 module.exports = router;

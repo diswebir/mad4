@@ -8,8 +8,9 @@ process.title = 'madrese';
 process.removeAllListeners('warning');
 process.on('warning', (w) => { if (w && w.name !== 'ExperimentalWarning') console.warn(w); });
 // خطاهای ناهمگام مدیریت‌نشده نباید کل سرویس را از کار بیندازند
-process.on('unhandledRejection', (err) => { console.error('[unhandledRejection]', err && err.stack ? err.stack : err); });
-process.on('uncaughtException', (err) => { console.error('[uncaughtException]', err && err.stack ? err.stack : err); });
+const logger = require('./src/core/logger');
+process.on('unhandledRejection', (err) => { console.error('[unhandledRejection]', err && err.stack ? err.stack : err); try { logger.error('unhandledRejection', err); } catch (e) { /* ignore */ } });
+process.on('uncaughtException', (err) => { console.error('[uncaughtException]', err && err.stack ? err.stack : err); try { logger.error('uncaughtException', err); } catch (e) { /* ignore */ } });
 
 const { createApp, boot } = require('./src/app');
 const config = require('./src/core/config');
@@ -31,7 +32,7 @@ boot((m) => console.log(m))
     process.on('SIGINT', shutdown);
   })
   .catch((err) => {
-    console.error('[madrese] خطا در راه‌اندازی:', err);
+    console.error('[madrese] خطا در راه‌اندازی:', err); try { logger.error('boot failed', err); } catch (e) { /* ignore */ }
     // حتی در صورت خطای اتصال، برنامه بالا می‌آید تا صفحهٔ نصب/خطا نمایش داده شود
     app.locals.bootError = err;
     app.listen(cfg.port, cfg.host, () => console.log('[madrese] در حالت محدود اجرا شد (خطای پایگاه داده)'));
