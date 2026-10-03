@@ -16,6 +16,7 @@ const stamp = Date.now().toString().slice(-5);
 
   // --- عمومی ---
   const g = new Client();
+  g.headers = { 'x-forwarded-for': '10.' + [0, 0, 0].map(() => Math.floor(Math.random() * 254) + 1).join('.') }; // سقف ۵ درخواست در ساعت برای هر IP
   r = await g.get('/apply'); assert(r.status === 302 && /\/admissions\/apply$/.test(r.location || ''), 'short url /apply redirects');
   r = await g.get('/admissions/apply'); assert(r.status === 200 && /name="national_id"/.test(r.text) && /متن راهنمای تست/.test(r.text) && /شناسنامه و کارنامه/.test(r.text), 'public apply form (no login) with intro + docs');
   assert(!/sidebar|داشبورد/.test(r.text) && /ورود به سامانه/.test(r.text), 'public layout (no app chrome)');

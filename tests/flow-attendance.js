@@ -18,7 +18,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   let opt = /name="attendance_id"[\s\S]*?<option value="(\d+)"/.exec(r.text);
   // اگر همهٔ غیبت‌های دانش‌آموز ۴۰۰۰۱ قبلاً موجه شده‌اند (اجرای مکرر تست)، یک غیبت جدید برای او در هفته‌های قبل ثبت می‌کنیم
   const adm = new Client(); await adm.login('admin', 'admin123'); // مدیر محدودیت پنجرهٔ ویرایش ندارد
-  for (let back = 7; !opt && back <= 35; back += 7) {
+  for (let back = 7; !opt && back <= 7 * 40; back += 7) {
     const d = new Date(formDate + 'T12:00:00'); d.setDate(d.getDate() - back - 1); const iso = d.toISOString().slice(0, 10); // روز قبل (شنبه تا چهارشنبه)
     const f = await adm.get('/attendance/take?class_id=1&date=' + iso);
     const b = { class_id: '1', date: f.text.match(/name="date" value="([^"]+)"/)[1], session_key: 'daily' };
