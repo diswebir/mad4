@@ -13,7 +13,7 @@ class Client {
   }
   async request(method, path, body, opts) {
     opts = opts || {};
-    const headers = Object.assign({ cookie: this.cookieHeader() }, opts.headers || {});
+    const headers = Object.assign({ cookie: this.cookieHeader() }, this.headers || {}, opts.headers || {});
     let payload;
     if (body && opts.json) { headers['content-type'] = 'application/json'; headers.accept = 'application/json'; if (this.csrf) headers['x-csrf-token'] = this.csrf; payload = JSON.stringify(body); }
     else if (body) { headers['content-type'] = 'application/x-www-form-urlencoded'; const p = new URLSearchParams(); if (this.csrf && !body._csrf) p.set('_csrf', this.csrf); for (const [k, v] of Object.entries(body)) { if (Array.isArray(v)) v.forEach((x) => p.append(k, x)); else p.set(k, v); } payload = p.toString(); }

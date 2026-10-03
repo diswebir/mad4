@@ -113,7 +113,9 @@ function createApp() {
     return res.redirect('/install');
   });
 
-  // نشست
+  // PWA: مانیفست، آیکون، سرویس‌ورکر و صفحهٔ آفلاین (بدون نیاز به نشست)
+  app.use(require('./core/pwa').router());
+
   // نشست (به‌صورت تنبل ساخته می‌شود تا کلید برنامه پس از نصب در دسترس باشد)
   let sessionMiddleware = null;
   let sessionKey = null;

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>آفلاین | <%= schoolName %></title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css">
+<style>body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bs-tertiary-bg)}.box{max-width:420px;text-align:center}.box i{font-size:4rem;color:<%= color %>}</style>
+</head>
+<body>
+<div class="box p-4">
+  <i class="bi bi-wifi-off"></i>
+  <h4 class="mt-3">اتصال اینترنت برقرار نیست</h4>
+  <p class="text-secondary">برای مشاهدهٔ <%= schoolName %> باید به اینترنت متصل باشید. پس از برقراری اتصال، صفحه را دوباره بارگذاری کنید.</p>
+  <button class="btn btn-primary" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i>تلاش دوباره</button>
+</div>
+<script>window.addEventListener('online', function () { location.reload(); });</script>
+</body>
+</html>

@@ -19,6 +19,7 @@ module.exports = {
     { key: 'jalali', name: 'تقویم شمسی و انتخابگر تاریخ', description: 'همیشه فعال', locked: true },
     { key: 'rtl_vazir', name: 'رابط راست‌چین با فونت وزیرمتن', description: 'همیشه فعال', locked: true },
     { key: 'dark_mode', name: 'حالت تاریک', description: 'دکمهٔ تغییر پوسته در نوار بالا' },
+    { key: 'pwa', name: 'نصب به‌عنوان اپلیکیشن (PWA)', description: 'مانیفست وب‌اپ با نام/رنگ مدرسه، آیکون تولیدشده، سرویس‌ورکر (کش دارایی‌های ایستا و صفحهٔ آفلاین) و گزینهٔ «نصب روی گوشی» برای دانش‌آموزان و اولیا' },
     { key: 'installer', name: 'ویزارد نصب وب و بازیابی اتصال', description: 'همیشه فعال', locked: true }
   ],
   menu: [
