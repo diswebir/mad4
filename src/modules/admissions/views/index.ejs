@@ -1,0 +1,33 @@
+<%- include('partials/page-header', { title: 'پیش‌ثبت‌نام و پذیرش', subtitle: (open ? 'ثبت‌نام باز است' : 'ثبت‌نام بسته است') + (year ? ' — سال تحصیلی ' + J.toPersianDigits(year.title) : ''), icon: 'bi-person-plus', actions: [
+  { href: '/admissions/apply', label: 'مشاهدهٔ فرم عمومی', icon: 'bi-box-arrow-up-left', class: 'btn-light', target: '_blank' },
+  ...(can('system.settings') ? [{ href: '/system/settings?tab=admissions', label: 'تنظیمات', icon: 'bi-gear', class: 'btn-light' }] : []),
+  ...(enabled('admissions.export') ? [{ href: '/admissions/export.csv' + (f.status || f.grade_level_id || f.q ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(f).filter(function (e) { return e[1]; }))).toString() : ''), label: 'CSV', icon: 'bi-download', class: 'btn-light' }] : [])
+] }) %>
+<% if (!open) { %><div class="alert alert-warning py-2 fs-7"><i class="bi bi-exclamation-triangle me-1"></i>فرم عمومی پیش‌ثبت‌نام بسته است و خانواده‌ها نمی‌توانند درخواست جدید ثبت کنند. <% if (can('system.settings')) { %><a href="/system/settings?tab=admissions">باز کردن ثبت‌نام</a><% } %></div><% } %>
+<div class="row g-3 mb-3">
+  <% Object.keys(STATUSES).forEach(function (s) { %><div class="col-6 col-md-4 col-xl-2"><a href="/admissions?status=<%= s %>" class="card stat-card h-100 text-decoration-none <%= f.status === s ? 'border-primary' : '' %>"><div class="card-body d-flex align-items-center gap-3 py-2"><div class="icon badge-soft-<%= STATUS_COLORS[s] %>"><i class="bi bi-circle-fill fs-7"></i></div><div><div class="fs-7 text-secondary"><%= STATUSES[s] %></div><div class="fw-bold"><%= J.toPersianDigits(stats[s] || 0) %></div></div></div></a></div><% }); %>
+</div>
+<div class="card">
+  <div class="card-header"><form method="get" class="row g-2 align-items-center">
+    <div class="col-md-4"><input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="جست‌وجو: نام، نام پدر، کد رهگیری، کد ملی، موبایل"></div>
+    <div class="col-md-3"><select class="form-select form-select-sm" name="status"><option value="">همهٔ وضعیت‌ها</option><% Object.keys(STATUSES).forEach(function (s) { %><option value="<%= s %>" <%= f.status === s ? 'selected' : '' %>><%= STATUSES[s] %></option><% }); %></select></div>
+    <div class="col-md-3"><select class="form-select form-select-sm" name="grade_level_id"><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
+    <div class="col-md-2 d-flex gap-1"><button class="btn btn-sm btn-primary flex-fill">فیلتر</button><a href="/admissions" class="btn btn-sm btn-light">پاک</a></div>
+  </form></div>
+  <div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>کد رهگیری</th><th>دانش‌آموز</th><th>پایه</th><th>پدر / موبایل</th><th>معدل قبلی</th><th>وضعیت</th><th>تاریخ ثبت</th><th></th></tr></thead>
+    <tbody>
+    <% if (!result.data.length) { %><tr><td colspan="8"><%- include('partials/empty', { message: 'درخواستی یافت نشد' }) %></td></tr><% } %>
+    <% result.data.forEach(function (r) { %><tr>
+      <td><a href="/admissions/<%= r.id %>" class="ltr fw-semibold"><%= r.code %></a><% if (r.file_path) { %> <i class="bi bi-paperclip text-secondary" title="دارای پیوست"></i><% } %></td>
+      <td><%= r.first_name %> <%= r.last_name %><div class="fs-7 text-secondary ltr"><%= r.national_id %></div></td>
+      <td><%= r.grade_title || '—' %></td>
+      <td><%= r.father_name || '—' %><div class="fs-7 text-secondary ltr"><%= r.father_phone || '' %></div></td>
+      <td><%= r.previous_average == null ? '—' : J.toPersianDigits(r.previous_average) %></td>
+      <td><span class="badge text-bg-<%= STATUS_COLORS[r.status] %>"><%= STATUSES[r.status] || r.status %></span></td>
+      <td class="fs-7"><%= J.formatDateTime(r.created_at) %></td>
+      <td class="actions"><a href="/admissions/<%= r.id %>" class="btn btn-sm btn-light" title="بررسی"><i class="bi bi-eye"></i></a></td>
+    </tr><% }); %>
+    </tbody></table></div>
+  <% if (result.pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: result }) %></div><% } %>
+</div>

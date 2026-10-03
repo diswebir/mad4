@@ -1,0 +1,8 @@
+<%- include('partials/page-header', { title: e.title, subtitle: TYPES[e.type] || e.type, icon: 'bi-calendar-event', breadcrumbs: [{ title: 'تقویم', href: '/calendar' }, { title: e.title }], actions: canManage ? [{ href: '/calendar/events/' + e.id + '/edit', label: 'ویرایش', icon: 'bi-pencil', class: 'btn-light' }, { post: '/calendar/events/' + e.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-outline-danger', confirm: 'رویداد حذف شود؟' }] : [] }) %>
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card" style="border-top:4px solid <%= e.color || '#2563eb' %>"><div class="card-body">
+  <dl class="row mb-0"><dt class="col-4">تاریخ</dt><dd class="col-8"><%= J.formatLong(e.start_date) %><%= e.end_date && e.end_date !== e.start_date ? ' تا ' + J.formatLong(e.end_date) : '' %></dd>
+  <% if (e.start_time) { %><dt class="col-4">ساعت</dt><dd class="col-8"><%= J.formatTime(e.start_time) %><%= e.end_time ? ' تا ' + J.formatTime(e.end_time) : '' %></dd><% } %>
+  <dt class="col-4">مخاطب</dt><dd class="col-8"><%= e.audience === 'class' ? (e.class_title || 'کلاس') : (AUD[e.audience] || e.audience) %></dd>
+  <% if (e.description) { %><dt class="col-4">توضیحات</dt><dd class="col-8"><%- utils.nl2br(utils.escapeHtml(e.description)) %></dd><% } %>
+  <dt class="col-4">ثبت‌کننده</dt><dd class="col-8"><%= e.creator || '—' %></dd></dl>
+</div></div></div></div>

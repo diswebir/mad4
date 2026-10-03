@@ -1,0 +1,36 @@
+<% var name = s.first_name + ' ' + s.last_name; var attTotal = att ? Object.values(att).reduce(function (a, b) { return a + b; }, 0) : 0; %>
+<% if (!print) { %><%- include('partials/page-header', { title: 'کارنامه — ' + name, subtitle: (s.class_title || '') + (term ? ' · ' + term.title : ''), icon: 'bi-file-earmark-text', breadcrumbs: [{ title: currentUser.role === 'student' ? 'نمرات من' : 'آزمون‌ها', href: currentUser.role === 'student' ? '/exams/my' : '/exams' }, { title: 'کارنامه' }], actions: [
+  ...(enabled('exams.print') ? [{ href: '/exams/report-card/' + s.id + '?term_id=' + termId + '&print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-light', target: '_blank' }] : []),
+  ...(currentUser.role !== 'student' ? [{ href: '/students/' + s.id, label: 'پرونده', icon: 'bi-person-vcard', class: 'btn-light' }] : [])
+] }) %>
+<form method="get" class="mb-3 d-flex gap-2 align-items-center"><label class="fs-7 text-secondary">نوبت:</label><select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select></form>
+<% } %>
+<div class="card report-card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 border-bottom pb-3 mb-3">
+      <div class="d-flex align-items-center gap-3"><%- include('partials/avatar', { user: { name: name, avatar: s.photo }, size: 64 }) %><div><h4 class="mb-1"><%= name %></h4><div class="text-secondary fs-7">شماره دانش‌آموزی: <span class="ltr d-inline-block"><%= J.toPersianDigits(s.student_number) %></span> · کلاس <%= s.class_title || '—' %> · پایهٔ <%= s.grade_title || '—' %></div><div class="text-secondary fs-7">نام پدر: <%= s.father_name || '—' %><% if (homeroom && homeroom.name) { %> · معلم راهنما: <%= homeroom.name %><% } %></div></div></div>
+      <div class="text-end"><div class="fw-bold"><%= S.get('school_name') %></div><div class="fs-7 text-secondary">کارنامهٔ <%= term ? term.title : '' %> · سال تحصیلی <%= term ? J.toPersianDigits(term.year_title) : '' %> <% if (term && Number(term.is_locked) && enabled('exams.lock')) { %><span class="badge text-bg-success ms-1"><i class="bi bi-patch-check-fill me-1"></i>نهایی</span><% } else if (term && enabled('exams.lock')) { %><span class="badge badge-soft-secondary ms-1">موقت</span><% } %></div><div class="fs-7 text-secondary">تاریخ صدور: <%= J.formatDate(J.todayISO()) %></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-8"><table class="table table-bordered align-middle mb-0 text-center">
+        <thead class="table-light"><tr><th class="text-start">درس</th><th>تعداد آزمون</th><th>نمره (از ۲۰)</th><th>میانگین کلاس</th><th>وضعیت</th></tr></thead>
+        <tbody><% report.subjects.forEach(function (sb) { var p = mine.per[sb.subject_id] || {}; var avg = report.subjectAvg[sb.subject_id]; %>
+          <tr><td class="text-start fw-semibold"><%= sb.title %></td><td><%= J.toPersianDigits(p.n || 0) %></td>
+            <td class="fw-bold <%= p.val != null && p.val < pass ? 'text-danger' : '' %>"><% if (p.val != null) { %><%= J.toPersianDigits(p.val) %><% } else if (p.desc) { %><%= utils.DESCRIPTIVE_GRADES[p.desc] %><% } else { %>—<% } %></td>
+            <td class="text-secondary"><%= avg != null ? J.toPersianDigits(avg) : '—' %></td>
+            <td><% if (p.val != null) { %><%- p.val >= pass ? '<span class="badge badge-soft-success">قبول</span>' : '<span class="badge badge-soft-danger">نیاز به جبران</span>' %><% } else if (p.desc) { %><span class="badge badge-soft-info"><%= utils.DESCRIPTIVE_GRADES[p.desc] %></span><% } %></td></tr>
+        <% }); %></tbody>
+        <tfoot class="table-light fw-bold"><tr><td class="text-start">معدل کل</td><td></td><td class="fs-5 <%= mine.gpa != null && mine.gpa < pass ? 'text-danger' : 'text-success' %>"><%= mine.gpa != null ? J.toPersianDigits(mine.gpa) : '—' %></td><td><%= report.classAvg != null ? J.toPersianDigits(report.classAvg) : '—' %></td><td><% if (enabled('exams.gpa') && mine.rank) { %>رتبهٔ <%= J.toPersianDigits(mine.rank) %> از <%= J.toPersianDigits(total) %><% } %></td></tr></tfoot>
+      </table></div>
+      <div class="col-lg-4">
+        <% if (att) { %><div class="border rounded p-3 mb-3"><div class="fw-semibold mb-2"><i class="bi bi-clipboard-check me-1"></i>حضور و غیاب این نوبت</div><div class="row g-2 text-center fs-7"><% [['present', 'حاضر', 'success'], ['absent', 'غایب', 'danger'], ['late', 'تأخیر', 'warning'], ['excused', 'موجه', 'info']].forEach(function (x) { %><div class="col-3"><div class="fs-5 fw-bold text-<%= x[2] %>"><%= J.toPersianDigits(att[x[0]] || 0) %></div><div class="text-secondary"><%= x[1] %></div></div><% }); %></div><% if (attTotal) { %><div class="fs-7 text-secondary mt-2 text-center">از <%= J.toPersianDigits(attTotal) %> روز ثبت‌شده</div><% } %></div><% } %>
+        <% if (discipline != null) { %><div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center"><span class="fw-semibold"><i class="bi bi-shield-check me-1"></i>امتیاز انضباطی</span><span class="fs-5 fw-bold <%= discipline < 0 ? 'text-danger' : 'text-success' %>"><%= J.toPersianDigits(discipline || 0) %></span></div><% } %>
+        <% if (enabled('exams.remarks')) { %><div class="border rounded p-3"><div class="fw-semibold mb-2"><i class="bi bi-chat-quote me-1"></i>نظر معلم راهنما</div>
+          <% if (canRemark && !print) { %><form method="post" action="/exams/remarks/<%= s.id %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="term_id" value="<%= termId %>"><textarea class="form-control form-control-sm mb-2" name="remark" rows="3" placeholder="توضیح برای اولیا…"><%= remark ? remark.remark : '' %></textarea><button class="btn btn-sm btn-outline-primary">ذخیره</button></form>
+          <% } else { %><div class="fs-7"><%= remark && remark.remark ? remark.remark : '—' %></div><% } %>
+          <% if (remark && remark.author_name) { %><div class="fs-7 text-secondary mt-1"><%= remark.author_name %> · <%= J.formatDate(remark.created_at) %></div><% } %></div><% } %>
+      </div>
+    </div>
+    <% if (print) { %><div class="row mt-5 text-center fs-7"><div class="col-4">امضای معلم راهنما</div><div class="col-4">امضای مدیر مدرسه</div><div class="col-4">امضای ولی دانش‌آموز</div></div><% } %>
+  </div>
+</div>

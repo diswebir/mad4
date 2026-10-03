@@ -1,0 +1,14 @@
+<div class="no-print mb-3 d-flex gap-2 align-items-center fs-7"><form method="get" class="d-flex gap-2 align-items-center"><label class="text-secondary">ماه:</label><select class="form-select form-select-sm w-auto" name="month" onchange="this.form.submit()"><% months.forEach(function (m) { %><option value="<%= m.value %>" <%= m.value === jy + '/' + jm ? 'selected' : '' %>><%= m.label %></option><% }); %></select></form><span class="text-secondary">راهنما: غ = غایب، ت = تأخیر، م = موجه، خ = مرخصی، خالی = حاضر، نقطه = ثبت نشده</span></div>
+<style>@media print { @page { size: A4 landscape; margin: 8mm; } } .roster td, .roster th { padding: 1px 2px !important; }</style>
+<div class="official-doc" style="margin:0 auto">
+  <%- include('partials/letterhead', { lh: lh, serial: serial, date: J.todayISO() }) %>
+  <h5 class="text-center fw-bold mb-1">دفتر حضور و غیاب کلاس <%= cls.title %> — <%= monthName %> <%= J.toPersianDigits(jy) %></h5>
+  <div class="text-center fs-7 text-secondary mb-2">پایهٔ <%= cls.grade_title || '—' %> · معلم راهنما: <%= cls.teacher_name || '—' %> · <%= J.toPersianDigits(rows.length) %> دانش‌آموز · <%= J.toPersianDigits(days.length) %> روز کاری</div>
+  <table class="table table-bordered table-sm roster text-center" style="font-size:10.5px">
+    <thead><tr><th style="width:24px">#</th><th class="text-start" style="min-width:120px">نام و نام خانوادگی</th><% days.forEach(function (d) { %><th title="<%= J.formatDate(d.iso) %>"><div><%= J.toPersianDigits(d.d) %></div><div class="fw-normal text-secondary"><%= J.WEEKDAYS_SHORT[d.wd] %></div></th><% }); %><th>غ</th><th>ت</th><th>م</th><th>خ</th></tr></thead>
+    <tbody><% rows.forEach(function (r, i) { %><tr><td><%= J.toPersianDigits(i + 1) %></td><td class="text-start text-nowrap"><%= r.s.first_name %> <%= r.s.last_name %></td>
+      <% r.cells.forEach(function (st) { %><td class="<%= st === 'absent' ? 'text-danger fw-bold' : st === 'late' ? 'text-warning' : '' %>"><%= st == null ? '·' : (SYM[st] != null ? SYM[st] : st) %></td><% }); %>
+      <td class="fw-bold"><%= J.toPersianDigits(r.c.absent) %></td><td><%= J.toPersianDigits(r.c.late) %></td><td><%= J.toPersianDigits(r.c.excused) %></td><td><%= J.toPersianDigits(r.c.leave) %></td></tr><% }); %></tbody>
+  </table>
+  <div class="d-flex justify-content-between fs-7 mt-3"><div class="text-center" style="min-width:180px"><div class="fw-bold">معلم راهنما</div><div class="text-secondary"><%= cls.teacher_name || '' %></div></div><div style="min-width:220px"><%- include('partials/signature', { lh: lh, verifyCode: null }) %></div></div>
+</div>

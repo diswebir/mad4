@@ -1,0 +1,8 @@
+<%- include('partials/page-header', { title: 'نظرسنجی‌ها', icon: 'bi-bar-chart-steps', actions: canCreate ? [{ href: '/polls/new', label: 'نظرسنجی جدید', icon: 'bi-plus-lg', class: 'btn-primary' }] : [] }) %>
+<div class="row g-3"><% polls.forEach(function (p) { %>
+  <div class="col-md-6 col-xl-4"><div class="card h-100 <%= !p.is_active || p.expired ? 'opacity-75' : '' %>"><div class="card-body">
+    <div class="d-flex flex-wrap gap-1 mb-2"><span class="badge badge-soft-primary"><%= p.audience === 'class' ? (p.class_title || 'کلاس') : AUD[p.audience] %></span><% if (!p.is_active) { %><span class="badge badge-soft-secondary">بسته</span><% } else if (p.expired) { %><span class="badge badge-soft-danger">مهلت تمام</span><% } else if (p.voted) { %><span class="badge badge-soft-success"><i class="bi bi-check2"></i> رأی داده‌اید</span><% } else { %><span class="badge text-bg-warning">در انتظار رأی شما</span><% } %></div>
+    <h6><a href="/polls/<%= p.id %>" class="text-body"><%= p.question %></a></h6>
+    <div class="fs-7 text-secondary"><%= J.toPersianDigits(p.opts.length) %> گزینه · <%= J.toPersianDigits(p.voters) %> شرکت‌کننده<% if (p.ends_at) { %> · تا <%= J.formatDate(p.ends_at) %><% } %></div>
+  </div><div class="card-footer bg-transparent"><a href="/polls/<%= p.id %>" class="btn btn-sm <%= p.voted || !p.is_active ? 'btn-light' : 'btn-primary' %>"><%= p.voted || !p.is_active || p.expired ? 'مشاهده' : 'شرکت در نظرسنجی' %></a></div></div></div>
+<% }); if (!polls.length) { %><div class="col-12"><div class="card"><%- include('partials/empty', { message: 'نظرسنجی فعالی وجود ندارد', icon: 'bi-bar-chart-steps' }) %></div></div><% } %></div>

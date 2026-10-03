@@ -1,0 +1,11 @@
+<%- include('partials/page-header', { title: 'بازنشانی رمز عبور', icon: 'bi-key', breadcrumbs: [{ title: 'کاربران', href: '/users' }, { title: 'بازنشانی رمز' }] }) %>
+<form method="post" action="/users/<%= user.id %>/reset" class="card" style="max-width:520px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="back" value="<%= query.back || '/users' %>">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-2 mb-3"><%- include('partials/avatar', { user: user }) %><div><strong><%= user.name %></strong><div class="fs-7 text-secondary ltr text-end"><%= user.username %> · <%= utils.ROLES[user.role] %></div></div></div>
+    <div class="mb-3"><label class="form-label required">رمز عبور جدید</label><div class="input-group"><input class="form-control ltr" name="password" value="<%= suggested %>" required minlength="6" id="pw"><button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('pw').value=Math.random().toString(36).slice(2,10)">تصادفی</button></div><div class="form-text">این رمز را به کاربر اطلاع دهید.</div></div>
+    <div class="form-check form-switch"><input type="hidden" name="force" value="0"><input class="form-check-input" type="checkbox" role="switch" name="force" value="1" id="force" checked><label class="form-check-label" for="force">کاربر در ورود بعدی باید رمز را تغییر دهد</label></div>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-end gap-2"><a href="<%= query.back || '/users' %>" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4">بازنشانی</button></div>
+</form>

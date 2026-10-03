@@ -1,0 +1,34 @@
+<div class="card">
+  <div class="card-header"><h5><i class="bi bi-check-circle-fill text-success me-1"></i>نصب با موفقیت انجام شد</h5></div>
+  <div class="card-body">
+    <div class="alert alert-success">سامانه آمادهٔ استفاده است. اطلاعات ورود را یادداشت کنید.</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="demo-box h-100">
+          <div class="fw-bold mb-2"><i class="bi bi-person-badge me-1"></i>حساب مدیر</div>
+          نام کاربری: <code class="ltr" data-copy><%= form.admin_username %></code><br>
+          رمز عبور: همان رمزی که وارد کردید
+        </div>
+      </div>
+      <% if (demo) { %>
+      <div class="col-md-6">
+        <div class="demo-box h-100">
+          <div class="fw-bold mb-2"><i class="bi bi-people me-1"></i>حساب‌های نمونه (رمز همه: <code data-copy>123456</code>)</div>
+          معلم: <code class="ltr" data-copy>teacher1</code> … <code class="ltr">teacher12</code><br>
+          دانش‌آموز: <code class="ltr" data-copy>student1</code> … <code class="ltr">student220</code>
+        </div>
+      </div>
+      <% } %>
+    </div>
+    <div class="mt-4">
+      <div class="fw-bold mb-1">مراحل انجام‌شده:</div>
+      <ul class="fs-7 text-secondary mb-0"><% log.forEach(function (l) { %><li><%= l %></li><% }); %></ul>
+    </div>
+    <div class="alert alert-light border mt-4 fs-7 mb-0">
+      <strong>نکتهٔ cPanel:</strong> اگر برنامه را از طریق «Setup Node.js App» اجرا کرده‌اید، در صورت نیاز یک‌بار دکمهٔ <em>Restart</em> را بزنید. تنظیمات در <code>storage/config.json</code> ذخیره شده است؛ از آن نسخهٔ پشتیبان بگیرید.
+    </div>
+  </div>
+  <div class="card-footer bg-transparent text-end">
+    <a href="/auth/login" class="btn btn-primary px-4"><i class="bi bi-box-arrow-in-left me-1"></i>ورود به سامانه</a>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+<%- include('partials/page-header', { title: 'درخواست‌های موجه‌شدن غیبت', icon: 'bi-file-earmark-medical', breadcrumbs: [{ title: 'حضور و غیاب', href: me ? '/attendance/my' : '/attendance' }, { title: 'درخواست‌های موجه' }] }) %>
+<% if (me) { %>
+<div class="row g-3 mb-3"><div class="col-lg-6">
+  <form method="post" action="/attendance/excuses" enctype="multipart/form-data" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="card-header"><h6><i class="bi bi-plus-circle me-1"></i>ثبت درخواست جدید</h6></div>
+    <div class="card-body">
+      <div class="mb-3"><label class="form-label required">غیبت مورد نظر</label><select class="form-select" name="attendance_id" required><option value="">— انتخاب کنید —</option><% myAbsences.forEach(function (a) { %><option value="<%= a.id %>"><%= J.formatLong(a.date) %></option><% }); %></select><% if (!myAbsences.length) { %><div class="form-text">غیبت بدون درخواست ندارید.</div><% } %></div>
+      <div class="mb-3"><label class="form-label required">دلیل غیبت</label><textarea class="form-control" name="reason" rows="3" required placeholder="مثال: بیماری و مراجعه به پزشک…"></textarea></div>
+      <div><label class="form-label">مدرک (گواهی پزشک و…)</label><input type="file" class="form-control" name="file" accept="image/*,.pdf"></div>
+    </div>
+    <div class="card-footer bg-transparent text-end"><button class="btn btn-primary" <%= myAbsences.length ? '' : 'disabled' %>>ارسال درخواست</button></div>
+  </form></div></div>
+<% } else { %>
+<ul class="nav nav-pills mb-3"><% [['pending', 'در انتظار'], ['approved', 'تأیید شده'], ['rejected', 'رد شده'], ['', 'همه']].forEach(function (x) { %><li class="nav-item"><a class="nav-link <%= status === x[0] ? 'active' : '' %>" href="?status=<%= x[0] %>"><%= x[1] %></a></li><% }); %></ul>
+<% } %>
+<div class="card table-card">
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><% if (!me) { %><th>دانش‌آموز</th><% } %><th>تاریخ غیبت</th><th>دلیل</th><th>مدرک</th><th>وضعیت</th><th>بررسی</th><% if (!me) { %><th></th><% } %></tr></thead>
+  <tbody><% result.data.forEach(function (e) { %><tr>
+    <% if (!me) { %><td><a href="/students/<%= e.student_id %>"><%= e.first_name %> <%= e.last_name %></a><div class="fs-7 text-secondary"><%= e.class_title || '' %></div></td><% } %>
+    <td><%= J.formatLong(e.date) %></td><td class="fs-7" style="max-width:280px"><%= e.reason %></td><td><% if (e.file_path) { %><a href="/files/<%= e.file_path %>" target="_blank"><i class="bi bi-paperclip"></i> مشاهده</a><% } else { %><span class="text-muted">—</span><% } %></td>
+    <td><%- utils.statusBadge(e.status) %></td><td class="fs-7"><% if (e.reviewed_by) { %><%= e.reviewer || '' %><div class="text-secondary"><%= J.formatDateTime(e.reviewed_at) %></div><% if (e.review_note) { %><div><%= e.review_note %></div><% } %><% } else { %>—<% } %></td>
+    <% if (!me) { %><td class="text-end"><% if (e.status === 'pending') { %><form method="post" action="/attendance/excuses/<%= e.id %>/review" class="d-flex gap-1 justify-content-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm" name="note" placeholder="توضیح (اختیاری)" style="width:140px"><button class="btn btn-sm btn-success" name="action" value="approve"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger" name="action" value="reject"><i class="bi bi-x-lg"></i></button></form><% } %></td><% } %>
+  </tr><% }); if (!result.data.length) { %><tr><td colspan="7"><%- include('partials/empty', { message: 'درخواستی وجود ندارد' }) %></td></tr><% } %></tbody></table></div>
+  <%- include('partials/pagination', { result: result, query: query }) %>
+</div>

@@ -1,0 +1,233 @@
+<%
+var fullName = s.first_name + ' ' + s.last_name;
+var tabs = [{ k: 'overview', t: 'نمای کلی', i: 'bi-grid' }, { k: 'info', t: 'اطلاعات کامل', i: 'bi-card-list' }];
+if (enabled('attendance')) tabs.push({ k: 'attendance', t: 'حضور و غیاب', i: 'bi-clipboard-check' });
+if (enabled('exams') && (!isStudent || enabled('exams.student_view'))) tabs.push({ k: 'grades', t: 'نمرات', i: 'bi-award' });
+if (enabled('discipline')) tabs.push({ k: 'discipline', t: 'انضباطی', i: 'bi-shield-check' });
+if (enabled('finance') && !isTeacher) tabs.push({ k: 'finance', t: 'مالی', i: 'bi-cash-coin' });
+if (enabled('students.notes')) tabs.push({ k: 'notes', t: 'یادداشت‌ها', i: 'bi-journal-text' });
+if (enabled('students.documents')) tabs.push({ k: 'docs', t: 'مدارک', i: 'bi-folder2-open' });
+if (enabled('students.transfer') || enabled('health') || enabled('counseling') || enabled('library')) tabs.push({ k: 'history', t: 'سوابق', i: 'bi-clock-history' });
+if (enabled('enrollments') && typeof enrollmentHistory !== 'undefined' && enrollmentHistory) tabs.push({ k: 'enrollments', t: 'سوابق تحصیلی', i: 'bi-mortarboard' });
+if (enabled('parents') && typeof parentAccounts !== 'undefined' && parentAccounts && !isStudent) tabs.push({ k: 'parents', t: 'حساب اولیا', i: 'bi-people' });
+if (!tabs.find(function (x) { return x.k === tab; })) tab = 'overview';
+var guardianPhone = s.guardian_type === 'mother' ? s.mother_phone : (s.guardian_type === 'other' ? s.guardian_phone : s.father_phone);
+var guardianName = s.guardian_type === 'mother' ? s.mother_name : (s.guardian_type === 'other' ? s.guardian_name : s.father_name);
+%>
+<%- include('partials/page-header', { title: fullName, subtitle: 'شماره ' + J.toPersianDigits(s.student_number) + (s.class_title ? ' · کلاس ' + s.class_title : ' · بدون کلاس') + (s.grade_title ? ' · ' + s.grade_title : ''), icon: 'bi-person-vcard', breadcrumbs: [{ title: 'دانش‌آموزان', href: isStudent ? '/dashboard' : '/students' }, { title: fullName }], actions: [
+  ...(enabled('students.id_card') ? [{ href: '/students/' + s.id + '/card', label: 'کارت', icon: 'bi-person-badge', class: 'btn-light', target: '_blank' }] : []),
+  ...(enabled('students.profile_print') && !isStudent ? [{ href: '/students/' + s.id + '?print=1', label: 'چاپ پرونده', icon: 'bi-printer', class: 'btn-light', target: '_blank' }] : []),
+  ...(enabled('tickets') && !isStudent && canManage ? [{ href: '/tickets/new?student_id=' + s.id, label: 'تیکت', icon: 'bi-chat-left-text', class: 'btn-light' }] : []),
+  ...(enabled('documents.certificates') && !isStudent && can('documents.issue') ? [{ href: '/documents/new?type=certificate&student_id=' + s.id, label: 'گواهی', icon: 'bi-patch-check', class: 'btn-light' }] : []),
+  ...(enabled('documents.report_card') && enabled('exams') && !isStudent && can('documents.issue') ? [{ href: '/documents/report-card/' + s.id, label: 'کارنامهٔ رسمی', icon: 'bi-file-earmark-text', class: 'btn-light' }] : []),
+  ...(canManage ? [{ href: '/students/' + s.id + '/edit', label: 'ویرایش پرونده', icon: 'bi-pencil', class: 'btn-primary' }] : [])
+] }) %>
+
+<div class="row g-3">
+  <div class="col-lg-3">
+    <div class="card mb-3"><div class="card-body text-center">
+      <div class="mx-auto mb-2 position-relative d-inline-block"><%- include('partials/avatar', { user: { name: fullName, avatar: s.photo }, size: 110 }) %>
+        <% if (canManage && enabled('students.photo')) { %><form method="post" action="/students/<%= s.id %>/photo" enctype="multipart/form-data" class="position-absolute bottom-0 end-0"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><label class="btn btn-sm btn-light rounded-circle shadow-sm mb-0" title="تغییر عکس"><i class="bi bi-camera"></i><input type="file" name="photo" accept="image/*" class="d-none" onchange="this.form.submit()"></label></form><% } %></div>
+      <h5 class="mb-0"><%= fullName %></h5>
+      <div class="fs-7 text-secondary mb-2"><%= utils.GENDERS[s.gender] || '' %><%= s.birth_date ? ' · ' + J.toPersianDigits(J.age(s.birth_date)) + ' ساله' : '' %></div>
+      <div><%- utils.statusBadge(s.status, utils.STUDENT_STATUS) %></div>
+    </div>
+    <div class="card-body border-top fs-7 info-list">
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">شماره دانش‌آموزی</span><span class="ltr fw-semibold"><%= J.toPersianDigits(s.student_number) %></span></div>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">کد ملی</span><span class="ltr"><%= J.toPersianDigits(s.national_id || '—') %></span></div>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">کلاس</span><span><% if (s.class_id) { %><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a><% } else { %>—<% } %></span></div>
+      <% if (homeroom && homeroom.name) { %><div class="d-flex justify-content-between py-1"><span class="text-secondary">معلم راهنما</span><span><% if (!isStudent) { %><a href="/teachers/<%= homeroom.teacher_id %>"><%= homeroom.name %></a><% } else { %><%= homeroom.name %><% } %></span></div><% } %>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">تاریخ تولد</span><span><%= s.birth_date ? J.formatDate(s.birth_date) : '—' %></span></div>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">ثبت‌نام</span><span><%= s.enrollment_date ? J.formatDate(s.enrollment_date) : '—' %></span></div>
+      <% if (enabled('students.parents')) { %><div class="d-flex justify-content-between py-1"><span class="text-secondary">ولی (<%= { father: 'پدر', mother: 'مادر', other: s.guardian_relation || 'سرپرست' }[s.guardian_type] || 'پدر' %>)</span><span><%= guardianName || '—' %></span></div>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">تماس ولی</span><span class="ltr"><% if (guardianPhone) { %><a href="tel:<%= guardianPhone %>"><%= J.toPersianDigits(guardianPhone) %></a><% } else { %>—<% } %></span></div><% } %>
+      <% if (s.mobile) { %><div class="d-flex justify-content-between py-1"><span class="text-secondary">موبایل</span><span class="ltr"><%= J.toPersianDigits(s.mobile) %></span></div><% } %>
+      <% if (enabled('students.medical') && s.blood_type) { %><div class="d-flex justify-content-between py-1"><span class="text-secondary">گروه خونی</span><span class="ltr fw-semibold text-danger"><%= s.blood_type %></span></div><% } %>
+      <% if (!isStudent && enabled('students.user_account')) { %><div class="d-flex justify-content-between py-1"><span class="text-secondary">حساب کاربری</span><span class="ltr"><%= s.username || '—' %> <%- s.user_status === 'inactive' ? '<span class="badge badge-soft-danger">غیرفعال</span>' : '' %></span></div>
+      <div class="d-flex justify-content-between py-1"><span class="text-secondary">آخرین ورود</span><span><%= s.last_login_at ? J.timeAgo(s.last_login_at) : 'هرگز' %></span></div><% } %>
+    </div>
+    <% if (canManage) { %>
+    <div class="card-footer bg-transparent d-grid gap-2">
+      <% if (enabled('students.transfer')) { %><button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transferModal"><i class="bi bi-arrow-left-right me-1"></i>انتقال کلاس</button><% } %>
+      <% if (enabled('students.status')) { %><button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#statusModal"><i class="bi bi-toggle2-on me-1"></i>تغییر وضعیت</button><% } %>
+      <% if (enabled('students.user_account') && s.user_id) { %><a href="#" data-post="/students/<%= s.id %>/reset-password" data-confirm="رمز جدید تصادفی ساخته شود؟" class="btn btn-sm btn-outline-secondary"><i class="bi bi-key me-1"></i>بازنشانی رمز</a><% } %>
+      <% if (enabled('auth.impersonate') && s.user_id) { %><a href="#" data-post="/auth/impersonate/<%= s.user_id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-in-left me-1"></i>مشاهدهٔ پنل دانش‌آموز</a><% } %>
+      <a href="#" data-post="/students/<%= s.id %>/delete" data-confirm="پروندهٔ «<%= fullName %>» و همهٔ سوابق او حذف شود؟ این عمل بازگشت‌پذیر نیست." class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>حذف پرونده</a>
+    </div>
+    <% } %>
+    </div>
+    <% if (enabled('students.siblings') && siblings && siblings.length) { %>
+    <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>خواهر / برادر</h6></div><ul class="list-group list-group-flush"><% siblings.forEach(function (x) { %><li class="list-group-item d-flex align-items-center gap-2"><%- include('partials/avatar', { user: { name: x.first_name + ' ' + x.last_name, avatar: x.photo }, size: 28 }) %><a href="/students/<%= x.id %>"><%= x.first_name %> <%= x.last_name %></a><span class="fs-7 text-secondary ms-auto"><%= x.class_title || '' %></span></li><% }); %></ul></div>
+    <% } %>
+  </div>
+
+  <div class="col-lg-9">
+    <ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto"><% tabs.forEach(function (t) { %><li class="nav-item"><a class="nav-link text-nowrap <%= tab === t.k ? 'active' : '' %>" href="?tab=<%= t.k %>"><i class="bi <%= t.i %> me-1"></i><%= t.t %></a></li><% }); %></ul>
+
+    <% if (tab === 'overview') { %>
+      <div class="row g-3 mb-3">
+        <% if (enabled('attendance')) { var rate = attTotal ? Math.round((((att.present || 0) + (att.late || 0)) / attTotal) * 100) : null; %>
+        <div class="col-6 col-md-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-clipboard-check"></i></div><div><div class="value"><%= rate != null ? J.toPersianDigits(rate) + '٪' : '—' %></div><div class="label">حضور · <%= J.toPersianDigits(att.absent || 0) %> غیبت</div></div></div></div></div>
+        <% } %>
+        <% if (typeof avg !== 'undefined' && enabled('exams')) { %><div class="col-6 col-md-3"><div class="card stat-card text-primary"><div class="card-body d-flex align-items-center gap-3"><div class="icon bg-brand-soft"><i class="bi bi-award"></i></div><div><div class="value"><%= avg != null ? J.toPersianDigits(avg) : '—' %></div><div class="label">میانگین نمرات</div></div></div></div></div><% } %>
+        <% if (enabled('discipline')) { %><div class="col-6 col-md-3"><div class="card stat-card <%= points >= 0 ? 'text-info' : 'text-danger' %>"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= points >= 0 ? 'info' : 'danger' %>"><i class="bi bi-shield-check"></i></div><div><div class="value"><%= J.toPersianDigits(points || 0) %></div><div class="label">امتیاز انضباطی</div></div></div></div></div><% } %>
+        <% if (enabled('finance') && !isTeacher) { %><div class="col-6 col-md-3"><div class="card stat-card <%= due > 0 ? 'text-warning' : 'text-success' %>"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= due > 0 ? 'warning' : 'success' %>"><i class="bi bi-cash-coin"></i></div><div><div class="value fs-6"><%= utils.money(due || 0) %></div><div class="label">بدهی شهریه</div></div></div></div></div><% } %>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <% if (enabled('students.timeline') && timeline) { %>
+          <div class="card h-100"><div class="card-header"><h6><i class="bi bi-activity me-1"></i>خط زمانی اخیر</h6></div>
+            <ul class="list-group list-group-flush timeline-list"><% timeline.forEach(function (x) { %><li class="list-group-item d-flex gap-2 align-items-start fs-7"><i class="bi <%= x.icon %> text-<%= x.color %> mt-1"></i><div class="flex-grow-1"><%= x.text %></div><span class="text-secondary text-nowrap"><%= J.formatDate(x.date) %></span></li><% }); if (!timeline.length) { %><li class="list-group-item text-secondary fs-7">رویدادی ثبت نشده است</li><% } %></ul></div>
+          <% } %>
+        </div>
+        <div class="col-md-6">
+          <% if (enabled('students.parents')) { %>
+          <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>اولیا</h6></div><div class="card-body fs-7">
+            <div class="d-flex justify-content-between border-bottom py-2"><div><div class="fw-semibold">پدر: <%= s.father_name || '—' %></div><div class="text-secondary"><%= s.father_job || '' %><%= s.father_education ? ' · ' + (utils.EDUCATIONS[s.father_education] || s.father_education) : '' %></div></div><div class="ltr"><% if (s.father_phone) { %><a href="tel:<%= s.father_phone %>"><%= J.toPersianDigits(s.father_phone) %></a><% } %></div></div>
+            <div class="d-flex justify-content-between py-2"><div><div class="fw-semibold">مادر: <%= s.mother_name || '—' %></div><div class="text-secondary"><%= s.mother_job || '' %><%= s.mother_education ? ' · ' + (utils.EDUCATIONS[s.mother_education] || s.mother_education) : '' %></div></div><div class="ltr"><% if (s.mother_phone) { %><a href="tel:<%= s.mother_phone %>"><%= J.toPersianDigits(s.mother_phone) %></a><% } %></div></div>
+            <% if (enabled('students.emergency') && s.emergency_name) { %><div class="alert alert-danger py-2 mt-2 mb-0"><i class="bi bi-telephone-forward me-1"></i>اضطراری: <%= s.emergency_name %> (<%= s.emergency_relation || '' %>) <a class="ltr d-inline-block" href="tel:<%= s.emergency_phone %>"><%= J.toPersianDigits(s.emergency_phone || '') %></a></div><% } %>
+          </div></div>
+          <% } %>
+          <% if (enabled('students.medical') && (s.allergies || s.medical_conditions || s.medications || s.special_needs)) { %>
+          <div class="card border-warning"><div class="card-header"><h6 class="text-warning"><i class="bi bi-heart-pulse me-1"></i>هشدارهای پزشکی</h6></div><div class="card-body fs-7">
+            <% if (s.allergies) { %><div><strong>حساسیت:</strong> <%= s.allergies %></div><% } %><% if (s.medical_conditions) { %><div><strong>بیماری:</strong> <%= s.medical_conditions %></div><% } %><% if (s.medications) { %><div><strong>دارو:</strong> <%= s.medications %></div><% } %><% if (s.special_needs) { %><div><strong>نیاز ویژه:</strong> <%= s.special_needs %></div><% } %>
+          </div></div>
+          <% } %>
+          <% if (enabled('tickets') && tickets && tickets.length) { %>
+          <div class="card mt-3"><div class="card-header"><h6><i class="bi bi-chat-left-text me-1"></i>تیکت‌های اخیر</h6></div><ul class="list-group list-group-flush"><% tickets.slice(0, 4).forEach(function (t) { %><li class="list-group-item d-flex justify-content-between fs-7"><a href="/tickets/<%= t.id %>"><%= t.subject %></a><%- include('../../tickets/views/_status', { status: t.status }) %></li><% }); %></ul></div>
+          <% } %>
+        </div>
+      </div>
+
+    <% } else if (tab === 'info') { %>
+      <% var show = function (label, val, ltr) { return '<div class="col-md-4 col-6"><div class="text-secondary fs-7">' + label + '</div><div class="' + (ltr ? 'ltr text-end ' : '') + 'fw-semibold">' + (val ? utils.escapeHtml(J.toPersianDigits(val)) : '—') + '</div></div>'; }; %>
+      <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-person-vcard me-1"></i>هویتی و تحصیلی</h6></div><div class="card-body"><div class="row g-3">
+        <%- show('نام', s.first_name) + show('نام خانوادگی', s.last_name) + show('شماره دانش‌آموزی', s.student_number, true) + show('کد ملی', s.national_id, true) + show('جنسیت', utils.GENDERS[s.gender]) + show('تاریخ تولد', s.birth_date ? J.formatDate(s.birth_date) : '') + show('محل تولد', s.birth_place) + show('ملیت', s.nationality) + show('دین/مذهب', s.religion) + show('کلاس', s.class_title) + show('پایه', s.grade_title) + show('وضعیت', utils.STUDENT_STATUS[s.status]) + show('تاریخ ثبت‌نام', s.enrollment_date ? J.formatDate(s.enrollment_date) : '') + show('مدرسهٔ قبلی', s.previous_school) %>
+        <% if (enabled('transport') && route) { %><%- show('سرویس', route.title + (route.driver_name ? ' — ' + route.driver_name : '')) %><% } %>
+      </div></div></div>
+      <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-geo-alt me-1"></i>تماس و نشانی</h6></div><div class="card-body"><div class="row g-3">
+        <%- show('موبایل دانش‌آموز', s.mobile, true) + show('تلفن منزل', s.home_phone, true) + show('ایمیل', s.email, true) + show('کد پستی', s.postal_code, true) %>
+        <div class="col-12"><div class="text-secondary fs-7">نشانی</div><div class="fw-semibold"><%= s.address || '—' %></div></div>
+      </div></div></div>
+      <% if (enabled('students.parents')) { %>
+      <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>اولیا و سرپرست</h6></div><div class="card-body"><div class="row g-3">
+        <%- show('نام پدر', s.father_name) + show('کد ملی پدر', s.father_national_id, true) + show('موبایل پدر', s.father_phone, true) + show('شغل پدر', s.father_job) + show('تحصیلات پدر', utils.EDUCATIONS[s.father_education]) %>
+        <div class="col-12"><hr class="my-1"></div>
+        <%- show('نام مادر', s.mother_name) + show('کد ملی مادر', s.mother_national_id, true) + show('موبایل مادر', s.mother_phone, true) + show('شغل مادر', s.mother_job) + show('تحصیلات مادر', utils.EDUCATIONS[s.mother_education]) %>
+        <div class="col-12"><hr class="my-1"></div>
+        <%- show('سرپرست', { father: 'پدر', mother: 'مادر', other: 'سایر' }[s.guardian_type]) + show('نام سرپرست', s.guardian_name) + show('موبایل سرپرست', s.guardian_phone, true) + show('نسبت', s.guardian_relation) %>
+      </div></div></div>
+      <% } %>
+      <% if (enabled('students.emergency')) { %>
+      <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-telephone-forward me-1"></i>تماس اضطراری</h6></div><div class="card-body"><div class="row g-3"><%- show('نام', s.emergency_name) + show('تلفن', s.emergency_phone, true) + show('نسبت', s.emergency_relation) %></div></div></div>
+      <% } %>
+      <% if (enabled('students.medical')) { %>
+      <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-heart-pulse me-1"></i>اطلاعات پزشکی</h6></div><div class="card-body"><div class="row g-3">
+        <%- show('گروه خونی', s.blood_type, true) + show('قد', s.height ? s.height + ' سانتی‌متر' : '') + show('وزن', s.weight ? s.weight + ' کیلوگرم' : '') + show('شماره بیمه', s.insurance_number, true) %>
+        <div class="col-md-6"><div class="text-secondary fs-7">حساسیت‌ها</div><div><%= s.allergies || '—' %></div></div><div class="col-md-6"><div class="text-secondary fs-7">بیماری‌های خاص</div><div><%= s.medical_conditions || '—' %></div></div><div class="col-md-6"><div class="text-secondary fs-7">داروها</div><div><%= s.medications || '—' %></div></div><div class="col-md-6"><div class="text-secondary fs-7">نیازهای ویژه</div><div><%= s.special_needs || '—' %></div></div>
+      </div></div></div>
+      <% } %>
+      <% if (s.notes) { %><div class="card"><div class="card-header"><h6>توضیحات تکمیلی</h6></div><div class="card-body"><%- utils.nl2br(s.notes) %></div></div><% } %>
+
+    <% } else if (tab === 'attendance') { %>
+      <div class="d-flex flex-wrap gap-2 mb-3"><% Object.keys(utils.ATT_STATUS).forEach(function (k) { %><span class="badge badge-soft-<%= utils.ATT_COLORS[k] %> fs-7 py-2 px-3"><%= utils.ATT_STATUS[k] %>: <%= J.toPersianDigits(att[k] || 0) %></span><% }); %><span class="badge badge-soft-secondary fs-7 py-2 px-3">کل جلسات: <%= J.toPersianDigits(attTotal) %></span>
+        <% if (enabled('attendance.student_report')) { %><a href="/attendance/report/student/<%= s.id %>" class="btn btn-sm btn-outline-primary ms-auto"><i class="bi bi-graph-up me-1"></i>گزارش کامل</a><% } %></div>
+      <div class="card table-card"><div class="card-header"><h6>آخرین غیبت‌ها و تأخیرها</h6></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>تاریخ</th><th>وضعیت</th><th>درس</th><th>توضیح</th></tr></thead>
+        <tbody><% attRecent.forEach(function (a) { %><tr><td><%= J.formatLong(a.date) %></td><td><%- utils.attBadge(a.status) %><%= a.minutes_late ? ' ' + J.toPersianDigits(a.minutes_late) + ' دقیقه' : '' %></td><td><%= a.subject_title || 'روزانه' %></td><td class="fs-7 text-secondary"><%= a.note || '' %></td></tr><% }); if (!attRecent.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">غیبت یا تأخیری ثبت نشده است 🎉</td></tr><% } %></tbody></table></div></div>
+
+    <% } else if (tab === 'grades') { %>
+      <div class="card table-card"><div class="card-header"><h6>آخرین نمرات</h6><div class="d-flex gap-2"><% if (enabled('exams.report_card')) { %><a href="/exams/report-card/<%= s.id %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text me-1"></i>کارنامه</a><% } %></div></div>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>درس</th><th>آزمون</th><th>نوع</th><th>تاریخ</th><th>نمره</th></tr></thead>
+        <tbody><% grades.forEach(function (g) { var pct = g.score != null && g.max_score ? g.score / g.max_score : null; %><tr><td class="fw-semibold"><%= g.subject_title %></td><td><%= g.exam_title %></td><td class="fs-7"><%= { quiz: 'کوئیز', midterm: 'میان‌ترم', final: 'پایان‌ترم', oral: 'شفاهی', project: 'پروژه', classwork: 'کلاسی' }[g.type] || g.type %></td><td class="fs-7"><%= J.formatDate(g.date) %></td>
+          <td><% if (g.score != null) { %><span class="badge <%= pct >= 0.85 ? 'text-bg-success' : pct >= 0.5 ? 'text-bg-primary' : 'text-bg-danger' %>"><%= J.toPersianDigits(g.score) %> / <%= J.toPersianDigits(g.max_score) %></span><% } else if (g.descriptive) { %><span class="badge badge-soft-info"><%= utils.DESCRIPTIVE_GRADES[g.descriptive] || g.descriptive %></span><% } else { %>—<% } %></td></tr><% }); if (!grades.length) { %><tr><td colspan="5" class="text-center text-secondary py-4">نمره‌ای ثبت نشده است</td></tr><% } %></tbody></table></div></div>
+
+    <% } else if (tab === 'discipline') { %>
+      <div class="card table-card"><div class="card-header"><h6>سوابق انضباطی (امتیاز: <%= J.toPersianDigits(points || 0) %>)</h6><% if (!isStudent && enabled('discipline')) { %><a href="/discipline/new?student_id=<%= s.id %>" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>ثبت مورد</a><% } %></div>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>تاریخ</th><th>نوع</th><th>دسته</th><th>شرح</th><th>امتیاز</th><th>ثبت‌کننده</th></tr></thead>
+        <tbody><% discipline.forEach(function (d) { %><tr><td class="fs-7"><%= J.formatDate(d.date) %></td><td><%- d.type === 'positive' ? '<span class="badge badge-soft-success">تشویقی</span>' : '<span class="badge badge-soft-danger">انضباطی</span>' %></td><td><%= d.category || '' %></td><td class="fs-7"><%= d.description || '' %><% if (d.action_taken) { %><div class="text-secondary">اقدام: <%= d.action_taken %></div><% } %></td><td class="fw-semibold <%= d.points >= 0 ? 'text-success' : 'text-danger' %>"><%= J.toPersianDigits(d.points > 0 ? '+' + d.points : d.points) %></td><td class="fs-7"><%= d.by_name || '' %></td></tr><% }); if (!discipline.length) { %><tr><td colspan="6" class="text-center text-secondary py-4">موردی ثبت نشده است</td></tr><% } %></tbody></table></div></div>
+
+    <% } else if (tab === 'finance') { %>
+      <div class="card table-card"><div class="card-header"><h6>صورت‌حساب‌ها</h6><% if (canManage) { %><a href="/finance/invoices/new?student_id=<%= s.id %>" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>صورت‌حساب جدید</a><% } else if (isStudent) { %><a href="/finance/my" class="btn btn-sm btn-light">جزئیات</a><% } %></div>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>شماره</th><th>عنوان</th><th>مبلغ</th><th>پرداختی</th><th>سررسید</th><th>وضعیت</th></tr></thead>
+        <tbody><% invoices.forEach(function (i) { %><tr><td class="ltr text-end"><a href="/finance/invoices/<%= i.id %>"><%= J.toPersianDigits(i.number) %></a></td><td><%= i.title %></td><td><%= utils.money(i.amount - (i.discount || 0)) %></td><td><%= utils.money(i.paid_amount) %></td><td class="fs-7"><%= J.formatDate(i.due_date) %></td><td><%- utils.statusBadge(i.status) %></td></tr><% }); if (!invoices.length) { %><tr><td colspan="6" class="text-center text-secondary py-4">صورت‌حسابی وجود ندارد</td></tr><% } %></tbody></table></div></div>
+
+    <% } else if (tab === 'notes') { %>
+      <% if (!isStudent) { %>
+      <form method="post" action="/students/<%= s.id %>/notes" class="card mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><div class="card-body">
+        <textarea class="form-control mb-2" name="content" rows="2" placeholder="یادداشت جدید دربارهٔ این دانش‌آموز…" required></textarea>
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <select class="form-select form-select-sm w-auto" name="type"><option value="general">عمومی</option><option value="academic">تحصیلی</option><option value="behavior">رفتاری</option><option value="parent">تماس با ولی</option><option value="health">سلامت</option></select>
+          <div class="form-check"><input class="form-check-input" type="radio" name="is_private" value="1" id="pv1" checked><label class="form-check-label fs-7" for="pv1">خصوصی (فقط کادر مدرسه)</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="is_private" value="0" id="pv0"><label class="form-check-label fs-7" for="pv0">قابل مشاهده برای دانش‌آموز</label></div>
+          <button class="btn btn-sm btn-primary ms-auto">ثبت یادداشت</button></div></div></form>
+      <% } %>
+      <% notes.forEach(function (n) { %><div class="card mb-2"><div class="card-body py-2"><div class="d-flex justify-content-between fs-7 text-secondary mb-1"><span><i class="bi bi-person me-1"></i><%= n.author_name || 'سیستم' %> · <span class="badge badge-soft-secondary"><%= { general: 'عمومی', academic: 'تحصیلی', behavior: 'رفتاری', parent: 'تماس با ولی', health: 'سلامت', status: 'وضعیت' }[n.type] || n.type %></span> <%- n.is_private ? '<i class="bi bi-lock" title="خصوصی"></i>' : '<i class="bi bi-eye" title="قابل مشاهده برای دانش‌آموز"></i>' %></span><span><%= J.formatDateTime(n.created_at) %> <% if (canManage || n.author_id === currentUser.id) { %><a href="#" data-post="/students/<%= s.id %>/notes/<%= n.id %>/delete" data-confirm="حذف شود؟" class="text-danger ms-2"><i class="bi bi-trash"></i></a><% } %></span></div><div><%- utils.nl2br(n.content) %></div></div></div><% }); if (!notes.length) { %><%- include('partials/empty', { message: 'یادداشتی ثبت نشده است' }) %><% } %>
+
+    <% } else if (tab === 'docs') { %>
+      <div class="card table-card"><div class="card-header"><h6>مدارک پرونده</h6></div>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>عنوان</th><th>فایل</th><th>حجم</th><th>تاریخ</th><th></th></tr></thead>
+        <tbody><% documents.forEach(function (d) { %><tr><td><%= d.title %></td><td><a href="/files/<%= d.file_path %>" target="_blank" class="fs-7"><i class="bi bi-download me-1"></i><%= d.file_name %></a></td><td class="fs-7"><%= utils.fileSize(d.size) %></td><td class="fs-7"><%= J.formatDate(d.created_at) %></td><td class="text-end"><% if (canManage) { %><a href="#" data-post="/students/<%= s.id %>/documents/<%= d.id %>/delete" data-confirm="حذف شود؟" class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></a><% } %></td></tr><% }); if (!documents.length) { %><tr><td colspan="5" class="text-center text-secondary py-4">مدرکی بارگذاری نشده</td></tr><% } %></tbody></table></div>
+        <% if (canManage) { %><div class="card-footer bg-transparent"><form method="post" action="/students/<%= s.id %>/documents" enctype="multipart/form-data" class="row g-2 align-items-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-4"><label class="form-label fs-7">عنوان</label><select class="form-select form-select-sm" name="title"><option>تصویر شناسنامه</option><option>تصویر کارت ملی</option><option>کارنامهٔ سال قبل</option><option>گواهی سلامت</option><option>فرم ثبت‌نام</option><option>رضایت‌نامه</option><option>سایر</option></select></div>
+          <div class="col-md-5"><label class="form-label fs-7">فایل (تصویر/PDF، حداکثر ۱۰MB)</label><input type="file" class="form-control form-control-sm" name="file" required></div>
+          <div class="col-md-3"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-upload me-1"></i>بارگذاری</button></div></form></div><% } %>
+      </div>
+
+    <% } else if (tab === 'enrollments') { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-mortarboard me-1"></i>سوابق تحصیلی (سال به سال)</h6><% if (canManage) { %><a href="/enrollments?student_id=<%= s.id %>" class="fs-7">مدیریت</a><% } %></div>
+        <div class="table-responsive"><table class="table mb-0"><thead><tr><th>سال تحصیلی</th><th>پایه</th><th>کلاس</th><th>وضعیت</th><th>از</th><th>تا</th><th>توضیح</th></tr></thead><tbody>
+        <% if (!enrollmentHistory.length) { %><tr><td colspan="7" class="text-center text-muted py-4">سابقه‌ای ثبت نشده است</td></tr><% } %>
+        <% enrollmentHistory.forEach(function (e) { %><tr><td><%= e.year_title || '—' %></td><td><%= e.grade_title || '—' %></td><td><%= e.class_title || '—' %></td><td><span class="badge text-bg-<%= ENROLL_COLORS[e.status] || 'secondary' %>"><%= ENROLL_STATUS[e.status] || e.status %></span></td><td><%= J.formatDate(e.enrolled_at, true) %></td><td><%= e.left_at ? J.formatDate(e.left_at, true) : '—' %></td><td class="fs-7 text-muted"><%= e.note || '' %></td></tr><% }) %>
+        </tbody></table></div></div>
+    <% } else if (tab === 'parents') { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>حساب‌های کاربری اولیا</h6><a href="/parents" class="fs-7">همهٔ اولیا</a></div>
+        <div class="table-responsive"><table class="table mb-0"><thead><tr><th>نام</th><th>نسبت</th><th>نام کاربری</th><th>تلفن</th><th>وضعیت</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
+        <% if (!parentAccounts.length) { %><tr><td colspan="7" class="text-center text-muted py-4">هنوز حساب ولی برای این دانش‌آموز ساخته نشده است</td></tr><% } %>
+        <% parentAccounts.forEach(function (p) { %><tr><td><a href="/parents/<%= p.id %>"><%= p.name %></a></td><td><%= RELATIONS[p.relation] || p.relation %></td><td dir="ltr" class="text-end"><%= p.username %></td><td dir="ltr" class="text-end"><%= J.toPersianDigits(p.phone || '') %></td><td><span class="badge text-bg-<%= p.user_status === 'active' ? 'success' : 'secondary' %>"><%= p.user_status === 'active' ? 'فعال' : 'غیرفعال' %></span></td><td class="fs-7"><%= p.last_login_at ? J.formatDateTime(p.last_login_at) : '—' %></td>
+          <td class="text-nowrap"><% if (canManage) { %><form method="post" action="/parents/<%= p.id %>/unlink/<%= s.id %>" class="d-inline" onsubmit="return confirm('حذف پیوند این ولی با دانش‌آموز؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></form><% } %></td></tr><% }) %>
+        </tbody></table></div></div>
+      <% if (canManage) { %>
+      <div class="card"><div class="card-header"><h6><i class="bi bi-person-plus me-1"></i>ساخت/پیوند حساب ولی</h6></div><div class="card-body">
+        <p class="text-muted fs-7">نام کاربری ولی به‌صورت پیش‌فرض شمارهٔ موبایل اوست. اگر ولی با همین شماره قبلاً حساب داشته باشد (خواهر/برادر)، همان حساب پیوند می‌خورد.</p>
+        <div class="row g-3">
+          <% [['father', 'پدر', s.father_name, s.father_phone, s.father_national_id], ['mother', 'مادر', s.mother_name, s.mother_phone, s.mother_national_id], ['guardian', 'سرپرست', s.guardian_name, s.guardian_phone, '']].forEach(function (r) { %>
+          <div class="col-md-4"><form method="post" action="/parents/link/<%= s.id %>" class="border rounded p-3 h-100"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="relation" value="<%= r[0] %>">
+            <div class="fw-bold mb-2"><%= r[1] %></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="name" placeholder="نام و نام خانوادگی" value="<%= r[2] || '' %>" required></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="phone" placeholder="موبایل (نام کاربری)" value="<%= r[3] || '' %>" dir="ltr" required></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="national_id" placeholder="کد ملی (اختیاری)" value="<%= r[4] || '' %>" dir="ltr"></div>
+            <div class="mb-2"><input class="form-control form-control-sm" name="password" placeholder="رمز (خالی = پیش‌فرض)" dir="ltr"></div>
+            <div class="form-check form-check-sm mb-2"><input class="form-check-input" type="checkbox" name="send_sms" value="1" id="sms_<%= r[0] %>"><label class="form-check-label fs-7" for="sms_<%= r[0] %>">ارسال پیامک اطلاعات ورود</label></div>
+            <button class="btn btn-sm btn-primary w-100"><i class="bi bi-person-plus me-1"></i>ساخت حساب <%= r[1] %></button></form></div>
+          <% }) %>
+        </div></div></div>
+      <% } %>
+    <% } else if (tab === 'history') { %>
+      <% if (enabled('students.transfer')) { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-arrow-left-right me-1"></i>تاریخچهٔ انتقال کلاس</h6></div><div class="table-responsive"><table class="table mb-0 align-middle"><thead><tr><th>تاریخ</th><th>از</th><th>به</th><th>دلیل</th><th>توسط</th></tr></thead><tbody><% transfers.forEach(function (t) { %><tr><td class="fs-7"><%= J.formatDateTime(t.created_at) %></td><td><%= t.from_title || '—' %></td><td><%= t.to_title || '—' %></td><td class="fs-7"><%= t.reason || '' %></td><td class="fs-7"><%= t.by_name || '' %></td></tr><% }); if (!transfers.length) { %><tr><td colspan="5" class="text-center text-secondary py-3">انتقالی ثبت نشده</td></tr><% } %></tbody></table></div></div>
+      <% } %>
+      <% if (enabled('health') && health) { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-heart-pulse me-1"></i>مراجعات بهداشت</h6><% if (!isStudent) { %><a href="/health?student_id=<%= s.id %>" class="fs-7">همه</a><% } %></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>تاریخ</th><th>نوع</th><th>عنوان</th><th>اقدام</th></tr></thead><tbody><% health.forEach(function (h) { %><tr><td class="fs-7"><%= J.formatDate(h.date) %></td><td class="fs-7"><%= { visit: 'مراجعه', checkup: 'معاینه', injury: 'آسیب', vaccine: 'واکسن', referral: 'ارجاع' }[h.type] || h.type %></td><td><%= h.title %></td><td class="fs-7"><%= h.action || '' %></td></tr><% }); if (!health.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">موردی ثبت نشده</td></tr><% } %></tbody></table></div></div>
+      <% } %>
+      <% if (enabled('counseling') && counseling) { %>
+      <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-chat-heart me-1"></i>جلسات مشاوره</h6><a href="/counseling?student_id=<%= s.id %>" class="fs-7">همه</a></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>تاریخ</th><th>موضوع</th><th>پیگیری</th></tr></thead><tbody><% counseling.forEach(function (c) { %><tr><td class="fs-7"><%= J.formatDate(c.date) %></td><td><%= c.topic %></td><td class="fs-7"><%= c.follow_up_date ? J.formatDate(c.follow_up_date) : '—' %></td></tr><% }); if (!counseling.length) { %><tr><td colspan="3" class="text-center text-secondary py-3">جلسه‌ای ثبت نشده</td></tr><% } %></tbody></table></div></div>
+      <% } %>
+      <% if (enabled('library') && loans) { %>
+      <div class="card table-card"><div class="card-header"><h6><i class="bi bi-book me-1"></i>امانت کتاب</h6></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>کتاب</th><th>امانت</th><th>مهلت</th><th>وضعیت</th></tr></thead><tbody><% loans.forEach(function (l) { %><tr><td><%= l.title %></td><td class="fs-7"><%= J.formatDate(l.loaned_at) %></td><td class="fs-7"><%= J.formatDate(l.due_at) %></td><td><%- l.status === 'loaned' && l.due_at < J.todayISO() ? '<span class="badge badge-soft-danger">دیرکرد</span>' : utils.statusBadge(l.status) %></td></tr><% }); if (!loans.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">امانتی ثبت نشده</td></tr><% } %></tbody></table></div></div>
+      <% } %>
+    <% } %>
+  </div>
+</div>
+
+<% if (canManage && enabled('students.transfer')) { %>
+<div class="modal fade" id="transferModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="/students/<%= s.id %>/transfer"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="modal-header"><h6 class="modal-title">انتقال به کلاس دیگر</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><div class="mb-3"><label class="form-label required">کلاس مقصد</label><select class="form-select" name="class_id" required><% classes.forEach(function (c) { if (c.id !== s.class_id) { %><option value="<%= c.id %>"><%= c.title %></option><% } }); %></select></div><div><label class="form-label">دلیل</label><input class="form-control" name="reason" placeholder="اختیاری"></div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">انتقال</button></div></form></div></div></div>
+<% } %>
+<% if (canManage && enabled('students.status')) { %>
+<div class="modal fade" id="statusModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form method="post" action="/students/<%= s.id %>/status"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="modal-header"><h6 class="modal-title">تغییر وضعیت تحصیلی</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><div class="mb-3"><label class="form-label">وضعیت جدید</label><select class="form-select" name="status"><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>" <%= s.status === k ? 'selected' : '' %>><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div><div><label class="form-label">توضیح (در یادداشت‌ها ثبت می‌شود)</label><input class="form-control" name="note"></div><div class="form-text">وضعیت غیر از «فعال»، حساب کاربری دانش‌آموز را غیرفعال می‌کند.</div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div></form></div></div></div>
+<% } %>

@@ -1,0 +1,24 @@
+<%- include('partials/page-header', { title: 'ارتقای گروهی دانش‌آموزان', icon: 'bi-arrow-up-right-square', breadcrumbs: [{ title: 'کلاس‌ها', href: '/academic/classes' }, { title: 'ارتقای گروهی' }] }) %>
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>این عملیات دانش‌آموزان انتخاب‌شده را از کلاس مبدأ به کلاس مقصد منتقل می‌کند و در تاریخچهٔ انتقال هر دانش‌آموز ثبت می‌شود. پیش از پایان سال، ابتدا کلاس‌های سال جدید را بسازید.</div>
+<form method="post" action="/academic/promote" class="card" style="max-width:860px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body row g-3">
+    <div class="col-md-6"><label class="form-label required">کلاس مبدأ</label><select class="form-select" name="from_class" id="fromClass" required><option value="">— انتخاب —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %> (<%= c.grade_title %> — <%= c.year_title %>) · <%= J.toPersianDigits(c.cnt) %> نفر</option><% }); %></select></div>
+    <div class="col-md-6"><label class="form-label required">کلاس مقصد</label><select class="form-select" name="to_class" required><option value="">— انتخاب —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %> (<%= c.grade_title %> — <%= c.year_title %>)</option><% }); %></select></div>
+    <div class="col-12"><label class="form-label">دلیل / توضیح</label><input class="form-control" name="reason" value="ارتقای پایه در پایان سال تحصیلی"></div>
+    <div class="col-12"><label class="form-label">دانش‌آموزان (پیش‌فرض: همهٔ دانش‌آموزان فعال)</label>
+      <div id="studentsBox" class="border rounded p-2 fs-7 text-secondary" style="max-height:260px;overflow:auto">ابتدا کلاس مبدأ را انتخاب کنید.</div></div>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-end gap-2"><a href="/academic/classes" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4" data-confirm="دانش‌آموزان منتقل شوند؟">انتقال</button></div>
+</form>
+<script>
+document.getElementById('fromClass').addEventListener('change', function () {
+  var box = document.getElementById('studentsBox'); box.innerHTML = 'در حال بارگذاری...';
+  fetch('/academic/promote/students/' + this.value).then(function (r) { return r.json(); }).then(function (list) {
+    if (!list.length) { box.innerHTML = 'دانش‌آموز فعالی در این کلاس نیست.'; return; }
+    box.innerHTML = '<div class="mb-2"><a href="#" id="selAll">انتخاب همه</a> | <a href="#" id="selNone">هیچ‌کدام</a></div><div class="row">' + list.map(function (s) { return '<div class="col-md-4"><label class="form-check"><input class="form-check-input" type="checkbox" name="student_ids" value="' + s.id + '" checked> ' + s.first_name + ' ' + s.last_name + ' <span class="text-muted ltr">' + s.student_number + '</span></label></div>'; }).join('') + '</div>';
+    box.querySelector('#selAll').onclick = function (e) { e.preventDefault(); box.querySelectorAll('input').forEach(function (i) { i.checked = true; }); };
+    box.querySelector('#selNone').onclick = function (e) { e.preventDefault(); box.querySelectorAll('input').forEach(function (i) { i.checked = false; }); };
+  });
+});
+</script>

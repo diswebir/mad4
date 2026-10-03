@@ -1,0 +1,17 @@
+<%- include('../partials/page-header', { title: title, icon: crud.icon, breadcrumbs: (crud.breadcrumbs || []).concat([{ title: crud.plural, href: urlBase }, { title: isNew ? 'افزودن' : 'ویرایش' }]) }) %>
+<form method="post" action="<%= action %>" enctype="multipart/form-data" class="card" style="max-width:<%= crud.formWidth || '980px' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <% var intro = typeof crud.formIntro === 'function' ? crud.formIntro(row, isNew) : crud.formIntro; if (intro) { %><div class="text-secondary mb-2"><%- intro %></div><% } %>
+    <div class="row g-3">
+      <% fields.filter(function (f) { return !f.hideInForm && !(f.readonly && isNew); }).forEach(function (field) { %>
+        <%- include('../partials/field', { field: field, row: row, old: old }) %>
+      <% }); %>
+    </div>
+    <% if (crud.formPartial) { %><%- include(crud.formPartial, { row: row, old: old, extra: (typeof extra !== 'undefined' ? extra : {}), isNew: isNew }) %><% } %>
+  </div>
+  <div class="card-footer bg-transparent d-flex gap-2 justify-content-end">
+    <a href="<%= urlBase %>" class="btn btn-light">انصراف</a>
+    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><%= isNew ? 'ثبت' : 'ذخیره تغییرات' %></button>
+  </div>
+</form>

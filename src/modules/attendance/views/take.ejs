@@ -1,0 +1,39 @@
+<%- include('partials/page-header', { title: 'حضور و غیاب ' + cls.title + (cs ? ' — ' + cs.subject_title : ' (روزانه)'), subtitle: J.formatLong(date) + (period ? ' · زنگ ' + J.toPersianDigits(period) : ''), icon: 'bi-clipboard-check', breadcrumbs: [{ title: 'حضور و غیاب', href: '/attendance?date=' + date }, { title: cls.title }], actions: enabled('documents.roster') && !cs ? [{ href: '/documents/roster/' + cls.id + '?month=' + J.toJalaliParts(date).jy + '/' + J.toJalaliParts(date).jm, label: 'دفتر ماهانه', icon: 'bi-file-earmark-ruled', class: 'btn-light', target: '_blank' }] : [] }) %>
+<% if (holiday) { %><div class="alert alert-danger py-2"><i class="bi bi-calendar-x me-1"></i>تاریخ انتخاب‌شده <b>تعطیل رسمی</b> است (<%= holiday %>).<% if (currentUser.role === 'teacher') { %> ثبت حضور و غیاب در روز تعطیل برای معلمان مجاز نیست.<% } else { %> در صورت برگزاری کلاس جبرانی، گزینهٔ زیر را علامت بزنید.<% } %></div><% } else if (!isSchoolDay) { %><div class="alert alert-warning py-2"><i class="bi bi-info-circle me-1"></i>این روز جزو روزهای کاری مدرسه نیست؛ در صورت نیاز می‌توانید ثبت کنید.</div><% } %>
+<% if (locked && !holiday) { %><div class="alert alert-danger"><i class="bi bi-lock me-1"></i>مهلت ویرایش معلمان برای این تاریخ گذشته است. برای اصلاح با مدیر تماس بگیرید.</div><% } %>
+<% if (existingCount) { %><div class="alert alert-info py-2"><i class="bi bi-check2-circle me-1"></i>حضور و غیاب این جلسه قبلاً ثبت شده و در حال ویرایش هستید.</div><% } %>
+<% if (otherSessions.length) { %><div class="fs-7 text-secondary mb-2">زنگ‌های دیگر ثبت‌شده در این روز: <% otherSessions.forEach(function (o) { %><span class="badge badge-soft-secondary"><%= o.title %></span> <% }); %></div><% } %>
+<form method="post" action="/attendance/take" class="card" id="attForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="class_id" value="<%= cls.id %>"><input type="hidden" name="class_subject_id" value="<%= cs ? cs.id : '' %>"><input type="hidden" name="date" value="<%= date %>"><input type="hidden" name="period" value="<%= period %>">
+  <div class="card-header flex-wrap gap-2">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <% if (enabled('attendance.quick_all_present')) { %><button type="button" class="btn btn-sm btn-outline-success" data-set-all="present"><i class="bi bi-check-all me-1"></i>همه حاضر</button><% } %>
+      <span class="fs-7 text-secondary">غایب: <strong id="cntAbsent" class="text-danger">۰</strong> · تأخیر: <strong id="cntLate" class="text-warning">۰</strong></span>
+    </div>
+    <input class="form-control form-control-sm" style="max-width:220px" placeholder="جستجوی نام…" data-filter-table="#attTable">
+  </div>
+  <div class="table-responsive"><table class="table align-middle mb-0" id="attTable">
+    <thead><tr><th style="width:40px">#</th><th>دانش‌آموز</th><th>وضعیت</th><% if (statuses.includes('late')) { %><th style="width:110px">دقیقه تأخیر</th><% } %><th>توضیح</th></tr></thead>
+    <tbody><% students.forEach(function (s, i) { var cur = map[s.id] ? map[s.id].status : (cs && dailyAbsent[s.id] === 'absent' ? 'absent' : 'present'); %>
+      <tr class="att-row" data-text="<%= s.first_name %> <%= s.last_name %>">
+        <td class="text-muted"><%= J.toPersianDigits(i + 1) %></td>
+        <td><div class="d-flex align-items-center gap-2"><%- include('partials/avatar', { user: { name: s.first_name + ' ' + s.last_name, avatar: s.photo }, size: 32 }) %><div><a href="/students/<%= s.id %>" class="fw-semibold"><%= s.first_name %> <%= s.last_name %></a><% if (stats30[s.id] >= 3) { %> <span class="badge badge-soft-danger fs-7" title="غیبت در ۳۰ روز اخیر"><%= J.toPersianDigits(stats30[s.id]) %> غیبت اخیر</span><% } %><% if (cs && dailyAbsent[s.id] === 'absent' && !map[s.id]) { %> <span class="badge badge-soft-warning fs-7">در روزانه غایب</span><% } %></div></div></td>
+        <td><div class="btn-group att-group" role="group">
+          <% statuses.forEach(function (st) { var id = 'st_' + s.id + '_' + st; %><input type="radio" class="btn-check" name="status_<%= s.id %>" id="<%= id %>" value="<%= st %>" <%= cur === st ? 'checked' : '' %> <%= locked ? 'disabled' : '' %>><label class="btn btn-sm btn-outline-<%= utils.ATT_COLORS[st] %>" for="<%= id %>"><%= utils.ATT_STATUS[st] %></label><% }); %>
+        </div></td>
+        <% if (statuses.includes('late')) { %><td><input class="form-control form-control-sm en-digits late-input" name="late_<%= s.id %>" value="<%= map[s.id] && map[s.id].minutes_late ? map[s.id].minutes_late : '' %>" placeholder="دقیقه" <%= cur !== 'late' ? 'disabled' : '' %>></td><% } %>
+        <td><input class="form-control form-control-sm" name="note_<%= s.id %>" value="<%= map[s.id] && map[s.id].note ? map[s.id].note : '' %>" placeholder="اختیاری" <%= locked ? 'disabled' : '' %>></td>
+      </tr>
+    <% }); if (!students.length) { %><tr><td colspan="5"><%- include('partials/empty', { message: 'دانش‌آموز فعالی در این کلاس نیست' }) %></td></tr><% } %></tbody>
+  </table></div>
+  <% if (!locked && students.length) { %><div class="card-footer bg-transparent d-flex justify-content-between align-items-center"><a href="/attendance?date=<%= date %>" class="btn btn-light">بازگشت</a><div class="d-flex align-items-center gap-3"><% if (holiday) { %><label class="form-check mb-0 text-danger"><input class="form-check-input" type="checkbox" name="confirm_holiday" value="1"> با وجود تعطیلی (کلاس جبرانی) ثبت شود</label><% } %><button class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>ثبت حضور و غیاب</button></div></div><% } %>
+</form>
+<script>
+(function () {
+  var form = document.getElementById('attForm');
+  function recount() { var a = 0, l = 0; form.querySelectorAll('input[type=radio]:checked').forEach(function (r) { if (r.value === 'absent') a++; if (r.value === 'late') l++; }); document.getElementById('cntAbsent').textContent = App.fa(a); document.getElementById('cntLate').textContent = App.fa(l); }
+  form.addEventListener('change', function (e) { if (e.target.type === 'radio') { var row = e.target.closest('tr'); var li = row.querySelector('.late-input'); if (li) { li.disabled = e.target.value !== 'late'; if (e.target.value === 'late' && !li.value) li.value = '<%= S.get("late_threshold_minutes", 15) %>'; } recount(); } });
+  document.querySelectorAll('[data-set-all]').forEach(function (b) { b.addEventListener('click', function () { form.querySelectorAll('input[type=radio][value="' + b.dataset.setAll + '"]').forEach(function (r) { if (r.closest('tr').style.display !== 'none') { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); } }); }); });
+  recount();
+})();
+</script>

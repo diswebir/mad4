@@ -1,0 +1,37 @@
+<% var name = s.first_name + ' ' + s.last_name; var rate = total ? Math.round((((totals.present || 0) + (totals.late || 0)) / total) * 100) : null; %>
+<%- include('partials/page-header', { title: isOwner ? 'حضور و غیاب من' : 'گزارش حضور ' + name, subtitle: (s.class_title || '') + (rate != null ? ' · نرخ حضور کل: ' + J.toPersianDigits(rate) + '٪' : ''), icon: 'bi-clipboard-check', breadcrumbs: [{ title: 'حضور و غیاب', href: isOwner ? '/dashboard' : '/attendance' }, { title: name }], actions: isOwner ? [] : [{ href: '/students/' + s.id, label: 'پرونده', icon: 'bi-person-vcard', class: 'btn-light' }] }) %>
+<div class="row g-3 mb-3"><% Object.keys(utils.ATT_STATUS).forEach(function (k) { %><div class="col-6 col-md"><div class="card stat-card text-<%= utils.ATT_COLORS[k] %>"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= utils.ATT_COLORS[k] %>"><i class="bi bi-circle-fill"></i></div><div><div class="value"><%= J.toPersianDigits(totals[k] || 0) %></div><div class="label"><%= utils.ATT_STATUS[k] %></div></div></div></div></div><% }); %></div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-calendar3 me-1"></i>تقویم <%= J.MONTHS[jm - 1] %> <%= J.toPersianDigits(jy) %></h6>
+        <div class="d-flex gap-1"><% var pm = jm === 1 ? 12 : jm - 1, py = jm === 1 ? jy - 1 : jy, nm = jm === 12 ? 1 : jm + 1, ny = jm === 12 ? jy + 1 : jy; %><a class="btn btn-sm btn-light" href="?jy=<%= py %>&jm=<%= pm %>"><i class="bi bi-chevron-right"></i></a><a class="btn btn-sm btn-light" href="?jy=<%= ny %>&jm=<%= nm %>"><i class="bi bi-chevron-left"></i></a></div></div>
+      <div class="card-body">
+        <div class="att-calendar">
+          <% J.WEEKDAYS_SHORT.forEach(function (w) { %><div class="cal-head"><%= w %></div><% }); %>
+          <% var firstWd = J.weekdayIndex(range.start); for (var e = 0; e < firstWd; e++) { %><div></div><% } %>
+          <% for (var d = 1; d <= monthLen; d++) { var iso = J.toGregorian(jy + '/' + jm + '/' + d); var info = byDay[iso]; var st = info && info.daily ? info.daily.status : (info && info.sessions.length ? (info.sessions.some(function (x) { return x.status === 'absent'; }) ? 'absent' : info.sessions.some(function (x) { return x.status === 'late'; }) ? 'late' : 'present') : null); var isSchool = schoolDays.indexOf(J.weekdayIndex(iso)) !== -1; var hol = holidays[iso]; %>
+            <div class="cal-day <%= st ? 'st-' + st : (hol ? 'holiday' : isSchool ? '' : 'off') %> <%= iso === J.todayISO() ? 'today' : '' %>" title="<%= hol ? 'تعطیل: ' + hol + (st ? ' · ' : '') : '' %><%= st ? utils.ATT_STATUS[st] : '' %><%= info && info.sessions.length ? ' · ' + info.sessions.map(function (x) { return (x.subject_title || '') + ': ' + utils.ATT_STATUS[x.status]; }).join('، ') : '' %>"><span><%= J.toPersianDigits(d) %></span><% if (info && info.sessions.length) { %><small><%= J.toPersianDigits(info.sessions.length) %> زنگ</small><% } %></div>
+          <% } %>
+        </div>
+        <div class="d-flex gap-3 fs-7 mt-2 flex-wrap"><% Object.keys(utils.ATT_STATUS).forEach(function (k) { %><span><span class="legend st-<%= k %>"></span> <%= utils.ATT_STATUS[k] %></span><% }); %><span><span class="legend off"></span> تعطیل</span></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-header"><h6><i class="bi bi-bar-chart me-1"></i>روند ۶ ماه اخیر</h6></div><div class="card-body"><canvas id="trendChart" height="110"></canvas></div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card table-card mb-3"><div class="card-header"><h6>غیبت‌ها و تأخیرها</h6></div>
+      <div class="table-responsive" style="max-height:420px"><table class="table table-sm align-middle mb-0"><thead><tr><th>تاریخ</th><th>وضعیت</th><th>درس</th><th>توضیح</th></tr></thead><tbody><% recent.forEach(function (a) { %><tr><td class="fs-7"><%= J.formatDate(a.date) %> <span class="text-secondary"><%= J.weekdayName(a.date) %></span></td><td><%- utils.attBadge(a.status) %><%= a.minutes_late ? ' ' + J.toPersianDigits(a.minutes_late) + "'" : '' %></td><td class="fs-7"><%= a.subject_title || 'روزانه' %></td><td class="fs-7 text-secondary"><%= a.note || '' %></td></tr><% }); if (!recent.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">موردی ثبت نشده 🎉</td></tr><% } %></tbody></table></div></div>
+    <% if (enabled('attendance.excuses')) { %>
+    <div class="card"><div class="card-header"><h6>درخواست‌های موجه</h6><a href="/attendance/excuses" class="fs-7"><%= isOwner ? 'ثبت درخواست' : 'همه' %></a></div><ul class="list-group list-group-flush"><% excuses.forEach(function (e) { %><li class="list-group-item d-flex justify-content-between fs-7"><span><%= J.formatDate(e.date) %> — <%= utils.truncate(e.reason, 40) %></span><%- utils.statusBadge(e.status) %></li><% }); if (!excuses.length) { %><li class="list-group-item text-secondary fs-7">درخواستی ثبت نشده</li><% } %></ul></div>
+    <% } %>
+  </div>
+</div>
+<script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('trendChart'), { type: 'bar', data: { labels: <%- JSON.stringify(trend.map(function (t) { return t.label; })) %>, datasets: [
+  { label: 'حاضر', data: <%- JSON.stringify(trend.map(function (t) { return t.present; })) %>, backgroundColor: '#16a34a' },
+  { label: 'غایب', data: <%- JSON.stringify(trend.map(function (t) { return t.absent; })) %>, backgroundColor: '#dc2626' },
+  { label: 'تأخیر', data: <%- JSON.stringify(trend.map(function (t) { return t.late; })) %>, backgroundColor: '#f59e0b' } ] },
+  options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom', rtl: true, labels: { font: { family: 'Vazirmatn' } } } } } });
+</script>

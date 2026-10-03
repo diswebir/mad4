@@ -1,0 +1,16 @@
+<%- include('partials/page-header', { title: 'گزارش حضور کلاس ' + cls.title, subtitle: J.toPersianDigits(days) + ' روز ثبت‌شده از ' + J.toPersianDigits(schoolDaysCount) + ' روز آموزشی بازه' + (holidaysCount ? ' (' + J.toPersianDigits(holidaysCount) + ' روز تعطیل رسمی کسر شد)' : ''), icon: 'bi-graph-up', breadcrumbs: [{ title: 'حضور و غیاب', href: '/attendance' }, { title: cls.title }], actions: [
+  ...(enabled('attendance.export') ? [{ href: '/attendance/export?class_id=' + cls.id + '&from=' + from + '&to=' + to, label: 'CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : []),
+  ...(enabled('attendance.monthly_report') ? [{ href: '/attendance/report/monthly?class_id=' + cls.id, label: 'دفتر ماهانه', icon: 'bi-calendar3', class: 'btn-light' }] : []),
+  { print: true, label: 'چاپ' }
+] }) %>
+<form method="get" class="card mb-3 no-print"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
+  <span class="fs-7">از</span><input class="form-control form-control-sm jdate" style="width:130px" name="from" value="<%= J.formatDate(from) %>"><span class="fs-7">تا</span><input class="form-control form-control-sm jdate" style="width:130px" name="to" value="<%= J.formatDate(to) %>"><button class="btn btn-sm btn-primary">اعمال</button>
+  <span class="fs-7 text-secondary ms-auto">دانش‌آموزان با <%= J.toPersianDigits(threshold) %> غیبت یا بیشتر پررنگ شده‌اند.</span></div></form>
+<div class="card table-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0 table-sm">
+  <thead><tr><th>#</th><th>دانش‌آموز</th><th>حاضر</th><th>غایب</th><th>تأخیر</th><th>موجه</th><th>مرخصی</th><th style="width:22%">نرخ حضور</th><th></th></tr></thead>
+  <tbody><% students.forEach(function (s, i) { var st = stats[s.id] || {}; var tot = Object.values(st).reduce(function (a, b) { return a + b; }, 0); var pr = (st.present || 0) + (st.late || 0); var pct = tot ? Math.round(pr / tot * 100) : null; %>
+    <tr class="<%= (st.absent || 0) >= threshold ? 'table-danger' : '' %>"><td class="text-muted"><%= J.toPersianDigits(i + 1) %></td><td><a href="/students/<%= s.id %>" class="fw-semibold"><%= s.first_name %> <%= s.last_name %></a></td>
+      <td><%= J.toPersianDigits(st.present || 0) %></td><td class="text-danger fw-semibold"><%= J.toPersianDigits(st.absent || 0) %></td><td class="text-warning"><%= J.toPersianDigits(st.late || 0) %></td><td><%= J.toPersianDigits(st.excused || 0) %></td><td><%= J.toPersianDigits(st.leave || 0) %></td>
+      <td><% if (pct != null) { %><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:8px"><div class="progress-bar bg-<%= pct >= 90 ? 'success' : pct >= 75 ? 'warning' : 'danger' %>" style="width:<%= pct %>%"></div></div><span class="fs-7"><%= J.toPersianDigits(pct) %>٪</span></div><% } else { %><span class="text-muted fs-7">—</span><% } %></td>
+      <td class="text-end no-print"><a href="/attendance/report/student/<%= s.id %>" class="btn btn-sm btn-light"><i class="bi bi-graph-up"></i></a></td></tr>
+  <% }); %></tbody></table></div></div>

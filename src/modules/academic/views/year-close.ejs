@@ -1,0 +1,115 @@
+<%- include('partials/page-header', { title: 'پایان سال تحصیلی و ارتقای پایه', icon: 'bi-calendar-check', breadcrumbs: [{ title: 'سال‌های تحصیلی', href: '/academic/years' }, { title: 'پایان سال' }] }) %>
+<% const f = form || {}; const cls = f.cls || {}; %>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="alert alert-info"><i class="bi bi-info-circle me-1"></i>این ویزارد سال تحصیلی <b><%= ctx.source.title %></b> را می‌بندد: سال جدید و نوبت‌های آن را می‌سازد، برای هر کلاس یک کلاس هم‌نام در پایهٔ بالاتر ایجاد می‌کند، دانش‌آموزان را (به‌جز تکرار پایه‌ها) به کلاس جدید می‌برد، پایهٔ آخر را فارغ‌التحصیل می‌کند و سابقهٔ تحصیلی هر نفر را ثبت می‌نماید. پیش از اجرا، پیش‌نمایش کامل نشان داده می‌شود و تا زمانی که دادهٔ جدیدی روی کلاس‌های تازه ثبت نشده باشد، اجرا <b>قابل بازگردانی</b> است.</div>
+    <% if (planErrors && planErrors.length) { %><div class="alert alert-danger"><i class="bi bi-x-circle me-1"></i><b>پیش‌نمایش ساخته نشد:</b><ul class="mb-0 mt-1"><% planErrors.forEach(function (e) { %><li><%= e %></li><% }); %></ul></div><% } %>
+    <% ctx.warnings.forEach(function (w) { %><div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle me-1"></i><%= w %></div><% }); %>
+    <form method="post" action="/academic/year-close/preview" id="ycForm">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-1-circle me-1"></i>سال تحصیلی مقصد</div>
+        <div class="card-body">
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="target_mode" id="tmNew" value="new" <%= f.target_mode !== 'existing' ? 'checked' : '' %>><label class="form-check-label" for="tmNew">ساخت سال جدید</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="target_mode" id="tmEx" value="existing" <%= f.target_mode === 'existing' ? 'checked' : '' %> <%= ctx.otherYears.length ? '' : 'disabled' %>><label class="form-check-label" for="tmEx">استفاده از سال موجود</label></div>
+          <div class="row g-3 mt-1" id="newYearBox">
+            <div class="col-md-4"><label class="form-label">عنوان سال</label><input class="form-control" name="year_title" value="<%= f.year_title || ctx.defaults.title %>"></div>
+            <div class="col-md-4"><label class="form-label">شروع</label><input type="text" class="form-control jdate" name="year_start" value="<%= J.toPersianDigits(f.year_start || J.toJalali(ctx.defaults.start_date)) %>"></div>
+            <div class="col-md-4"><label class="form-label">پایان</label><input type="text" class="form-control jdate" name="year_end" value="<%= J.toPersianDigits(f.year_end || J.toJalali(ctx.defaults.end_date)) %>"></div>
+          </div>
+          <div class="row g-3 mt-1" id="existYearBox" style="display:none">
+            <div class="col-md-6"><label class="form-label">سال موجود</label><select class="form-select" name="target_year_id"><% ctx.otherYears.forEach(function (y) { %><option value="<%= y.id %>" <%= String(f.target_year_id) === String(y.id) ? 'selected' : '' %>><%= y.title %> (<%= J.toJalali(y.start_date) %> تا <%= J.toJalali(y.end_date) %>)</option><% }); %></select></div>
+          </div>
+          <div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="copy_terms" value="1" id="copyTerms" <%= f.copy_terms === '1' || !form.target_mode ? 'checked' : '' %>><label class="form-check-label" for="copyTerms">کپی نوبت‌های سال جاری (<%= ctx.terms.map(function (t) { return t.title; }).join('، ') || 'نوبتی تعریف نشده' %>) با تاریخ‌های یک سال بعد — اگر سال مقصد نوبت نداشته باشد</label></div>
+        </div></div>
+
+      <div class="card mb-3"><div class="card-header fw-bold d-flex justify-content-between align-items-center"><span><i class="bi bi-2-circle me-1"></i>کلاس‌ها و دانش‌آموزان</span><span class="fs-7 text-secondary"><%= J.toPersianDigits(ctx.classes.length) %> کلاس فعال در سال جاری</span></div>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+          <thead class="table-light"><tr><th>کلاس</th><th>پایه</th><th>معلم راهنما</th><th>دانش‌آموز</th><th style="min-width:130px">اقدام</th><th style="min-width:160px">کلاس جدید</th><th>گزینه‌ها</th><th>تکرار پایه</th></tr></thead>
+          <tbody>
+          <% ctx.classes.forEach(function (c) { const next = ctx.nextGradeOf(c.grade_level_id); const ci = cls['c' + c.id] || {}; const action = ci.action || (next ? 'promote' : 'graduate'); %>
+            <tr data-class="<%= c.id %>">
+              <td class="fw-bold"><%= c.title %></td><td><%= c.grade_title || '—' %></td><td class="fs-7"><%= c.teacher_name || '—' %></td><td><%= J.toPersianDigits(c.student_count) %></td>
+              <td><select class="form-select form-select-sm yc-action" name="cls[c<%= c.id %>][action]">
+                <option value="promote" <%= action === 'promote' ? 'selected' : '' %>>ارتقا به پایهٔ بالاتر</option>
+                <option value="graduate" <%= action === 'graduate' ? 'selected' : '' %>>فارغ‌التحصیلی</option>
+                <option value="keep" <%= action === 'keep' ? 'selected' : '' %>>بدون تغییر</option></select></td>
+              <td class="yc-new">
+                <select class="form-select form-select-sm mb-1" name="cls[c<%= c.id %>][grade_level_id]"><% ctx.grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(ci.grade_level_id || (next ? next.id : '')) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select>
+                <input class="form-control form-control-sm" name="cls[c<%= c.id %>][title]" value="<%= ci.title || '' %>" placeholder="<%= next ? c.title.includes(c.grade_title || '') && c.grade_title ? c.title.replace(c.grade_title, next.title) : (next.title + ' ' + c.title) : '' %>">
+              </td>
+              <td class="yc-new fs-7">
+                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][keep_teacher]" value="1" <%= ci.keep_teacher !== '0' ? 'checked' : '' %>><input type="hidden" name="cls[c<%= c.id %>][keep_teacher]" value="0" disabled> معلم‌ها حفظ شوند</label>
+                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][copy_subjects]" value="1" <%= ci.copy_subjects !== '0' ? 'checked' : '' %>> دروس کپی شوند</label>
+              </td>
+              <td><button type="button" class="btn btn-sm btn-outline-secondary yc-retain" data-class="<%= c.id %>" data-title="<%= c.title %>"><i class="bi bi-people"></i> انتخاب</button> <span class="badge bg-warning text-dark yc-retain-count" style="display:none"></span><div class="yc-retain-box" style="display:none"></div></td>
+            </tr>
+          <% }); %>
+          </tbody></table></div>
+        <div class="card-body border-top">
+          <% const lowest = ctx.grades[0]; %>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="entry_classes" value="1" id="entryClasses" <%= f.entry_classes === '1' || !form.target_mode ? 'checked' : '' %> <%= lowest ? '' : 'disabled' %>><label class="form-check-label" for="entryClasses">برای پایهٔ ورودی (<%= lowest ? lowest.title : '—' %>) کلاس‌های خالی هم‌نام با کلاس‌های فعلی این پایه ساخته شود (برای ثبت‌نام‌های جدید و تکرار پایه‌ها)</label></div>
+          <div class="fs-7 text-secondary mt-2"><i class="bi bi-lightbulb me-1"></i>دانش‌آموزان «تکرار پایه» با دکمهٔ انتخاب در هر ردیف مشخص می‌شوند؛ آن‌ها به کلاسِ هم‌پایه در سال جدید (کلاس ورودی یا کلاس ارتقایافته از پایهٔ پایین‌تر) منتقل می‌شوند.</div>
+        </div>
+      </div>
+
+      <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-3-circle me-1"></i>گزینه‌های پایانی</div>
+        <div class="card-body">
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="archive_old" value="1" id="archiveOld" <%= f.archive_old !== '0' ? 'checked' : '' %>><label class="form-check-label" for="archiveOld">کلاس‌های سال جاری (به‌جز «بدون تغییر») غیرفعال/بایگانی شوند</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="set_current" value="1" id="setCurrent" <%= f.set_current !== '0' ? 'checked' : '' %>><label class="form-check-label" for="setCurrent">سال مقصد به‌عنوان سال جاری و اولین نوبت آن به‌عنوان نوبت جاری تنظیم شود</label></div>
+          <% if (backupOn) { %><div class="form-check"><input class="form-check-input" type="checkbox" name="backup" value="1" id="backup" <%= f.backup === '1' || !form.target_mode ? 'checked' : '' %>><label class="form-check-label" for="backup">پیش از اجرا یک نسخهٔ پشتیبان خودکار گرفته شود (توصیه می‌شود)</label></div><% } %>
+          <input type="hidden" name="archive_old" value="0" id="archiveOldHidden"><input type="hidden" name="set_current" value="0" id="setCurrentHidden">
+        </div>
+        <div class="card-footer bg-transparent d-flex justify-content-end gap-2"><a href="/academic/years" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4"><i class="bi bi-eye me-1"></i>پیش‌نمایش</button></div>
+      </div>
+    </form>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header fw-bold">سال جاری: <%= ctx.source.title %></div>
+      <ul class="list-group list-group-flush fs-7">
+        <li class="list-group-item d-flex justify-content-between"><span>بازه</span><span><%= J.toJalali(ctx.source.start_date) %> تا <%= J.toJalali(ctx.source.end_date) %></span></li>
+        <% ctx.grades.forEach(function (g) { const gc = ctx.classes.filter(function (c) { return c.grade_level_id === g.id; }); const n = gc.reduce(function (a, c) { return a + Number(c.student_count); }, 0); %>
+        <li class="list-group-item d-flex justify-content-between"><span><%= g.title %></span><span><%= J.toPersianDigits(gc.length) %> کلاس · <%= J.toPersianDigits(n) %> دانش‌آموز</span></li>
+        <% }); %>
+      </ul></div>
+    <div class="card"><div class="card-header fw-bold">اجراهای قبلی</div>
+      <% if (!runs.length) { %><div class="card-body text-secondary fs-7">هنوز اجرایی ثبت نشده است.</div><% } else { %>
+      <ul class="list-group list-group-flush fs-7">
+        <% runs.forEach(function (r, i) { const s = r.summaryObj; %>
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between"><b><%= r.source_title %> ← <%= r.target_title %></b><span class="badge <%= r.status === 'done' ? 'bg-success' : 'bg-secondary' %>"><%= r.status === 'done' ? 'اجرا شده' : 'بازگردانی شده' %></span></div>
+          <div class="text-secondary"><%= J.formatDateTime(r.created_at) %> · <%= r.user_name || '' %></div>
+          <div><%= J.toPersianDigits(s.promoted || 0) %> ارتقا، <%= J.toPersianDigits(s.graduated || 0) %> فارغ‌التحصیل، <%= J.toPersianDigits(s.retained || 0) %> تکرار پایه، <%= J.toPersianDigits(s.classes || 0) %> کلاس جدید</div>
+          <% if (i === 0 && r.status === 'done') { %><button class="btn btn-sm btn-outline-danger mt-2" data-post="/academic/year-close/<%= r.id %>/revert" data-confirm="اجرای پایان سال بازگردانی شود؟ کلاس‌ها و سال ساخته‌شده حذف و دانش‌آموزان به وضعیت قبل برمی‌گردند."><i class="bi bi-arrow-counterclockwise me-1"></i>بازگردانی</button><% } %>
+        </li>
+        <% }); %>
+      </ul><% } %>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('ycForm');
+  function syncMode() { var ex = document.getElementById('tmEx').checked; document.getElementById('newYearBox').style.display = ex ? 'none' : ''; document.getElementById('existYearBox').style.display = ex ? '' : 'none'; }
+  document.querySelectorAll('input[name=target_mode]').forEach(function (r) { r.addEventListener('change', syncMode); }); syncMode();
+  function syncRow(tr) { var a = tr.querySelector('.yc-action').value; tr.querySelectorAll('.yc-new').forEach(function (td) { td.style.visibility = a === 'promote' ? '' : 'hidden'; }); }
+  document.querySelectorAll('tr[data-class]').forEach(function (tr) { tr.querySelector('.yc-action').addEventListener('change', function () { syncRow(tr); }); syncRow(tr); });
+  // چک‌باکس‌های unchecked مقدار 0 بفرستند
+  form.addEventListener('submit', function () {
+    document.querySelectorAll('input[type=checkbox][name^="cls["]').forEach(function (cb) { var h = cb.nextElementSibling; if (!cb.checked) { if (!h || h.type !== 'hidden') { h = document.createElement('input'); h.type = 'hidden'; h.name = cb.name; h.value = '0'; cb.parentNode.insertBefore(h, cb.nextSibling); } h.disabled = false; } else if (h && h.type === 'hidden') h.disabled = true; });
+    document.getElementById('archiveOldHidden').disabled = document.getElementById('archiveOld').checked; document.getElementById('setCurrentHidden').disabled = document.getElementById('setCurrent').checked;
+  });
+  document.querySelectorAll('.yc-retain').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tr = btn.closest('tr'), box = tr.querySelector('.yc-retain-box'), cid = btn.dataset.class;
+      if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+      box.style.display = ''; if (box.dataset.loaded) return; box.innerHTML = '...';
+      fetch('/academic/promote/students/' + cid).then(function (r) { return r.json(); }).then(function (list) {
+        box.dataset.loaded = '1';
+        if (!list.length) { box.innerHTML = '<span class="text-muted fs-7">دانش‌آموزی نیست</span>'; return; }
+        box.innerHTML = '<div class="border rounded p-2 mt-1 fs-7" style="max-height:180px;overflow:auto;min-width:220px">' + list.map(function (s) { return '<label class="form-check mb-0"><input class="form-check-input yc-retain-cb" type="checkbox" name="retain" value="' + s.id + '"> ' + s.first_name + ' ' + s.last_name + ' <span class="text-muted ltr">' + s.student_number + '</span></label>'; }).join('') + '</div>';
+        box.querySelectorAll('.yc-retain-cb').forEach(function (cb) { cb.addEventListener('change', function () { var n = box.querySelectorAll('.yc-retain-cb:checked').length, badge = tr.querySelector('.yc-retain-count'); badge.textContent = n; badge.style.display = n ? '' : 'none'; }); });
+      });
+    });
+  });
+})();
+</script>

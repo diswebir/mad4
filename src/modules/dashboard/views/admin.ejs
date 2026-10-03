@@ -1,0 +1,148 @@
+<div class="page-header">
+  <div><h1><i class="bi bi-speedometer2"></i>داشبورد مدیریت</h1><div class="text-secondary fs-7 mt-1">خوش آمدید <%= currentUser.name %> عزیز · <%= year ? 'سال تحصیلی ' + J.toPersianDigits(year.title) : '' %></div></div>
+  <div class="page-actions d-flex gap-2 flex-wrap">
+    <% if (enabled('students')) { %><a href="/students/new" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>ثبت‌نام دانش‌آموز</a><% } %>
+    <% if (enabled('announcements')) { %><a href="/announcements/new" class="btn btn-outline-secondary"><i class="bi bi-megaphone me-1"></i>اطلاعیهٔ جدید</a><% } %>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><a href="/students" class="card stat-card text-primary d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon bg-brand-soft"><i class="bi bi-people"></i></div><div><div class="value"><%= J.toPersianDigits(students) %></div><div class="label">دانش‌آموز فعال <span class="text-secondary">(<%= J.toPersianDigits(boys) %> پسر · <%= J.toPersianDigits(girls) %> دختر)</span></div></div></div></a></div>
+  <div class="col-6 col-xl-3"><a href="/teachers" class="card stat-card text-success d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-person-video3"></i></div><div><div class="value"><%= J.toPersianDigits(teachers) %></div><div class="label">معلم</div></div></div></a></div>
+  <div class="col-6 col-xl-3"><a href="/academic/classes" class="card stat-card text-info d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-door-open"></i></div><div><div class="value"><%= J.toPersianDigits(classes) %></div><div class="label">کلاس فعال</div></div></div></a></div>
+  <div class="col-6 col-xl-3">
+    <% if (typeof todayAtt !== 'undefined' && todayAtt) { %>
+    <a href="/attendance/report/daily" class="card stat-card text-warning d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-calendar-check"></i></div><div><div class="value"><%= todayAtt.rate == null ? '—' : J.toPersianDigits(todayAtt.rate) + '٪' %></div><div class="label">حضور امروز <span class="text-secondary">(<%= J.toPersianDigits(classesRecorded) %> کلاس ثبت‌شده · <%= J.toPersianDigits(todayAtt.absent) %> غایب)</span></div></div></div></a>
+    <% } else { %>
+    <div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-person-badge"></i></div><div><div class="value"><%= J.toPersianDigits(users) %></div><div class="label">کاربر فعال</div></div></div></div>
+    <% } %>
+  </div>
+</div>
+
+<% if (typeof setup !== 'undefined' && setup) { var next = setup.items.filter(function (i) { return !i.done; }).slice(0, 4); %>
+<div class="card mb-3 border-warning-subtle" id="setupWidget"><div class="card-body py-2">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="fw-bold fs-7"><i class="bi bi-check2-square me-1 text-brand"></i>راه‌اندازی اولیه: <%= J.toPersianDigits(setup.percent) %>٪</div>
+    <div class="progress flex-grow-1" style="height:8px;min-width:120px"><div class="progress-bar" style="width:<%= setup.percent %>%"></div></div>
+    <div class="d-flex gap-1 flex-wrap"><% next.forEach(function (i) { %><a href="<%= i.href %>" class="badge badge-soft-<%= i.required ? 'warning' : 'secondary' %> fs-7 py-2 px-2 text-decoration-none"><i class="bi <%= i.icon %> me-1"></i><%= i.title %></a><% }); %></div>
+    <a href="/help/setup" class="btn btn-sm btn-outline-primary ms-auto">همهٔ موارد</a>
+    <a href="#" data-post="/help/setup/dismiss" data-params='{"state":"1"}' class="btn btn-sm btn-light" title="پنهان‌کردن"><i class="bi bi-x-lg"></i></a>
+  </div>
+</div></div>
+<% } %>
+<% if (enabled('dashboard.pending') && typeof pending !== 'undefined') { var items = []; if (pending.tickets) items.push({ href: '/tickets?status=open', icon: 'bi-ticket-detailed', label: 'تیکت باز', n: pending.tickets, c: 'danger' }); if (pending.ticketsOverdue) items.push({ href: '/tickets?sla=overdue', icon: 'bi-stopwatch', label: 'تیکت خارج از مهلت پاسخ', n: pending.ticketsOverdue, c: 'danger' }); if (pending.excuses) items.push({ href: '/attendance/excuses', icon: 'bi-file-earmark-medical', label: 'درخواست موجه‌سازی', n: pending.excuses, c: 'warning' }); if (pending.leaves) items.push({ href: '/hr/leaves', icon: 'bi-calendar-x', label: 'درخواست مرخصی', n: pending.leaves, c: 'info' }); if (pending.unpaid) items.push({ href: '/finance/invoices?status=unpaid', icon: 'bi-receipt', label: 'صورتحساب پرداخت‌نشده', n: pending.unpaid, c: 'secondary' }); if (pending.overdue) items.push({ href: '/library/loans?status=overdue', icon: 'bi-book', label: 'کتاب دیرکرد', n: pending.overdue, c: 'purple' }); if (items.length) { %>
+<div class="card mb-3"><div class="card-body py-2 d-flex gap-3 flex-wrap align-items-center"><span class="fw-bold fs-7"><i class="bi bi-bell me-1 text-brand"></i>در انتظار اقدام:</span>
+  <% items.forEach(function (it) { %><a href="<%= it.href %>" class="badge badge-soft-<%= it.c %> fs-7 py-2 px-3"><i class="bi <%= it.icon %> me-1"></i><%= J.toPersianDigits(it.n) %> <%= it.label %></a><% }); %>
+</div></div>
+<% } } %>
+
+<% if (enabled('dashboard.quick_actions')) { %>
+<div class="row g-2 quick-actions mb-3">
+  <% var qa = [
+    enabled('attendance') && { href: '/attendance', icon: 'bi-calendar-check', t: 'حضور و غیاب' },
+    enabled('students') && { href: '/students', icon: 'bi-people', t: 'دانش‌آموزان' },
+    enabled('teachers') && { href: '/teachers', icon: 'bi-person-video3', t: 'معلمان' },
+    enabled('academic') && { href: '/academic/classes', icon: 'bi-door-open', t: 'کلاس‌ها' },
+    enabled('exams') && { href: '/exams', icon: 'bi-journal-check', t: 'آزمون‌ها' },
+    enabled('tickets') && { href: '/tickets', icon: 'bi-ticket-detailed', t: 'تیکت‌ها' },
+    enabled('finance') && { href: '/finance', icon: 'bi-cash-coin', t: 'مالی' },
+    enabled('reports') && { href: '/reports', icon: 'bi-bar-chart', t: 'گزارش‌ها' },
+    enabled('calendar') && { href: '/calendar', icon: 'bi-calendar3', t: 'تقویم' },
+    enabled('academic.schedule') && { href: '/academic/schedule', icon: 'bi-table', t: 'برنامه هفتگی' },
+    enabled('messages') && { href: '/messages/compose', icon: 'bi-send', t: 'ارسال پیام' },
+    { href: '/system/modules', icon: 'bi-grid-1x2', t: 'ماژول‌ها' }
+  ].filter(Boolean); qa.forEach(function (a) { %>
+  <div class="col-4 col-md-3 col-xl-1"><a href="<%= a.href %>"><i class="bi <%= a.icon %>"></i><span><%= a.t %></span></a></div>
+  <% }); %>
+</div>
+<% } %>
+
+<div class="row g-3">
+  <% if (enabled('dashboard.charts')) { %>
+  <div class="col-xl-8">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-graph-up me-1 text-brand"></i>روند حضور روزانه (۱۴ روز اخیر)</h6><a href="/attendance/report/monthly" class="fs-7">گزارش کامل</a></div>
+      <div class="card-body"><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-pie-chart me-1 text-brand"></i>دانش‌آموزان به تفکیک پایه</h6></div>
+      <div class="card-body"><div class="chart-box sm"><canvas id="gradeChart"></canvas></div></div>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (typeof tickets !== 'undefined' && tickets) { %>
+  <div class="col-xl-6">
+    <div class="card h-100 table-card">
+      <div class="card-header"><h6><i class="bi bi-ticket-detailed me-1 text-brand"></i>آخرین تیکت‌ها</h6><a href="/tickets" class="fs-7">همه</a></div>
+      <% if (!tickets.length) { %><div class="empty-state py-4">تیکتی وجود ندارد</div><% } else { %>
+      <table class="table table-hover table-sm"><tbody>
+        <% tickets.forEach(function (t) { %><tr><td><a href="/tickets/<%= t.id %>" class="fw-500"><%= utils.truncate(t.subject, 40) %></a><div class="fs-7 text-secondary"><%= t.creator %> · <%= J.timeAgo(t.updated_at || t.created_at) %></div></td><td class="text-end"><%- include('../../tickets/views/_status', { status: t.status }) %></td></tr><% }); %>
+      </tbody></table>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="col-xl-6">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-megaphone me-1 text-brand"></i>اطلاعیه‌ها</h6><% if (enabled('announcements')) { %><a href="/announcements" class="fs-7">همه</a><% } %></div>
+      <div class="card-body">
+        <% if (!announcements.length) { %><div class="text-secondary fs-7">اطلاعیه‌ای وجود ندارد</div><% } %>
+        <% announcements.forEach(function (a) { %>
+        <div class="d-flex gap-2 mb-3"><i class="bi <%= a.is_pinned ? 'bi-pin-angle-fill text-warning' : 'bi-dot' %>"></i><div class="mw-0"><a href="/announcements/<%= a.id %>" class="fw-500 d-block"><%= a.title %></a><div class="fs-7 text-secondary"><%= utils.truncate(a.body || '', 90) %></div><div class="fs-7 text-secondary"><%= a.author_name %> · <%= J.formatDate(a.publish_at || a.created_at) %></div></div></div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <% if (typeof exams !== 'undefined' && exams) { %>
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-journal-check me-1 text-brand"></i>آزمون‌های پیش رو</h6><a href="/exams/schedule" class="fs-7">برنامه</a></div>
+      <ul class="list-group list-group-flush">
+        <% if (!exams.length) { %><li class="list-group-item text-secondary fs-7">آزمونی ثبت نشده است</li><% } %>
+        <% exams.forEach(function (x) { %><li class="list-group-item d-flex justify-content-between align-items-center"><div><div class="fw-500 fs-7"><%= x.subject_title %> — <%= x.title %></div><div class="text-secondary" style="font-size:.74rem"><%= x.class_title %></div></div><span class="badge badge-soft-primary"><%= J.formatDate(x.date) %></span></li><% }); %>
+      </ul>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-calendar-event me-1 text-brand"></i>رویدادهای نزدیک</h6><% if (enabled('calendar')) { %><a href="/calendar" class="fs-7">تقویم</a><% } %></div>
+      <ul class="list-group list-group-flush">
+        <% if (!events.length) { %><li class="list-group-item text-secondary fs-7">رویدادی ثبت نشده است</li><% } %>
+        <% events.forEach(function (ev) { %><li class="list-group-item d-flex justify-content-between align-items-center"><div class="fw-500 fs-7"><i class="bi <%= { holiday: 'bi-sun text-danger', exam: 'bi-journal-check text-warning', meeting: 'bi-people text-info', trip: 'bi-bus-front text-success' }[ev.type] || 'bi-calendar-event text-primary' %> me-1"></i><%= ev.title %></div><span class="fs-7 text-secondary"><%= J.formatLong(ev.start_date) %></span></li><% }); %>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header"><h6><i class="bi bi-activity me-1 text-brand"></i>فعالیت‌های اخیر</h6><% if (enabled('system.activity_log')) { %><a href="/system/activity" class="fs-7">همه</a><% } %></div>
+      <ul class="list-group list-group-flush">
+        <% if (typeof birthdays !== 'undefined' && birthdays && birthdays.length) { %><li class="list-group-item fs-7"><i class="bi bi-cake2 text-danger me-1"></i>تولد امروز: <% birthdays.forEach(function (b, i) { %><a href="/students/<%= b.id %>"><%= b.first_name %> <%= b.last_name %></a><%= i < birthdays.length - 1 ? '، ' : '' %><% }); %></li><% } %>
+        <% (typeof activity !== 'undefined' ? activity : []).forEach(function (a) { %><li class="list-group-item fs-7 d-flex justify-content-between gap-2"><span class="truncate"><strong><%= a.user_name || 'سیستم' %></strong> <%= a.description %></span><span class="text-secondary text-nowrap"><%= J.timeAgo(a.created_at) %></span></li><% }); %>
+        <% if (typeof finance !== 'undefined' && finance) { %><li class="list-group-item fs-7 d-flex justify-content-between"><span><i class="bi bi-cash-stack text-success me-1"></i>دریافتی این ماه</span><strong><%= utils.money(finance.collected) %></strong></li><li class="list-group-item fs-7 d-flex justify-content-between"><span><i class="bi bi-exclamation-circle text-danger me-1"></i>مطالبات معوق</span><strong><%= utils.money(finance.due) %></strong></li><% } %>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<% if (enabled('dashboard.charts')) { %>
+<script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
+<script>
+(function(){
+  Chart.defaults.font.family = 'Vazirmatn, Tahoma';
+  var trend = <%- JSON.stringify(typeof trend !== 'undefined' ? trend : []) %>;
+  var tc = document.getElementById('trendChart');
+  if (tc) new Chart(tc, { type: 'line', data: { labels: trend.map(function (t) { return Jalali.fa(t.label); }), datasets: [{ label: 'درصد حضور', data: trend.map(function (t) { return t.value; }), borderColor: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#2563eb', backgroundColor: 'rgba(37,99,235,.12)', fill: true, tension: .35, pointRadius: 3 }] }, options: { maintainAspectRatio: false, scales: { y: { min: 0, max: 100, ticks: { callback: function (v) { return Jalali.fa(v) + '٪'; } } } }, plugins: { legend: { display: false }, tooltip: { rtl: true, callbacks: { label: function (c) { return Jalali.fa(c.parsed.y) + '٪ حضور'; } } } } } });
+  var byGrade = <%- JSON.stringify(typeof byGrade !== 'undefined' ? byGrade : []) %>;
+  var gc = document.getElementById('gradeChart');
+  if (gc) new Chart(gc, { type: 'doughnut', data: { labels: byGrade.map(function (g) { return g.title || 'نامشخص'; }), datasets: [{ data: byGrade.map(function (g) { return Number(g.c); }), backgroundColor: ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0891b2','#ca8a04','#64748b','#0d9488','#4f46e5','#dc2626','#f59e0b'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', rtl: true, labels: { boxWidth: 12, font: { size: 11 } } }, tooltip: { rtl: true, callbacks: { label: function (c) { return ' ' + c.label + ': ' + Jalali.fa(c.parsed) + ' نفر'; } } } } } });
+})();
+</script>
+<% } %>

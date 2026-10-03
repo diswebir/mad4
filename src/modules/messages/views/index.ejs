@@ -1,0 +1,14 @@
+<%- include('partials/page-header', { title: 'پیام‌ها', subtitle: unread ? J.toPersianDigits(unread) + ' پیام خوانده‌نشده' : '', icon: 'bi-envelope', actions: [...(canSend ? [{ href: '/messages/compose', label: 'پیام جدید', icon: 'bi-pencil-square', class: 'btn-primary' }] : []), ...(unread ? [{ post: '/messages/read-all', label: 'خواندن همه', icon: 'bi-check2-all', class: 'btn-light' }] : [])] }) %>
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+  <ul class="nav nav-pills"><li class="nav-item"><a class="nav-link <%= box === 'inbox' ? 'active' : '' %>" href="/messages">صندوق ورودی <% if (unread) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(unread) %></span><% } %></a></li><li class="nav-item"><a class="nav-link <%= box === 'sent' ? 'active' : '' %>" href="/messages?box=sent">ارسال‌شده</a></li></ul>
+  <form method="get" class="d-flex gap-2"><input type="hidden" name="box" value="<%= box %>"><% if (box === 'inbox') { %><label class="form-check fs-7 align-self-center"><input type="checkbox" class="form-check-input" name="unread" value="1" <%= f.unread === '1' ? 'checked' : '' %> data-auto-submit> فقط خوانده‌نشده</label><% } %><input class="form-control form-control-sm" style="max-width:220px" name="q" value="<%= f.q %>" placeholder="جستجو…"><button class="btn btn-sm btn-light"><i class="bi bi-search"></i></button></form>
+</div>
+<div class="card"><div class="list-group list-group-flush">
+  <% result.data.forEach(function (m) { var who = box === 'sent' ? m.receiver_name : m.sender_name; var role = box === 'sent' ? m.receiver_role : m.sender_role; var unreadRow = box === 'inbox' && !m.is_read; %>
+  <a href="/messages/<%= m.id %>" class="list-group-item list-group-item-action d-flex gap-3 align-items-center <%= unreadRow ? 'fw-semibold border-start border-3 border-primary' : '' %>">
+    <%- include('partials/avatar', { user: { name: who, avatar: box === 'sent' ? null : m.sender_avatar }, size: 36 }) %>
+    <div class="flex-grow-1 mw-0"><div class="d-flex justify-content-between gap-2"><span class="truncate"><%= who %> <span class="badge badge-soft-secondary fw-normal"><%= utils.ROLES[role] || role %></span></span><span class="fs-7 text-secondary text-nowrap"><%= J.timeAgo(m.created_at) %></span></div><div class="truncate"><%= m.subject %> <span class="text-secondary fw-normal fs-7">— <%= utils.truncate(m.body, 80) %></span></div></div>
+    <% if (box === 'sent' && enabled('messages.read_receipt')) { %><i class="bi <%= m.is_read ? 'bi-check2-all text-primary' : 'bi-check2 text-secondary' %>" title="<%= m.is_read ? 'خوانده شده' : 'ارسال شده' %>"></i><% } %>
+  </a>
+  <% }); if (!result.data.length) { %><%- include('partials/empty', { message: 'پیامی وجود ندارد', icon: 'bi-envelope-open' }) %><% } %>
+</div><%- include('partials/pagination', { result: result, query: query }) %></div>

@@ -1,0 +1,27 @@
+<%- include('partials/page-header', { title: 'آزمون‌ها و نمرات', icon: 'bi-award', actions: [
+  { href: '/exams/new', label: 'آزمون جدید', icon: 'bi-plus-lg', class: 'btn-primary' },
+  ...(enabled('exams.schedule') ? [{ href: '/exams/schedule', label: 'برنامهٔ آزمون‌ها', icon: 'bi-calendar-event', class: 'btn-light' }] : []),
+  ...(enabled('exams.analytics') ? [{ href: '/exams/analytics', label: 'تحلیل', icon: 'bi-graph-up', class: 'btn-light' }] : []),
+  ...(enabled('exams.class_sheet') && classes.length ? [{ href: '/exams/class/' + (f.class_id || classes[0].id), label: 'ریزنمرات کلاس', icon: 'bi-table', class: 'btn-light' }] : []),
+  ...(enabled('exams.history') ? [{ href: '/exams/changes', label: 'تاریخچهٔ تغییرات', icon: 'bi-clock-history', class: 'btn-light' }] : [])
+] }) %>
+<% if (upcoming.length && !f.status) { %><div class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center fs-7"><span class="text-secondary"><i class="bi bi-calendar-event me-1"></i>پیش رو:</span><% upcoming.forEach(function (e) { %><a href="/exams/<%= e.id %>" class="badge badge-soft-primary fw-normal"><%= J.formatDate(e.date) %> — <%= e.subject_title %> <%= e.class_title %></a><% }); %></div></div><% } %>
+<form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
+  <select class="form-select form-select-sm w-auto" name="class_id" data-auto-submit><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
+  <select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit><option value="">همهٔ نوبت‌ها</option><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.term_id) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select>
+  <select class="form-select form-select-sm w-auto" name="type" data-auto-submit><option value="">همهٔ انواع</option><% Object.keys(TYPES).forEach(function (k) { %><option value="<%= k %>" <%= f.type === k ? 'selected' : '' %>><%= TYPES[k] %></option><% }); %></select>
+  <select class="form-select form-select-sm w-auto" name="status" data-auto-submit><option value="">همه</option><option value="upcoming" <%= f.status === 'upcoming' ? 'selected' : '' %>>پیش رو</option><option value="ungraded" <%= f.status === 'ungraded' ? 'selected' : '' %>>بدون نمره</option><% if (enabled('exams.publish')) { %><option value="unpublished" <%= f.status === 'unpublished' ? 'selected' : '' %>>منتشرنشده</option><% } %></select>
+  <input class="form-control form-control-sm" style="max-width:200px" name="q" value="<%= f.q %>" placeholder="جستجو…"><button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+</div></form>
+<div class="card table-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+  <thead><tr><th>تاریخ</th><th>عنوان</th><th>درس / کلاس</th><th>نوع</th><th>بارم</th><th>نمرات</th><th>میانگین</th><% if (enabled('exams.publish')) { %><th>انتشار</th><% } %><th></th></tr></thead>
+  <tbody><% result.data.forEach(function (e) { var future = e.date >= J.todayISO(); %>
+    <tr><td class="text-nowrap fs-7"><%= J.formatDate(e.date) %><% if (future) { %> <span class="badge badge-soft-info">پیش رو</span><% } %></td>
+      <td><a href="/exams/<%= e.id %>" class="fw-semibold"><%= e.title %></a><% if (e.term_title) { %><div class="fs-7 text-secondary"><%= e.term_title %></div><% } %></td>
+      <td><%= e.subject_title %><div class="fs-7 text-secondary"><%= e.class_title %></div></td><td class="fs-7"><%= TYPES[e.type] || e.type %></td><td><%= J.toPersianDigits(e.max_score) %><% if (Number(e.weight) !== 1) { %> <span class="fs-7 text-secondary">×<%= J.toPersianDigits(e.weight) %></span><% } %></td>
+      <td><% var pct = e.students_count ? Math.round(e.graded_count / e.students_count * 100) : 0; %><div class="d-flex align-items-center gap-2"><div class="progress" style="width:60px;height:6px"><div class="progress-bar bg-<%= pct >= 100 ? 'success' : 'warning' %>" style="width:<%= Math.min(100, pct) %>%"></div></div><span class="fs-7"><%= J.toPersianDigits(e.graded_count) %>/<%= J.toPersianDigits(e.students_count) %></span></div></td>
+      <td><%= e.avg_score != null ? J.toPersianDigits(Math.round(e.avg_score * 100) / 100) : '—' %></td>
+      <% if (enabled('exams.publish')) { %><td><%- e.is_published ? '<span class="badge badge-soft-success">منتشر شده</span>' : '<span class="badge badge-soft-secondary">پیش‌نویس</span>' %></td><% } %>
+      <td class="text-end text-nowrap"><a href="/exams/<%= e.id %>" class="btn btn-sm btn-light" title="ثبت نمره"><i class="bi bi-pencil-square"></i></a> <a href="/exams/<%= e.id %>/edit" class="btn btn-sm btn-light" title="ویرایش"><i class="bi bi-gear"></i></a></td></tr>
+  <% }); if (!result.data.length) { %><tr><td colspan="9"><%- include('partials/empty', { message: 'آزمونی یافت نشد', action: { href: '/exams/new', label: 'تعریف آزمون' } }) %></td></tr><% } %></tbody></table></div>
+  <%- include('partials/pagination', { result: result, query: query }) %></div>

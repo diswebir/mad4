@@ -1,0 +1,28 @@
+<% var fullName = s.first_name + ' ' + s.last_name; var show = function (label, val) { return '<tr><th style="width:28%">' + label + '</th><td>' + (val ? utils.escapeHtml(J.toPersianDigits(val)) : '—') + '</td></tr>'; }; %>
+<div class="d-flex gap-3 align-items-start mb-3">
+  <% if (s.photo) { %><img src="/files/<%= s.photo %>" alt="" style="width:30mm;height:38mm;object-fit:cover;border:1px solid #ddd;border-radius:6px"><% } %>
+  <div><h4 class="mb-1">پروندهٔ دانش‌آموز: <%= fullName %></h4><div class="text-secondary">شماره <%= J.toPersianDigits(s.student_number) %> · <%= s.class_title || 'بدون کلاس' %> · <%= s.grade_title || '' %> · وضعیت: <%= utils.STUDENT_STATUS[s.status] %></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-6"><h6 class="border-bottom pb-1">هویتی و تحصیلی</h6><table class="table table-sm table-bordered"><%- show('نام', s.first_name) + show('نام خانوادگی', s.last_name) + show('کد ملی', s.national_id) + show('جنسیت', utils.GENDERS[s.gender]) + show('تاریخ تولد', s.birth_date ? J.formatDate(s.birth_date) : '') + show('محل تولد', s.birth_place) + show('ملیت', s.nationality) + show('تاریخ ثبت‌نام', s.enrollment_date ? J.formatDate(s.enrollment_date) : '') + show('مدرسهٔ قبلی', s.previous_school) + (homeroom ? show('معلم راهنما', homeroom.name) : '') %></table></div>
+  <div class="col-6"><h6 class="border-bottom pb-1">تماس و نشانی</h6><table class="table table-sm table-bordered"><%- show('موبایل', s.mobile) + show('تلفن منزل', s.home_phone) + show('ایمیل', s.email) + show('کد پستی', s.postal_code) + show('نشانی', s.address) %></table>
+    <% if (enabled('students.emergency')) { %><h6 class="border-bottom pb-1">تماس اضطراری</h6><table class="table table-sm table-bordered"><%- show('نام', s.emergency_name) + show('تلفن', s.emergency_phone) + show('نسبت', s.emergency_relation) %></table><% } %></div>
+  <% if (enabled('students.parents')) { %>
+  <div class="col-6"><h6 class="border-bottom pb-1">پدر</h6><table class="table table-sm table-bordered"><%- show('نام', s.father_name) + show('کد ملی', s.father_national_id) + show('موبایل', s.father_phone) + show('شغل', s.father_job) + show('تحصیلات', utils.EDUCATIONS[s.father_education]) %></table></div>
+  <div class="col-6"><h6 class="border-bottom pb-1">مادر</h6><table class="table table-sm table-bordered"><%- show('نام', s.mother_name) + show('کد ملی', s.mother_national_id) + show('موبایل', s.mother_phone) + show('شغل', s.mother_job) + show('تحصیلات', utils.EDUCATIONS[s.mother_education]) %></table></div>
+  <% } %>
+  <% if (enabled('students.medical')) { %>
+  <div class="col-12"><h6 class="border-bottom pb-1">پزشکی</h6><table class="table table-sm table-bordered"><%- show('گروه خونی', s.blood_type) + show('قد / وزن', (s.height ? s.height + ' سانتی‌متر' : '—') + ' / ' + (s.weight ? s.weight + ' کیلوگرم' : '—')) + show('شماره بیمه', s.insurance_number) + show('حساسیت‌ها', s.allergies) + show('بیماری‌های خاص', s.medical_conditions) + show('داروها', s.medications) + show('نیازهای ویژه', s.special_needs) %></table></div>
+  <% } %>
+  <% if (enabled('attendance')) { %>
+  <div class="col-6"><h6 class="border-bottom pb-1">خلاصهٔ حضور و غیاب</h6><table class="table table-sm table-bordered"><% Object.keys(utils.ATT_STATUS).forEach(function (k) { %><%- show(utils.ATT_STATUS[k], String(att[k] || 0)) %><% }); %></table></div>
+  <% } %>
+  <% if (enabled('discipline')) { %>
+  <div class="col-6"><h6 class="border-bottom pb-1">انضباطی (امتیاز <%= J.toPersianDigits(points || 0) %>)</h6><table class="table table-sm table-bordered"><thead><tr><th>تاریخ</th><th>نوع</th><th>شرح</th><th>امتیاز</th></tr></thead><tbody><% discipline.forEach(function (d) { %><tr><td><%= J.formatDate(d.date) %></td><td><%= d.type === 'positive' ? 'تشویقی' : 'انضباطی' %></td><td><%= d.category || '' %> <%= d.description || '' %></td><td><%= J.toPersianDigits(d.points) %></td></tr><% }); %></tbody></table></div>
+  <% } %>
+  <% if (typeof grades !== 'undefined' && grades && grades.length) { %>
+  <div class="col-12"><h6 class="border-bottom pb-1">آخرین نمرات</h6><table class="table table-sm table-bordered"><thead><tr><th>درس</th><th>آزمون</th><th>تاریخ</th><th>نمره</th></tr></thead><tbody><% grades.forEach(function (g) { %><tr><td><%= g.subject_title %></td><td><%= g.exam_title %></td><td><%= J.formatDate(g.date) %></td><td><%= g.score != null ? J.toPersianDigits(g.score) + ' / ' + J.toPersianDigits(g.max_score) : (utils.DESCRIPTIVE_GRADES[g.descriptive] || '—') %></td></tr><% }); %></tbody></table></div>
+  <% } %>
+  <% if (s.notes) { %><div class="col-12"><h6 class="border-bottom pb-1">توضیحات</h6><p><%- utils.nl2br(s.notes) %></p></div><% } %>
+</div>
+<div class="row mt-5 text-center fs-7"><div class="col-4">امضای مدیر</div><div class="col-4">امضای معاون</div><div class="col-4">امضای ولی</div></div>
