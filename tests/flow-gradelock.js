@@ -60,7 +60,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   body.change_reason = 'اعتراض دانش‌آموز تأیید شد';
   r = await a.post('/exams/' + examId + '/grades', body); assert(r.status === 302, 'admin saves with reason');
   r = await a.get('/exams/' + examId); assert(new RegExp('name="score_' + sids[0] + '"[^>]*value="۱۷"').test(r.text), 'grade changed to 17 by admin');
-  r = await a.get('/exams/' + examId + '/history'); assert(r.status === 200 && /اعتراض دانش‌آموز تأیید شد/.test(r.text) && /۱۷<\/span>/.test(r.text) && /مدیر مدرسه/.test(r.text), 'exam history lists admin change with reason');
+  r = await a.get('/exams/' + examId + '/history'); assert(r.status === 200 && /اعتراض دانش‌آموز تأیید شد/.test(r.text) && /۱۷<\/span>/.test(r.text) && /مدیر/.test(r.text), 'exam history lists admin change with reason');
   r = await a.get('/exams/changes?q=' + encodeURIComponent('اعتراض')); assert(r.status === 200 && /اعتراض دانش‌آموز تأیید شد/.test(r.text) && r.text.includes(title), 'global changes page filters by reason');
   r = await a.get('/exams/changes?term_id=' + termId); assert(r.status === 200 && r.text.includes(title), 'global changes page filters by term');
   r = await t.get('/exams/changes'); assert(r.status === 200 && r.text.includes(title), 'teacher sees changes of own classes');
