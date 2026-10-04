@@ -1,12 +1,12 @@
 'use strict';
 /** جریان: PWA (system.pwa) — مانیفست پویا، آیکون PNG، سرویس‌ورکر، صفحهٔ آفلاین، تگ‌های قالب، خاموش‌کردن */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'system.pwa', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'system.pwa', enabled: '1' });
 
   // مانیفست (بدون نشست هم در دسترس است)
   let res = await fetch(BASE + '/manifest.webmanifest'); assert(res.status === 200 && /manifest\+json/.test(res.headers.get('content-type') || ''), 'manifest served with proper type');
@@ -50,10 +50,10 @@ const BASE = process.env.BASE_URL || 'http://localhost:3000';
   const lp = await new Client().get('/auth/login'); assert(/rel="manifest"/.test(lp.text), 'login layout has manifest too');
 
   // خاموش
-  await a.post('/system/modules/toggle', { key: 'system.pwa', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'system.pwa', enabled: '0' });
   res = await fetch(BASE + '/manifest.webmanifest'); assert(res.status === 404, 'feature off -> manifest 404');
   res = await fetch(BASE + '/sw.js'); assert(res.status === 404, 'feature off -> sw 404');
   r = await a.get('/dashboard'); assert(!/rel="manifest"/.test(r.text) && !/serviceWorker\.register/.test(r.text), 'feature off -> no tags');
-  await a.post('/system/modules/toggle', { key: 'system.pwa', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'system.pwa', enabled: '1' });
   console.log('done');
 })().catch((e) => { console.error(e); process.exit(1); });

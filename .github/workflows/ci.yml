@@ -25,7 +25,7 @@ jobs:
       - name: بررسی نحوی ماژول‌ها
         run: node -e "require('./src/app.js'); for (const m of require('fs').readdirSync('src/modules')) require('./src/modules/' + m); console.log('modules ok')"
       - name: نصب سامانه با دادهٔ نمونه (SQLite)
-        run: node scripts/install.js --force --fresh --school "مدرسهٔ آزمایشی CI" --admin admin --password admin123 --name "مدیر" --demo
+        run: node scripts/install.js --force --fresh --school "مدرسهٔ آزمایشی CI" --admin admin --password admin123 --name "مدیر" --demo --super-user vendor --super-password "Vendor#12345"
       - name: اجرای سرور
         run: |
           NODE_ENV=production PORT=3000 node app.js > server.log 2>&1 &
@@ -66,7 +66,7 @@ jobs:
       - name: نصب وابستگی‌ها
         run: npm ci --no-audit --no-fund
       - name: نصب سامانه با دادهٔ نمونه (MySQL)
-        run: node scripts/install.js --force --mysql --host 127.0.0.1 --port 3306 --db madrese --user root --pass root --school "مدرسهٔ آزمایشی CI" --admin admin --password admin123 --name "مدیر" --demo
+        run: node scripts/install.js --force --mysql --host 127.0.0.1 --port 3306 --db madrese --user root --pass root --school "مدرسهٔ آزمایشی CI" --admin admin --password admin123 --name "مدیر" --demo --super-user vendor --super-password "Vendor#12345"
       - name: اجرای سرور
         run: |
           NODE_ENV=production PORT=3000 node app.js > server.log 2>&1 &

@@ -1,12 +1,12 @@
 'use strict';
 /** جریان: برنامهٔ هفتگی حرفه‌ای — مودال هوشمند (slot-info)، ساعات در دسترس‌نبودن معلم، تولید خودکار برای یک کلاس و سراسری با پیش‌نمایش */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const k of ['academic.schedule', 'academic.schedule_auto', 'academic.teacher_availability', 'academic.class_subjects']) await a.post('/system/modules/toggle', { key: k, enabled: '1' });
+  for (const k of ['academic.schedule', 'academic.schedule_auto', 'academic.teacher_availability', 'academic.class_subjects']) await superPost('/system/modules/toggle', { key: k, enabled: '1' });
 
   // دروس/معلمان کلاس ۱ (هفتم الف) — دو درس با معلم را برمی‌داریم تا در کلاس تست استفاده کنیم
   r = await a.get('/academic/classes/1');
@@ -102,9 +102,9 @@ const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.in
   assert(cells2.length === 5 && Object.values(perDay2).every((n) => n === 1), 'applied with max 1 per day: subject 1 on 3 different days');
 
   // غیرفعال‌کردن ویژگی → صفحهٔ auto 404
-  await a.post('/system/modules/toggle', { key: 'academic.schedule_auto', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'academic.schedule_auto', enabled: '0' });
   r = await a.get('/academic/schedule/auto'); assert(r.status === 404, 'feature off → 404');
-  await a.post('/system/modules/toggle', { key: 'academic.schedule_auto', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'academic.schedule_auto', enabled: '1' });
 
   // پاک‌سازی
   await a.post(`/academic/schedule/teacher/${s1.teacher}/availability`, { day: String(freeCell.d), period: String(freeCell.p), status: 'available' }, { json: true });

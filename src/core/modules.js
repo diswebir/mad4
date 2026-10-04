@@ -101,18 +101,18 @@ const CONSOLE_MENU = [
   { title: 'داشبورد کنسول', href: '/console', icon: 'bi-speedometer' },
   { title: 'گزارش‌های خطا', href: '/console/reports', icon: 'bi-bug', badge: 'reports' },
   { title: 'درخواست‌های ماژول', href: '/console/requests', icon: 'bi-bag-plus', badge: 'requests' },
-  { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2' },
+  { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2', feature: 'system.modules' },
   { title: 'تنظیمات فنی', href: '/system/settings?tab=sms', icon: 'bi-sliders' },
-  { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-cloud-arrow-down' },
-  { title: 'خطاهای سرور', href: '/system/logs', icon: 'bi-journal-x' },
-  { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-cpu' },
+  { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-cloud-arrow-down', feature: 'system.updates' },
+  { title: 'خطاهای سرور', href: '/system/logs', icon: 'bi-journal-x', feature: 'system.error_log' },
+  { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-cpu', feature: 'system.system_info' },
   { title: 'امنیت کنسول', href: '/console/security', icon: 'bi-shield-lock' }
 ];
 function menuFor(user, opts) {
   opts = opts || {};
   const groups = [];
   const superUser = !!(user && user.is_super && opts.superSession);
-  if (superUser) groups.push({ key: 'console', title: 'کنسول سازنده', icon: 'bi-shield-lock', items: CONSOLE_MENU.map((i) => Object.assign({ module: 'console' }, i)) });
+  if (superUser) groups.push({ key: 'console', title: 'کنسول سازنده', icon: 'bi-shield-lock', items: CONSOLE_MENU.filter((i) => !i.feature || isEnabled(i.feature)).map((i) => Object.assign({ module: 'console' }, i)) });
   for (const cat of CATEGORIES) {
     const items = [];
     for (const mod of registry.modules) {

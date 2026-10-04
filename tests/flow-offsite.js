@@ -2,7 +2,7 @@
 /** جریان: ارسال پشتیبان به بیرون (system.backup_offsite) — تنظیمات، آزمایش اتصال، ارسال دستی به WebDAV محلی، مسیر خطا، اجرای کار شبانه، خاموش‌کردن */
 const http = require('http');
 const zlib = require('zlib');
-const { Client, BASE } = require('./client');
+const { Client, BASE, superPost, superClient } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 
 // یک سرور WebDAV ساده (PROPFIND/HEAD/PUT) روی 127.0.0.1 برای دریافت فایل‌ها
@@ -25,22 +25,23 @@ const dav = http.createServer((req, res) => {
   const port = dav.address().port;
   const davUrl = `http://127.0.0.1:${port}/dav/backups`;
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'system.auto_backup', enabled: '1' });
+  const sa = await superClient();
+  await superPost('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'system.auto_backup', enabled: '1' });
 
   // تب تنظیمات
-  r = await a.get('/system/settings?tab=offsite'); assert(r.status === 200 && /id="st_backup_offsite_mode"/.test(r.text) && /backup_webdav_url/.test(r.text) && /backup_ftp_host/.test(r.text) && /backup_email_to/.test(r.text), 'offsite settings tab renders all destinations');
+  r = await sa.get('/system/settings?tab=offsite'); assert(r.status === 200 && /id="st_backup_offsite_mode"/.test(r.text) && /backup_webdav_url/.test(r.text) && /backup_ftp_host/.test(r.text) && /backup_email_to/.test(r.text), 'offsite settings tab renders all destinations');
   r = await a.get('/system/backup'); assert(/ارسال پشتیبان به بیرون/.test(r.text) && /غیرفعال/.test(r.text), 'backup page shows offsite card (disabled)');
 
   // آزمایش اتصال بدون پیکربندی
-  r = await a.post('/system/settings/test/offsite', {}); assert(r.status === 302, 'test connection redirects');
-  r = await a.get('/system/settings?tab=offsite'); assert(/آزمایش ناموفق/.test(r.text), 'test without configuration reports failure');
+  r = await sa.post('/system/settings/test/offsite', {}); assert(r.status === 302, 'test connection redirects');
+  r = await sa.get('/system/settings?tab=offsite'); assert(/آزمایش ناموفق/.test(r.text), 'test without configuration reports failure');
 
   // پیکربندی WebDAV محلی
-  r = await a.post('/system/settings/offsite', { backup_offsite_mode: 'webdav', backup_webdav_url: davUrl + '/', backup_webdav_user: 'davuser', backup_webdav_pass: 'davpass', backup_offsite_max_mb: '۵۰' });
+  r = await sa.post('/system/settings/offsite', { backup_offsite_mode: 'webdav', backup_webdav_url: davUrl + '/', backup_webdav_user: 'davuser', backup_webdav_pass: 'davpass', backup_offsite_max_mb: '۵۰' });
   assert(r.status === 302, 'save offsite settings');
-  r = await a.get('/system/settings?tab=offsite'); assert(new RegExp('value="' + davUrl.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '/"').test(r.text) && /name="backup_offsite_max_mb" value="50"/.test(r.text), 'settings persisted (digits normalized)');
-  r = await a.post('/system/settings/test/offsite', {}); r = await a.get('/system/settings?tab=offsite'); assert(/اتصال برقرار است/.test(r.text), 'test connection succeeds against local WebDAV');
+  r = await sa.get('/system/settings?tab=offsite'); assert(new RegExp('value="' + davUrl.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '/"').test(r.text) && /name="backup_offsite_max_mb" value="50"/.test(r.text), 'settings persisted (digits normalized)');
+  r = await sa.post('/system/settings/test/offsite', {}); r = await sa.get('/system/settings?tab=offsite'); assert(/اتصال برقرار است/.test(r.text), 'test connection succeeds against local WebDAV');
 
   // ارسال دستی یک پشتیبان JSON
   r = await a.post('/system/backup/create', { type: 'json' }); assert(r.status === 302, 'create json backup');
@@ -73,38 +74,38 @@ const dav = http.createServer((req, res) => {
   }
 
   // سقف حجم
-  await a.post('/system/settings/offsite', { backup_offsite_max_mb: '0' });
+  await sa.post('/system/settings/offsite', { backup_offsite_max_mb: '0' });
   r = await a.post('/system/backup/offsite/' + name, {}); r = await a.get('/system/backup'); assert(/ناموفق: حجم فایل/.test(r.text) && received.length === 1, 'size cap blocks sending');
-  await a.post('/system/settings/offsite', { backup_offsite_max_mb: '50' });
+  await sa.post('/system/settings/offsite', { backup_offsite_max_mb: '50' });
 
   // مقصد خراب (پورت بسته)
-  await a.post('/system/settings/offsite', { backup_webdav_url: 'http://127.0.0.1:9/dav' });
+  await sa.post('/system/settings/offsite', { backup_webdav_url: 'http://127.0.0.1:9/dav' });
   r = await a.post('/system/backup/offsite/' + name, {}); assert(r.status === 302, 'send to dead destination handled');
   r = await a.get('/system/backup'); assert(/ناموفق/.test(r.text) && received.length === 1, 'failure recorded, nothing received');
   r = await a.post('/system/backup/offsite/nope.json', {}); assert(r.status === 404, 'unknown file 404');
 
   // کار شبانه: پشتیبان خودکار + ارسال
-  await a.post('/system/settings/offsite', { backup_webdav_url: davUrl });
+  await sa.post('/system/settings/offsite', { backup_webdav_url: davUrl });
   r = await a.post('/system/jobs/backup_auto', { action: 'run' }); assert(r.status === 302, 'run backup_auto job');
   r = await a.get('/system/jobs'); assert(/ارسال به بیرون: WebDAV/.test(r.text), 'job result mentions offsite send');
   assert(received.length === 2 && /auto-.*\.gz$/.test(decodeURIComponent(received[1].url)), 'auto backup uploaded: ' + decodeURIComponent((received[1] || {}).url || ''));
 
   // کار شبانه با مقصد خراب → اعلان به مدیر
-  await a.post('/system/settings/offsite', { backup_webdav_url: 'http://127.0.0.1:9/dav' });
+  await sa.post('/system/settings/offsite', { backup_webdav_url: 'http://127.0.0.1:9/dav' });
   r = await a.post('/system/jobs/backup_auto', { action: 'run' }); r = await a.get('/system/jobs'); assert(/ارسال به بیرون ناموفق/.test(r.text), 'job reports failed offsite send');
   r = await a.get('/notifications'); assert(/ارسال پشتیبان به بیرون ناموفق بود/.test(r.text), 'admin notified about failed offsite send');
 
   // پاک‌سازی: حذف فایل‌های ساخته‌شده در این تست و بازگشت تنظیمات
   r = await a.get('/system/backup');
   for (const n of [...r.text.matchAll(/data-post="\/system\/backup\/delete\/([^"]+)"/g)].map((m) => m[1])) if (n === name || /^auto-/.test(n)) await a.post('/system/backup/delete/' + n, {});
-  await a.post('/system/settings/offsite', { backup_offsite_mode: 'none', backup_webdav_url: '', backup_webdav_user: '', backup_webdav_pass: '' });
+  await sa.post('/system/settings/offsite', { backup_offsite_mode: 'none', backup_webdav_url: '', backup_webdav_user: '', backup_webdav_pass: '' });
 
   // خاموش‌کردن قابلیت
-  await a.post('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '0' });
-  r = await a.get('/system/settings?tab=offsite'); assert(r.status === 200 && !/st_backup_offsite_mode/.test(r.text), 'tab hidden when feature off');
+  await superPost('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '0' });
+  r = await sa.get('/system/settings?tab=offsite'); assert(r.status === 200 && !/st_backup_offsite_mode/.test(r.text), 'tab hidden when feature off');
   r = await a.post('/system/backup/offsite/' + name, {}); assert(r.status === 404, 'send route 404 when feature off');
   r = await a.get('/system/backup'); assert(r.status === 200 && !/ارسال پشتیبان به بیرون/.test(r.text), 'backup page hides offsite card when off');
-  await a.post('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'system.backup_offsite', enabled: '1' });
 
   dav.close();
   console.log('done');

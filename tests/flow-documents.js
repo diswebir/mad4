@@ -1,12 +1,12 @@
 'use strict';
 /** جریان اسناد رسمی: صدور گواهی با قالب، چاپ با سربرگ، استعلام عمومی، ابطال، کارنامهٔ رسمی (snapshot)، ریزنمرات، دفتر حضور و غیاب، دسترسی‌ها، تنظیمات سربرگ */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
   const s = new Client(); r = await s.login('40001', '123456'); assert(r.status === 302, 'student login');
-  for (const key of ['documents', 'documents.certificates', 'documents.letters', 'documents.report_card', 'documents.grade_sheet', 'documents.roster', 'documents.verify', 'documents.revoke', 'documents.student_view']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); assert(r.status === 200, 'enable ' + key); }
+  for (const key of ['documents', 'documents.certificates', 'documents.letters', 'documents.report_card', 'documents.grade_sheet', 'documents.roster', 'documents.verify', 'documents.revoke', 'documents.student_view']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); assert(r.status === 200, 'enable ' + key); }
 
   // تنظیمات سربرگ
   r = await a.get('/system/settings?tab=documents'); assert(r.status === 200 && /name="certificate_template"/.test(r.text) && /name="signature_image"/.test(r.text), 'settings tab documents');
@@ -88,11 +88,11 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   r = await a.get('/attendance/take?class_id=1'); assert(/\/documents\/roster\/1\?month=/.test(r.text), 'take page links to roster');
 
   // غیرفعال‌سازی قابلیت‌ها
-  r = await a.post('/system/modules/toggle', { key: 'documents.verify', enabled: '0' }); r = await g.get('/documents/verify/' + code); assert(r.status === 404 || r.status === 403, 'verify disabled → ' + r.status);
-  r = await a.post('/system/modules/toggle', { key: 'documents.verify', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'documents.letters', enabled: '0' }); r = await a.get('/documents/new?type=letter'); assert(r.status === 404, 'letters disabled → 404');
-  r = await a.post('/system/modules/toggle', { key: 'documents.letters', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'documents.student_view', enabled: '0' }); r = await s.get('/documents/' + docId); assert(r.status === 403, 'student view disabled → 403');
-  r = await a.post('/system/modules/toggle', { key: 'documents.student_view', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'documents.verify', enabled: '0' }); r = await g.get('/documents/verify/' + code); assert(r.status === 404 || r.status === 403, 'verify disabled → ' + r.status);
+  r = await superPost('/system/modules/toggle', { key: 'documents.verify', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'documents.letters', enabled: '0' }); r = await a.get('/documents/new?type=letter'); assert(r.status === 404, 'letters disabled → 404');
+  r = await superPost('/system/modules/toggle', { key: 'documents.letters', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'documents.student_view', enabled: '0' }); r = await s.get('/documents/' + docId); assert(r.status === 403, 'student view disabled → 403');
+  r = await superPost('/system/modules/toggle', { key: 'documents.student_view', enabled: '1' });
   console.log(process.exitCode ? 'SOME FAILED' : 'ALL PASSED');
 })().catch((e) => { console.error(e); process.exit(1); });

@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     if (result.user && Number(result.user.is_super)) await superAlert(req, 'تلاش ناموفق برای ورود به کنسول سازنده', `نام کاربری ${username} از IP ${auth.clientIp(req)} — ${J.formatDateTime(J.nowISO())}`);
     return fail('اطلاعات ورود نادرست است.');
   }
-  auth.clearFailures(req, 'console|' + username);
+  auth.clearFailures(req, 'console|' + username); auth.clearFailures(req, 'console|*');
   if (Number(user.totp_enabled) === 1 && totp.openSecret(user.totp_secret)) {
     req.session.consolePending = { userId: user.id, at: Date.now(), tries: 0 };
     return req.session.save(() => res.redirect('/console/login/2fa'));
@@ -85,6 +85,7 @@ async function finalizeLogin(req, user) {
   logger.info('console login', { user: user.username, ip: auth.clientIp(req) });
   await superAlert(req, 'ورود به کنسول سازنده', `${user.name || user.username} از IP ${auth.clientIp(req)} — ${J.formatDateTime(J.nowISO())} — ${String(req.get('user-agent') || '').slice(0, 120)}`, { type: 'info' });
 }
+const usedCodes = new Map();
 router.get('/login/2fa', (req, res) => {
   const p = req.session.consolePending;
   if (!p || Date.now() - p.at > PENDING_TTL) { delete req.session.consolePending; return res.redirect('/console/login'); }
@@ -98,7 +99,11 @@ router.post('/login/2fa', async (req, res) => {
   const fail = (msg) => { p.tries = (p.tries || 0) + 1; if (p.tries >= 5) { delete req.session.consolePending; req.flash('danger', 'تعداد تلاش بیش از حد مجاز؛ دوباره وارد شوید.'); return res.redirect('/console/login'); } req.flash('danger', msg); return res.redirect('/console/login/2fa'); };
   if (!user || Number(user.is_super) !== 1 || user.status !== 'active') { delete req.session.consolePending; return res.redirect('/console/login'); }
   const secret = totp.openSecret(user.totp_secret);
-  let ok = totp.verify(secret, code);
+  // جلوگیری از استفادهٔ مجدد یک کد TOTP در همان بازه (replay)
+  const replayKey = user.id + ':' + code; const nowMs = Date.now();
+  for (const [k, t] of usedCodes) if (nowMs - t > 120000) usedCodes.delete(k);
+  let ok = code.length === 6 && !usedCodes.has(replayKey) && totp.verify(secret, code);
+  if (ok) usedCodes.set(replayKey, nowMs);
   if (!ok && code.length >= 10) {
     const left = totp.consumeBackupCode(user.backup_codes, code);
     if (left) { ok = true; await db.update('users', { backup_codes: JSON.stringify(left), updated_at: db.now() }, { id: user.id }); await superAlert(req, 'استفاده از کد پشتیبان برای ورود به کنسول', `${left.length} کد پشتیبان باقی مانده است.`); }

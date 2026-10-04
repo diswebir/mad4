@@ -1,6 +1,6 @@
 'use strict';
 /** جریان SLA تیکت‌ها: نشان مهلت در فهرست/تیکت، فیلتر خارج از مهلت، گزارش رعایت، تنظیمات، اعلان خودکار (job)، خروجی CSV، داشبورد، و رفتار پاسخ ولی */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const fa = '۰۱۲۳۴۵۶۷۸۹';
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => fa.indexOf(d));
@@ -8,7 +8,7 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const s = new Client(); r = await s.login('40002', '123456'); assert(r.status === 302, 'student login');
-  for (const key of ['tickets.sla', 'tickets.priority', 'tickets.stats', 'tickets.export', 'tickets.notify', 'notifications.inapp', 'system.scheduler']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); }
+  for (const key of ['tickets.sla', 'tickets.priority', 'tickets.stats', 'tickets.export', 'tickets.notify', 'notifications.inapp', 'system.scheduler']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); }
 
   // --- تنظیمات SLA ---
   r = await a.get('/system/settings?tab=communication'); assert(r.status === 200 && /name="ticket_sla_urgent_hours"/.test(r.text) && /name="ticket_sla_notify"/.test(r.text), 'SLA settings fields present');
@@ -93,11 +93,11 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   } else console.log('skip: no demo parent');
 
   // --- غیرفعال‌سازی قابلیت ---
-  r = await a.post('/system/modules/toggle', { key: 'tickets.sla', enabled: '0' });
+  r = await superPost('/system/modules/toggle', { key: 'tickets.sla', enabled: '0' });
   r = await a.get('/tickets?sla=overdue'); assert(r.status === 200 && !/\?sla=warning/.test(r.text) && !/<th>مهلت پاسخ<\/th>/.test(r.text), 'feature off: no SLA UI');
   r = await a.get('/tickets/' + tid); assert(!/مهلت پاسخ \(SLA\)/.test(r.text), 'feature off: no SLA card');
   r = await a.get('/tickets/stats'); assert(r.status === 200 && !/رعایت مهلت پاسخ/.test(r.text), 'feature off: no SLA report');
-  r = await a.post('/system/modules/toggle', { key: 'tickets.sla', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'tickets.sla', enabled: '1' });
   // بازگرداندن تنظیمات
   r = await a.post('/system/settings/communication', keep);
   r = await a.post('/tickets/' + tid + '/status', { status: 'closed' });

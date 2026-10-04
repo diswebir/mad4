@@ -1,6 +1,6 @@
 'use strict';
 /** جریان: کارت هوشمند دانش‌آموزی — بارکد Code 128، QR استعلام، صفحهٔ عمومی استعلام، ابطال/صدور مجدد، امانت سریع با اسکن (library.scan)، QR اسناد */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const barcode = require('../src/core/barcode');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const strip = (h) => String(h || '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
@@ -18,7 +18,7 @@ const tokenOf = (html) => (html.match(/کد یکتای کارت: <code>([A-Z0-9]
   assert(barcode.qr('https://example.com/students/verify/ABC', { size: 64 }) === q1, 'qr result is cached');
 
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const key of ['students.id_card', 'students.card_qr', 'library.scan', 'documents.verify']) await a.post('/system/modules/toggle', { key, enabled: '1' });
+  for (const key of ['students.id_card', 'students.card_qr', 'library.scan', 'documents.verify']) await superPost('/system/modules/toggle', { key, enabled: '1' });
 
   // ---------- کارت تکی ----------
   r = await a.get('/students/1/card');
@@ -74,14 +74,14 @@ const tokenOf = (html) => (html.match(/کد یکتای کارت: <code>([A-Z0-9]
   if (m) { r = await a.get('/documents/' + m[1]); const i = r.text.indexOf('signature-block'); assert(i > 0 && /width:52px[^>]*>\s*<svg/.test(r.text.slice(i, i + 1500)), 'issued document shows verification QR in signature block'); }
 
   // ---------- غیرفعال‌سازی ----------
-  r = await a.post('/system/modules/toggle', { key: 'students.card_qr', enabled: '0' }); assert(r.status === 200, 'disable card_qr');
+  r = await superPost('/system/modules/toggle', { key: 'students.card_qr', enabled: '0' }); assert(r.status === 200, 'disable card_qr');
   r = await g.get('/students/verify/' + token2); assert(r.status === 404, 'verify 404 when feature off');
   r = await a.get('/students/1/card'); assert(r.status === 200 && !/class="qr"/.test(r.text) && /aria-label="40001"/.test(r.text), 'card without QR but still with barcode when feature off');
   r = await a.post('/students/1/card/reissue', {}); assert(r.status === 404, 'reissue 404 when feature off');
-  await a.post('/system/modules/toggle', { key: 'students.card_qr', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'library.scan', enabled: '0' }); assert(r.status === 200, 'disable library.scan');
+  await superPost('/system/modules/toggle', { key: 'students.card_qr', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'library.scan', enabled: '0' }); assert(r.status === 200, 'disable library.scan');
   r = await a.get('/library/loans/new'); assert(r.status === 200 && !/id="loanScan"/.test(r.text), 'scan box hidden when off');
   r = await a.get('/library/api/lookup?code=40001'); assert(r.status === 404, 'lookup 404 when off');
-  await a.post('/system/modules/toggle', { key: 'library.scan', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'library.scan', enabled: '1' });
   console.log('done');
 })().catch((e) => { console.error(e); process.exit(1); });

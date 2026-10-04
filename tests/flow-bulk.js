@@ -1,6 +1,6 @@
 'use strict';
 /** جریان عملیات گروهی دانش‌آموزان: انتخاب، انتقال، تغییر وضعیت، اعلان، پیامک، CSV، کارت، بازنشانی رمز، «همهٔ نتایج فیلتر»، دسترسی و غیرفعال‌سازی */
-const { Client } = require('./client');
+const { Client, superPost, superClient } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const fa = '۰۱۲۳۴۵۶۷۸۹';
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => fa.indexOf(d));
@@ -9,8 +9,9 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
 const enrollTable = (html) => { const i = html.indexOf('سوابق تحصیلی (سال به سال)'); if (i < 0) return ''; return strip(html.slice(i, html.indexOf('</table>', i))); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
+  const sa = await superClient();
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
-  for (const key of ['students.bulk', 'students.transfer', 'students.status', 'students.export', 'students.id_card', 'students.user_account', 'notifications.inapp', 'notifications.sms', 'enrollments']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); }
+  for (const key of ['students.bulk', 'students.transfer', 'students.status', 'students.export', 'students.id_card', 'students.user_account', 'notifications.inapp', 'notifications.sms', 'enrollments']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); }
 
   // --- نمایش ---
   r = await a.get('/students'); assert(r.status === 200 && /id="bulkForm"/.test(r.text) && (r.text.match(/class="form-check-input bulk-cb"/g) || []).length >= 10, 'admin list has bulk checkboxes + bar');
@@ -55,13 +56,13 @@ const enrollTable = (html) => { const i = html.indexOf('سوابق تحصیلی 
   r = await a.post('/students/bulk', { action: 'notify', ids: [String(A.id)], title: '', message: 'x' }); r = await a.get('/students'); assert(/عنوان اعلان الزامی/.test(strip(r.text)), 'notify requires title');
 
   // --- پیامک گروهی به اولیا (درگاه log) ---
-  r = await a.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log', sms_sender: '1000' }); assert(r.status === 302, 'sms log provider on');
+  r = await sa.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log', sms_sender: '1000' }); assert(r.status === 302, 'sms log provider on');
   const smsText = 'پیامک گروهی تست ' + Date.now().toString().slice(-4);
   r = await a.post('/students/bulk', { action: 'sms', ids: [String(A.id), String(B.id)], message: smsText }); r = await a.get('/students'); assert(/پیامک برای [۰-۹]+ شماره ارسال شد/.test(strip(r.text)), 'bulk sms flash');
   r = await a.get('/system/sms-log?q=' + encodeURIComponent('گروهی تست')); assert(r.status === 200 && strip(r.text).includes(smsText.replace(/\d/g, (d) => fa[d])) || strip(r.text).includes(smsText), 'sms log has the message');
-  r = await a.post('/system/settings/sms', { sms_enabled: '0' });
+  r = await sa.post('/system/settings/sms', { sms_enabled: '0' });
   r = await a.post('/students/bulk', { action: 'sms', ids: [String(A.id)], message: 'x' }); r = await a.get('/students'); assert(/ارسال پیامک در تنظیمات فعال نیست/.test(strip(r.text)), 'sms disabled → clear error');
-  r = await a.post('/system/settings/sms', { sms_enabled: '1' });
+  r = await sa.post('/system/settings/sms', { sms_enabled: '1' });
 
   // --- CSV منتخب و همهٔ نتایج فیلتر ---
   r = await a.post('/students/bulk', { action: 'export', ids: [String(A.id), String(B.id)] }); assert(r.status === 200 && r.text.includes(A.student_number) && r.text.includes(B.student_number) && r.text.trim().split('\n').length === 3, 'CSV of 2 selected');
@@ -89,9 +90,9 @@ const enrollTable = (html) => { const i = html.indexOf('سوابق تحصیلی 
   r = await sA2.post('/auth/password', { current: A.student_number, password: '123456', password2: '123456' }); assert(r.status === 302, 'student A restored password');
 
   // --- غیرفعال‌سازی ---
-  r = await a.post('/system/modules/toggle', { key: 'students.bulk', enabled: '0' });
+  r = await superPost('/system/modules/toggle', { key: 'students.bulk', enabled: '0' });
   r = await a.get('/students'); assert(r.status === 200 && !/id="bulkForm"/.test(r.text), 'feature off: no bulk UI');
   r = await a.post('/students/bulk', { action: 'export', ids: [String(A.id)] }); assert(r.status === 404, 'feature off: route disabled');
-  r = await a.post('/system/modules/toggle', { key: 'students.bulk', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'students.bulk', enabled: '1' });
   console.log('done');
 })().catch((e) => { console.error(e); process.exitCode = 2; });

@@ -1,12 +1,12 @@
 'use strict';
 /** جریان: بهبودهای تجربهٔ کاربری — زبانه‌های واقعی پروندهٔ دانش‌آموز، ویرایش سریع، جستجوی دانش‌آموز، افزودن دانش‌آموز موجود به کلاس */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const k of ['students.manage', 'students.parents', 'students.emergency', 'students.transfer', 'academic.class_subjects']) await a.post('/system/modules/toggle', { key: k, enabled: '1' });
+  for (const k of ['students.manage', 'students.parents', 'students.emergency', 'students.transfer', 'academic.class_subjects']) await superPost('/system/modules/toggle', { key: k, enabled: '1' });
 
   // ---------- زبانه‌های واقعی ----------
   r = await a.get('/students/1');

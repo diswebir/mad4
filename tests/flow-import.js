@@ -1,6 +1,6 @@
 'use strict';
 /** جریان: ورود گروهی دانش‌آموزان از CSV (students.import) — قالب، درج در کلاس، حساب کاربری، تکراری‌ها، ردیف نامعتبر، نوع فایل */
-const { Client, BASE } = require('./client');
+const { Client, BASE, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 /** کد ملی معتبر تصادفی (الگوریتم رقم کنترل) */
@@ -16,7 +16,7 @@ async function upload(a, path, filename, content, type, fields) {
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'students.import', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.import', enabled: '1' });
 
   r = await a.get('/students/import'); assert(r.status === 200 && /name="class_id"/.test(r.text) && /import\/template/.test(r.text), 'import page with class select + template link');
   r = await a.get('/students/import/template'); assert(r.status === 200 && /text\/csv/.test(r.headers['content-type']), 'template is csv');
@@ -66,7 +66,7 @@ async function upload(a, path, filename, content, type, fields) {
   r = await a.get('/students/import'); assert(/مجاز نیست|فقط فایل CSV/.test(r.text), 'image rejected');
 
   // بارگذاری مدرک با نوع ناشناخته (octet-stream): پسوند امن پذیرفته، پسوند خطرناک رد
-  await a.post('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
   up = await upload(a, '/students/' + ids[0] + '/documents', 'madarek.zip', 'PK\u0003\u0004', 'application/octet-stream', { title: 'مدارک فشرده' });
   r = await a.get('/students/' + ids[0] + '?tab=docs'); assert(/مدرک بارگذاری شد/.test(r.text) && /مدارک فشرده/.test(r.text), 'zip with octet-stream mime accepted (safe extension)');
   up = await upload(a, '/students/' + ids[0] + '/documents', 'virus.exe', 'MZ', 'application/octet-stream', { title: 'x' });
@@ -81,8 +81,8 @@ async function upload(a, path, filename, content, type, fields) {
   r = await a.get('/students?q=' + encodeURIComponent(last)); assert(!(new RegExp('/students/' + ids[0] + '"').test(r.text)), 'cleanup: imported students removed');
 
   // خاموش‌کردن
-  await a.post('/system/modules/toggle', { key: 'students.import', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'students.import', enabled: '0' });
   r = await a.get('/students/import'); assert(r.status === 404, 'import 404 when feature off');
-  await a.post('/system/modules/toggle', { key: 'students.import', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.import', enabled: '1' });
   console.log('done');
 })().catch((e) => { console.error(e); process.exitCode = 2; });

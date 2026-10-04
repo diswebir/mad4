@@ -36,4 +36,24 @@ class Client {
     return res;
   }
 }
-module.exports = { Client, BASE };
+/** حساب سازنده (super admin) برای تست‌ها — با نصب: --super-user vendor --super-password 'Vendor#12345' */
+const SUPER = { user: process.env.SUPER_USER || 'vendor', pass: process.env.SUPER_PASS || 'Vendor#12345' };
+let superPromise = null;
+/** ورود به کنسول سازنده (/console/login)؛ نتیجه در همان فرایند کش می‌شود */
+async function superClient(fresh) {
+  if (!fresh && superPromise) return superPromise;
+  const p = (async () => {
+    const c = new Client();
+    await c.get('/console/login');
+    const r = await c.post('/console/login', { username: SUPER.user, password: SUPER.pass });
+    if (r.status !== 302 || !/\/console/.test(r.location || '')) throw new Error('ورود به کنسول سازنده ناموفق بود: ' + r.status + ' ' + r.location);
+    await c.get('/console');
+    return c;
+  })();
+  if (!fresh) superPromise = p;
+  return p;
+}
+/** POST با نشست سازنده (برای فعال/غیرفعال‌سازی ماژول‌ها و تنظیمات فنی در تست‌ها) */
+async function superPost(path, body, opts) { return (await superClient()).post(path, body, opts); }
+async function superGet(path, opts) { return (await superClient()).get(path, opts); }
+module.exports = { Client, BASE, SUPER, superClient, superPost, superGet };

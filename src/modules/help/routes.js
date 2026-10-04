@@ -15,8 +15,8 @@ router.use(auth.requireAuth);
 
 /** موضوعات قابل مشاهده برای کاربر (نقش + ماژول فعال)، با حذف بخش‌های ماژول/قابلیت خاموش */
 function topicsFor(user) {
-  const role = user.role;
-  return TOPICS.filter((t) => t.roles.includes(role) && (!t.module || modules.isEnabled(t.module)))
+  const roles = [user.role]; if (user.is_super) roles.push('super');
+  return TOPICS.filter((t) => t.roles.some((r) => roles.includes(r)) && (!t.module || modules.isEnabled(t.module)))
     .map((t) => Object.assign({}, t, { sections: t.sections.filter((s) => (!s.module || modules.isEnabled(s.module)) && (!s.feature || modules.isEnabled(s.feature))) }))
     .filter((t) => t.sections.length);
 }

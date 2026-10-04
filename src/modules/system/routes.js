@@ -89,7 +89,7 @@ const FIELDS = {
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'site_url', 'sms_price', 'notify_retry_max'],
   payment: ['payment_gateway', 'zarinpal_merchant_id', 'zarinpal_sandbox', 'zarinpal_base_url', 'payment_min_amount', 'payment_allow_partial', 'payment_description', 'site_url'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
-  maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent', 'upload_max_mb', 'log_keep_days', 'cleanup_notifications_days', 'cleanup_login_logs_days', 'cleanup_job_runs_days'],
+  maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent', 'log_keep_days', 'cleanup_notifications_days', 'cleanup_login_logs_days', 'cleanup_job_runs_days'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };

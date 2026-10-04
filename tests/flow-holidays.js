@@ -1,6 +1,6 @@
 'use strict';
 /** جریان: تعطیلات رسمی در حضور و غیاب (attendance.holidays) — خودبازگردان */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 const lastId = (text, base) => (text.match(new RegExp(base.replace(/\//g, '\\/') + '\\/(\\d+)\\/edit', 'g')) || []).map((x) => Number(x.match(/(\d+)\/edit/)[1])).sort((x, y) => y - x)[0];
@@ -9,7 +9,7 @@ const TITLE = 'تعطیلی آزمایشی حضور';
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const key of ['attendance.holidays', 'calendar.holidays', 'calendar.events', 'attendance.daily', 'attendance.monthly_report', 'attendance.class_report', 'attendance.student_report']) await a.post('/system/modules/toggle', { key, enabled: '1' });
+  for (const key of ['attendance.holidays', 'calendar.holidays', 'calendar.events', 'attendance.daily', 'attendance.monthly_report', 'attendance.class_report', 'attendance.student_report']) await superPost('/system/modules/toggle', { key, enabled: '1' });
   // پاک‌سازی رویدادهای باقی‌مانده از اجرای ناقص قبلی
   r = await a.get('/calendar/events?q=' + encodeURIComponent(TITLE)); let old = lastId(r.text, '/calendar/events');
   while (old) { await a.post(`/calendar/events/${old}/delete`, {}); r = await a.get('/calendar/events?q=' + encodeURIComponent(TITLE)); old = lastId(r.text, '/calendar/events'); }
@@ -58,10 +58,10 @@ const TITLE = 'تعطیلی آزمایشی حضور';
     r = await a.get('/lessons/missing?from=' + jDate + '&to=' + jDate); assert(r.status === 200, 'lessons missing page ok on holiday range');
 
     // ۶) خاموش‌کردن قابلیت: رفتار قبلی
-    r = await a.post('/system/modules/toggle', { key: 'attendance.holidays', enabled: '0' }); assert(r.status === 302 || r.status === 200, 'disable attendance.holidays');
+    r = await superPost('/system/modules/toggle', { key: 'attendance.holidays', enabled: '0' }); assert(r.status === 302 || r.status === 200, 'disable attendance.holidays');
     r = await t.get('/attendance/take?class_id=1&date=' + date); assert(r.status === 200 && !/تعطیل رسمی/.test(r.text) && /ثبت حضور و غیاب<\/button>/.test(r.text), 'feature off: teacher form unlocked');
     r = await a.get(`/attendance/report/monthly?class_id=${cls.id}&jy=${parts.jy}&jm=${parts.jm}`); assert(!r.text.includes('تعطیل: ' + TITLE), 'feature off: monthly report plain');
-    r = await a.post('/system/modules/toggle', { key: 'attendance.holidays', enabled: '1' }); assert(r.status === 302 || r.status === 200, 're-enable attendance.holidays');
+    r = await superPost('/system/modules/toggle', { key: 'attendance.holidays', enabled: '1' }); assert(r.status === 302 || r.status === 200, 're-enable attendance.holidays');
   } finally {
     r = await a.post(`/calendar/events/${eid}/delete`, {}); assert(r.status === 302, 'cleanup: delete holiday event');
   }

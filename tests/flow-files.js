@@ -2,7 +2,7 @@
 /** جریان: مجوز دسترسی به فایل‌های بارگذاری‌شده (/files/*) بر اساس رکورد — مدارک دانش‌آموز، عکس، پیوست تیکت، فایل یتیم، پیمایش مسیر */
 const fs = require('fs');
 const path = require('path');
-const { Client, BASE } = require('./client');
+const { Client, BASE, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 
 async function upload(a, p, filename, content, type, fields, field) {
@@ -17,9 +17,9 @@ const filesIn = (html, folder) => [...html.matchAll(new RegExp('/files/(' + fold
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'students.photo', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'tickets.attachments', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.photo', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'tickets.attachments', enabled: '1' });
   const tag = Math.floor(Math.random() * 1e6);
 
   // دانش‌آموز ۱ (کلاس ۱ — معلم راهنما teacher1) و یک دانش‌آموز از کلاس دیگر

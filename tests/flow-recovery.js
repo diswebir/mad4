@@ -1,14 +1,15 @@
 'use strict';
 /** جریان بازیابی رمز عبور: درخواست کد، محدودیت تلاش، رمز کوتاه، موفقیت، محدودیت تعداد درخواست، پاسخ یکسان برای اطلاعات نادرست، غیرفعال‌سازی */
-const { Client } = require('./client');
+const { Client, superPost, superClient } = require('./client');
 const J = require('../src/core/jalali');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  r = await a.post('/system/modules/toggle', { key: 'auth.password_reset', enabled: '1' }); assert(r.status === 200, 'enable auth.password_reset');
-  r = await a.post('/system/modules/toggle', { key: 'notifications.sms', enabled: '1' }); assert(r.status === 200, 'enable notifications.sms');
+  const sa = await superClient();
+  r = await superPost('/system/modules/toggle', { key: 'auth.password_reset', enabled: '1' }); assert(r.status === 200, 'enable auth.password_reset');
+  r = await superPost('/system/modules/toggle', { key: 'notifications.sms', enabled: '1' }); assert(r.status === 200, 'enable notifications.sms');
   r = await a.post('/system/settings/security', { password_reset_enabled: '1', password_min_length: '۶', login_captcha: '0' }); assert(r.status === 302, 'settings: reset enabled, min length 6 (persian digits)');
-  r = await a.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log' }); assert(r.status === 302, 'settings: sms log provider');
+  r = await sa.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log' }); assert(r.status === 302, 'settings: sms log provider');
   // کاربر آزمایشی با شمارهٔ موبایل
   const un = 'rc' + String(Date.now()).slice(-6), phone = '0912' + String(Date.now()).slice(-7);
   r = await a.post('/users', { name: 'کاربر بازیابی', username: un, role: 'staff', password: 'oldpass1', status: 'active', phone }); assert(r.status === 302, 'create test user with phone');
@@ -66,8 +67,8 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   r = await g.get('/auth/forgot'); assert(r.status === 404, 'forgot page 404 when disabled');
   r = await g.get('/auth/login'); assert(!/\/auth\/forgot/.test(r.text), 'login page hides forgot link when disabled');
   r = await a.post('/system/settings/security', { password_reset_enabled: '1' }); assert(r.status === 302, 're-enable');
-  r = await a.post('/system/modules/toggle', { key: 'auth.password_reset', enabled: '0' }); r = await g.get('/auth/forgot'); assert(r.status === 404, 'forgot page 404 when feature disabled');
-  r = await a.post('/system/modules/toggle', { key: 'auth.password_reset', enabled: '1' }); assert(r.status === 200, 'feature re-enabled');
+  r = await superPost('/system/modules/toggle', { key: 'auth.password_reset', enabled: '0' }); r = await g.get('/auth/forgot'); assert(r.status === 404, 'forgot page 404 when feature disabled');
+  r = await superPost('/system/modules/toggle', { key: 'auth.password_reset', enabled: '1' }); assert(r.status === 200, 'feature re-enabled');
   // پاک‌سازی
   r = await a.post('/users/' + uid + '/delete', {}); assert(r.status === 302, 'cleanup user');
   console.log(process.exitCode ? 'SOME FAILED' : 'ALL PASSED');

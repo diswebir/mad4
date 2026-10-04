@@ -1,12 +1,12 @@
 'use strict';
 /** جریان: راهنما و راه‌اندازی (help) — راهنمای نقش‌محور، جستجو، راهنمای زمینه‌ای، چک‌لیست زنده، ویجت داشبورد، درباره */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const key of ['help', 'help.guide', 'help.checklist', 'help.contextual', 'help.about']) await a.post('/system/modules/toggle', { key, enabled: '1' });
+  for (const key of ['help', 'help.guide', 'help.checklist', 'help.contextual', 'help.about']) await superPost('/system/modules/toggle', { key, enabled: '1' });
   await a.post('/help/setup/dismiss', { state: '0' });
 
   // راهنمای مدیر
@@ -22,9 +22,9 @@ const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
   r = await a.get('/dashboard'); assert(/id="helpBtn"/.test(r.text) && /href="\/help\?for=%2Fdashboard"/.test(r.text), 'topbar help button links to current path');
 
   // بخش وابسته به قابلیت پنهان می‌شود
-  await a.post('/system/modules/toggle', { key: 'attendance.excuses', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'attendance.excuses', enabled: '0' });
   r = await a.get('/help?topic=attendance'); assert(!/موجه‌کردن غیبت/.test(r.text) && /ثبت روزانه و زنگی/.test(r.text), 'section hidden when its feature is off');
-  await a.post('/system/modules/toggle', { key: 'attendance.excuses', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'attendance.excuses', enabled: '1' });
 
   // چک‌لیست
   r = await a.get('/help/setup'); assert(r.status === 200 && /راه‌اندازی اولیهٔ مدرسه/.test(r.text), 'setup page renders');
@@ -69,15 +69,15 @@ const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
   if (pu) { const p = new Client(); await p.login(pu, '123456'); r = await p.get('/help'); assert(r.status === 200 && /راهنمای اولیا/.test(r.text) && /انتخاب فرزند/.test(r.text), 'parent sees parent guide'); }
 
   // خاموش‌کردن
-  await a.post('/system/modules/toggle', { key: 'help.contextual', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'help.contextual', enabled: '0' });
   r = await a.get('/dashboard'); assert(!/id="helpBtn"/.test(r.text), 'contextual off -> no topbar button');
-  await a.post('/system/modules/toggle', { key: 'help.checklist', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'help.checklist', enabled: '0' });
   r = await a.get('/dashboard'); assert(!/id="setupWidget"/.test(r.text), 'checklist off -> no widget');
   r = await a.get('/help/setup'); assert(r.status === 404, 'checklist off -> 404');
-  await a.post('/system/modules/toggle', { key: 'help', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'help', enabled: '0' });
   r = await a.get('/help'); assert(r.status === 404, 'module off -> 404');
   r = await a.get('/dashboard'); assert(!/href="\/help"/.test(r.text), 'module off -> no menu');
-  for (const key of ['help', 'help.checklist', 'help.contextual']) await a.post('/system/modules/toggle', { key, enabled: '1' });
+  for (const key of ['help', 'help.checklist', 'help.contextual']) await superPost('/system/modules/toggle', { key, enabled: '1' });
   r = await a.get('/help'); assert(r.status === 200, 'restored');
   console.log('done');
 })().catch((e) => { console.error(e); process.exit(1); });

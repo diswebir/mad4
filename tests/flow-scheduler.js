@@ -1,14 +1,16 @@
 'use strict';
 /** جریان زمان‌بند: صفحهٔ کارها، اجرای دستی هر کار، تغییر ساعت/توگل، cron با توکن، لاگ پیامک، اسکریپت cron */
-const { Client, BASE } = require('./client');
+const { Client, BASE, superClient } = require('./client');
 const { execSync } = require('child_process');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
+  const sa = await superClient();
   r = await a.get('/system/jobs'); assert(r.status === 200 && /attendance_sms/.test(r.text) && /backup_auto/.test(r.text) && /cleanup/.test(r.text), 'jobs page lists jobs');
   const token = (r.text.match(/\/cron\?token=([a-f0-9]+)/) || [])[1]; assert(token, 'cron token shown');
   // فعال‌سازی پیامک در حالت لاگ تا کار پیامک غیبت چیزی ثبت کند
-  r = await a.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log', sms_api_key: '', sms_sender: '', sms_webhook_url: '', sms_template_absent: 'ولی گرامی، {name} در تاریخ {date} غایب بود.', site_url: 'http://localhost:3000' }); assert(r.status === 302, 'enable sms (log provider)');
+  r = await sa.post('/system/settings/sms', { sms_enabled: '1', sms_provider: 'log', sms_api_key: '', sms_sender: '', sms_webhook_url: '', site_url: 'http://localhost:3000' }); assert(r.status === 302, 'enable sms (log provider)');
+  r = await a.post('/system/settings/academic', { sms_template_absent: 'ولی گرامی، {name} در تاریخ {date} غایب بود.' }); assert(r.status === 302, 'settings: absent template (academic tab)');
   // ثبت یک غیبت امروز برای کلاس ۱ تا پیامک غیبت موضوع داشته باشد
   const t = new Client(); await t.login('teacher1', '123456');
   r = await t.get('/attendance/take?class_id=1'); const sids = [...r.text.matchAll(/name="status_(\d+)"/g)].map((m) => m[1]).filter((v, i, arr) => arr.indexOf(v) === i);

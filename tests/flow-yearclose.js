@@ -1,6 +1,6 @@
 'use strict';
 /** جریان پایان سال تحصیلی: فرم، اعتبارسنجی، پیش‌نمایش، اجرا (سال/نوبت/کلاس/درس/دانش‌آموز/سوابق)، بازگردانی کامل و ارتقای گروهی با ثبت سابقه */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const fa = '۰۱۲۳۴۵۶۷۸۹';
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => fa.indexOf(d));
@@ -10,7 +10,7 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
-  for (const key of ['academic.year_close', 'academic.promote', 'enrollments']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); }
+  for (const key of ['academic.year_close', 'academic.promote', 'enrollments']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); }
 
   // --- دسترسی و فرم ---
   r = await t.get('/academic/year-close'); assert(r.status === 403, 'teacher cannot open year-close');
@@ -118,9 +118,9 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   r = await a.get('/academic/promote/students/' + promoteClass); assert(r.json().some((s) => s.id === promotedId), 'student back in original class');
 
   // --- غیرفعال‌سازی قابلیت ---
-  r = await a.post('/system/modules/toggle', { key: 'academic.year_close', enabled: '0' });
+  r = await superPost('/system/modules/toggle', { key: 'academic.year_close', enabled: '0' });
   r = await a.get('/academic/year-close'); assert(r.status === 404, 'feature disabled → 404');
-  r = await a.post('/system/modules/toggle', { key: 'academic.year_close', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'academic.year_close', enabled: '1' });
   r = await a.get('/academic/year-close'); assert(r.status === 200, 'feature re-enabled');
   console.log('done');
 })().catch((e) => { console.error(e); process.exitCode = 2; });

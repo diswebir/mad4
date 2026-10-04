@@ -1,7 +1,7 @@
 'use strict';
 /** جریان: درگاه پرداخت آنلاین زرین‌پال (finance.online_payment) با درگاه ساختگی محلی — تنظیمات، شروع پرداخت، بازگشت موفق/ناموفق/تکراری، ثبت پرداخت و به‌روزرسانی صورت‌حساب، استعلام، صفحهٔ مدیر */
 const http = require('http');
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const J = require('../src/core/jalali');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
@@ -35,7 +35,7 @@ const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
 
   // ---------- پیکربندی توسط مدیر ----------
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  for (const k of ['finance.online_payment', 'finance.student_view', 'finance.invoices', 'finance.payments', 'notifications.inapp']) await a.post('/system/modules/toggle', { key: k, enabled: '1' });
+  for (const k of ['finance.online_payment', 'finance.student_view', 'finance.invoices', 'finance.payments', 'notifications.inapp']) await superPost('/system/modules/toggle', { key: k, enabled: '1' });
   r = await a.get('/system/settings?tab=payment'); assert(r.status === 200 && /درگاه پرداخت/.test(r.text) && /finance\/pay\/callback/.test(r.text), 'payment settings tab with callback hint');
   const prevSite = (/name="site_url" value="([^"]*)"/.exec(r.text) || [, ''])[1];
   const prevGateway = (/name="payment_gateway"[\s\S]*?<option value="([a-z]+)" selected/.exec(r.text) || [, 'none'])[1];
@@ -129,9 +129,9 @@ const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
   r = await a.post('/finance/invoices', { student_id: '1', title: 'سرویس ' + tag, amount: '20000', discount: '0', due_date: due, status: 'unpaid' }); const inv3 = Number((r.location || '').split('/').pop());
   r = await s.post(`/finance/pay/${inv3}`, {}); r = await s.get('/finance/my'); assert(/درگاه پرداخت آنلاین فعال نیست/.test(r.text), 'gateway off → pay refused with flash');
   // ویژگی غیرفعال → callback 404
-  await a.post('/system/modules/toggle', { key: 'finance.online_payment', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'finance.online_payment', enabled: '0' });
   r = await g.get(`/finance/pay/callback?Authority=${auth1}&Status=OK`); assert(r.status === 404, 'feature disabled → callback 404');
-  await a.post('/system/modules/toggle', { key: 'finance.online_payment', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'finance.online_payment', enabled: '1' });
 
   // ---------- پاک‌سازی ----------
   await a.post('/system/settings/payment', { payment_gateway: prevGateway, zarinpal_merchant_id: '', zarinpal_sandbox: '0', zarinpal_base_url: '', payment_min_amount: '', payment_allow_partial: '1', payment_description: 'پرداخت {title} — {school}', site_url: prevSite });

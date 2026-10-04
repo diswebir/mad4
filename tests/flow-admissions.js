@@ -1,6 +1,6 @@
 'use strict';
 /** جریان پیش‌ثبت‌نام: فرم عمومی، اعتبارسنجی، کد رهگیری، پیگیری، بررسی/پذیرش توسط مدیر، ثبت‌نام قطعی و ساخت پرونده، بستن ثبت‌نام و محدودیت پایه‌ها، دسترسی نقش‌ها */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const fa = '۰۱۲۳۴۵۶۷۸۹';
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => fa.indexOf(d));
@@ -11,7 +11,7 @@ const stamp = Date.now().toString().slice(-5);
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
   const s = new Client(); r = await s.login('40001', '123456'); assert(r.status === 302, 'student login');
-  for (const key of ['admissions', 'admissions.public_form', 'admissions.tracking', 'admissions.review', 'admissions.enroll', 'admissions.export', 'admissions.login_link']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); }
+  for (const key of ['admissions', 'admissions.public_form', 'admissions.tracking', 'admissions.review', 'admissions.enroll', 'admissions.export', 'admissions.login_link']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); }
   r = await a.post('/system/settings/admissions', { admissions_open: '1', admissions_year: '', admissions_text: 'متن راهنمای تست', admissions_docs: 'شناسنامه و کارنامه' }); assert(r.status === 302, 'open admissions via settings');
 
   // --- عمومی ---
@@ -111,10 +111,10 @@ const stamp = Date.now().toString().slice(-5);
   r = await a.get('/system/settings?tab=admissions'); assert(r.status === 200 && /name="admissions_open"[^>]*checked/.test(r.text) && /name="admissions_grades"/.test(r.text), 'settings tab renders with state');
 
   // غیرفعال‌کردن ویژگی پیگیری
-  r = await a.post('/system/modules/toggle', { key: 'admissions.tracking', enabled: '0' });
+  r = await superPost('/system/modules/toggle', { key: 'admissions.tracking', enabled: '0' });
   r = await g.get('/admissions/track?code=' + code + '&national_id=' + nid); assert(r.status === 404 || r.status === 403, 'tracking disabled → blocked (' + r.status + ')');
   r = await g.get('/admissions/apply'); assert(r.status === 200 && !/\/admissions\/track/.test(r.text), 'apply page hides tracking link when feature off');
-  r = await a.post('/system/modules/toggle', { key: 'admissions.tracking', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'admissions.tracking', enabled: '1' });
 
   // پاک‌سازی: حذف دانش‌آموز تستی (درخواست به‌صورت enrolled باقی می‌ماند و حذف نمی‌شود → حذف از طریق تغییر وضعیت ممکن نیست؛ پس فقط دانش‌آموز حذف می‌شود)
   r = await a.post('/students/' + sid + '/delete', {}); assert(r.status === 302, 'cleanup: test student deleted');

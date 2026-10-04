@@ -47,7 +47,7 @@
 
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0">گزارش اجرا <span class="fs-7 text-secondary fw-normal">(storage/logs/update.log)</span></h6>
-        <div class="d-flex align-items-center gap-2"><span id="updSpinner" class="spinner-border spinner-border-sm text-primary <%= running ? '' : 'd-none' %>" role="status"></span><button type="button" class="btn btn-sm btn-outline-secondary" id="updRefresh"><i class="bi bi-arrow-clockwise"></i></button></div></div>
+        <div class="d-flex align-items-center gap-2"><span id="updSpinner" class="spinner-border spinner-border-sm text-primary <%= running ? '' : 'd-none' %>" role="status"></span><button type="button" class="btn btn-sm btn-outline-secondary" id="updRefresh" title="تازه‌سازی وضعیت" aria-label="تازه‌سازی وضعیت"><i class="bi bi-arrow-clockwise"></i></button></div></div>
       <pre id="updLog" class="mb-0 p-3 fs-7 ltr text-start" style="max-height:360px;overflow:auto;white-space:pre-wrap;direction:rtl;text-align:right"><%= log.length ? log.join('\n') : 'هنوز گزارشی ثبت نشده است.' %></pre>
     </div>
   </div>

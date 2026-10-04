@@ -2,7 +2,7 @@
 /** جریان: پشتیبان کامل (ZIP = پایگاه داده + فایل‌ها) — ساخت، manifest، دانلود، بازیابی داده‌ها و فایل‌ها با متن فارسی/ایموجی و نام فایل یونیکد، JSON با BOM، مسیر ناامن در ZIP، تنظیم نوع پشتیبان خودکار */
 const fs = require('fs');
 const path = require('path');
-const { Client, BASE } = require('./client');
+const { Client, BASE, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const zip = require('../src/core/zip');
 
@@ -17,8 +17,8 @@ async function upload(a, p, filename, content, type, fields, field) {
 
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'system.backup', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'system.backup', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
   const root = path.join(__dirname, '..');
   const cfg = JSON.parse(fs.readFileSync(path.join(root, 'storage', 'config.json'), 'utf8'));
   const uploadsDir = path.resolve(root, (cfg.uploads && cfg.uploads.dir) || 'storage/uploads');

@@ -1,13 +1,13 @@
 'use strict';
 /** جریان قفل نمرات نوبت: ایجاد آزمون، قفل نوبت، منع معلم، ویرایش مدیر با دلیل، تاریخچه، کارنامهٔ نهایی، بازکردن قفل، غیرفعال کردن قابلیت */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const J = require('../src/core/jalali');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
   // اطمینان از فعال بودن قابلیت‌ها
-  for (const key of ['exams.lock', 'exams.history']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); assert(r.status === 200, 'enable ' + key); }
+  for (const key of ['exams.lock', 'exams.history']) { r = await superPost('/system/modules/toggle', { key, enabled: '1' }); assert(r.status === 200, 'enable ' + key); }
 
   // یک نوبت مخصوص تست می‌سازیم تا نوبت‌های دمو دست‌نخورده بمانند
   const termTitle = 'نوبت تست قفل ' + String(Date.now()).slice(-5);
@@ -77,11 +77,11 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
 
   // غیرفعال کردن قابلیت قفل → قفل نادیده گرفته می‌شود
   r = await a.post('/academic/terms/' + termId + '/lock', {}); assert(r.status === 302, 'lock again');
-  r = await a.post('/system/modules/toggle', { key: 'exams.lock', enabled: '0' }); assert(r.status === 200, 'disable exams.lock feature');
+  r = await superPost('/system/modules/toggle', { key: 'exams.lock', enabled: '0' }); assert(r.status === 200, 'disable exams.lock feature');
   body = {}; body['score_' + sids[0]] = '18.5'; body['score_' + sids[1]] = '12';
   r = await t.post('/exams/' + examId + '/grades', body); assert(r.status === 302, 'teacher can save when lock feature disabled');
   r = await t.post('/academic/terms/' + termId + '/unlock', {}); assert(r.status === 403 || r.status === 404, 'lock routes unavailable when feature disabled (' + r.status + ')');
-  r = await a.post('/system/modules/toggle', { key: 'exams.lock', enabled: '1' }); assert(r.status === 200, 're-enable exams.lock');
+  r = await superPost('/system/modules/toggle', { key: 'exams.lock', enabled: '1' }); assert(r.status === 200, 're-enable exams.lock');
   r = await a.post('/academic/terms/' + termId + '/unlock', {}); assert(r.status === 302, 'unlock for cleanup');
 
   // پاک‌سازی: حذف آزمون و نوبت تست

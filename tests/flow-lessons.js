@@ -1,6 +1,6 @@
 'use strict';
 /** جریان دفتر کلاسی: تدریس امروز و ثبت سریع، ثبت/ویرایش کامل، مهلت ویرایش معلم، محدودهٔ دسترسی معلم، جلسات ثبت‌نشده، پیشرفت تدریس، سرفصل‌ها، دفتر ماهانه و چاپ، درس‌های من، خروجی CSV، قابلیت‌ها */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const J = require('../src/core/jalali');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const fa = '۰۱۲۳۴۵۶۷۸۹';
@@ -11,7 +11,7 @@ const strip = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login');
   const s = new Client(); r = await s.login('40001', '123456'); assert(r.status === 302, 'student login');
-  for (const key of ['lessons', 'lessons.today', 'lessons.syllabus', 'lessons.coverage', 'lessons.missing', 'lessons.edit_window', 'lessons.student_view', 'lessons.register', 'lessons.export']) r = await a.post('/system/modules/toggle', { key, enabled: '1' });
+  for (const key of ['lessons', 'lessons.today', 'lessons.syllabus', 'lessons.coverage', 'lessons.missing', 'lessons.edit_window', 'lessons.student_view', 'lessons.register', 'lessons.export']) r = await superPost('/system/modules/toggle', { key, enabled: '1' });
   r = await a.post('/system/settings/academic', { lesson_log_edit_days: '7' });
 
   // --- فهرست و منو ---
@@ -73,9 +73,9 @@ const strip = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+
   r = await t.get('/lessons/' + oldLog + '/edit'); assert(r.status === 403 && /مهلت ویرایش/.test(r.text), 'teacher blocked from editing old log (edit window)');
   r = await t.post('/lessons/' + oldLog, { topic: 'hack' }); assert(r.status === 403, 'teacher blocked from updating old log');
   r = await a.get('/lessons/' + oldLog + '/edit'); assert(r.status === 200 && !/name="date"[^>]*disabled/.test(r.text), 'admin can edit old log (date editable)');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.edit_window', enabled: '0' });
+  r = await superPost('/system/modules/toggle', { key: 'lessons.edit_window', enabled: '0' });
   r = await t.get('/lessons/' + oldLog + '/edit'); assert(r.status === 200, 'edit window feature off → teacher can edit old log');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.edit_window', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'lessons.edit_window', enabled: '1' });
   r = await a.get('/system/settings?tab=academic'); assert(/name="lesson_log_edit_days"/.test(r.text), 'settings: lesson_log_edit_days field');
   r = await a.post('/system/settings/academic', { lesson_log_edit_days: '0' });
   r = await t.get('/lessons/' + log2 + '/edit'); assert(r.status === (m2.date === J.toJalali(J.todayISO()) ? 200 : 403), 'edit window 0 days → only same-day editable');
@@ -114,14 +114,14 @@ const strip = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+
 
   // --- خروجی CSV و قابلیت‌ها ---
   r = await t.get('/lessons/export.csv?q=' + encodeURIComponent('فرم کامل ویرایش')); assert(r.status === 200 && /موضوع/.test(r.text) && r.text.includes('موضوع فرم کامل ویرایش ' + stamp), 'teacher CSV export (scoped, filtered)');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.export', enabled: '0' }); r = await t.get('/lessons/export.csv'); assert(r.status === 404 || r.status === 403, 'export feature off → blocked');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.export', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'lessons.student_view', enabled: '0' }); r = await s.get('/lessons/my'); assert(r.status === 404 || r.status === 403, 'student_view off → blocked'); r = await s.get('/dashboard'); assert(!/href="\/lessons\/my"/.test(r.text), 'student_view off → menu hidden');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.student_view', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'lessons.today', enabled: '0' }); r = await t.get('/lessons/today'); assert(r.status === 404 || r.status === 403, 'today off → blocked'); r = await t.post('/lessons/quick', { class_subject_id: m1.cs, date: m1.date, period: m1.period, topic: 'x' }); assert(r.status === 404 || r.status === 403, 'today off → quick blocked');
-  r = await a.post('/system/modules/toggle', { key: 'lessons.today', enabled: '1' });
-  r = await a.post('/system/modules/toggle', { key: 'lessons', enabled: '0' }); r = await t.get('/lessons'); assert(r.status === 404, 'module off → 404'); r = await t.get('/dashboard'); assert(!/href="\/lessons"/.test(r.text), 'module off → menu hidden');
-  r = await a.post('/system/modules/toggle', { key: 'lessons', enabled: '1' }); r = await t.get('/lessons'); assert(r.status === 200, 'module on again');
+  r = await superPost('/system/modules/toggle', { key: 'lessons.export', enabled: '0' }); r = await t.get('/lessons/export.csv'); assert(r.status === 404 || r.status === 403, 'export feature off → blocked');
+  r = await superPost('/system/modules/toggle', { key: 'lessons.export', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'lessons.student_view', enabled: '0' }); r = await s.get('/lessons/my'); assert(r.status === 404 || r.status === 403, 'student_view off → blocked'); r = await s.get('/dashboard'); assert(!/href="\/lessons\/my"/.test(r.text), 'student_view off → menu hidden');
+  r = await superPost('/system/modules/toggle', { key: 'lessons.student_view', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'lessons.today', enabled: '0' }); r = await t.get('/lessons/today'); assert(r.status === 404 || r.status === 403, 'today off → blocked'); r = await t.post('/lessons/quick', { class_subject_id: m1.cs, date: m1.date, period: m1.period, topic: 'x' }); assert(r.status === 404 || r.status === 403, 'today off → quick blocked');
+  r = await superPost('/system/modules/toggle', { key: 'lessons.today', enabled: '1' });
+  r = await superPost('/system/modules/toggle', { key: 'lessons', enabled: '0' }); r = await t.get('/lessons'); assert(r.status === 404, 'module off → 404'); r = await t.get('/dashboard'); assert(!/href="\/lessons"/.test(r.text), 'module off → menu hidden');
+  r = await superPost('/system/modules/toggle', { key: 'lessons', enabled: '1' }); r = await t.get('/lessons'); assert(r.status === 200, 'module on again');
 
   // --- پاک‌سازی ---
   r = await t.post('/lessons/' + logId + '/delete', {}); assert(r.status === 302, 'teacher deletes own recent log');

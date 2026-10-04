@@ -1,6 +1,6 @@
 'use strict';
 /** جریان: تولد دانش‌آموزان (students.birthdays) — محاسبهٔ شمسی، فهرست/بازه‌ها، خروجی Excel/CSV، تبریک دستی، کار روزانه و اعلان‌ها، ویجت پنل دانش‌آموز/ولی، تقویم، تنظیمات الگوها، محدودهٔ معلم */
-const { Client } = require('./client');
+const { Client, superPost } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 
@@ -24,9 +24,9 @@ const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.in
   assert(bd.joinFa(['الف', 'ب', 'ج']) === 'الف، ب و ج' && bd.whenLabel(1) === 'فردا' && /۳ روز/.test(bd.whenLabel(3)), 'joinFa / whenLabel');
 
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
-  await a.post('/system/modules/toggle', { key: 'students.birthdays', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'calendar.birthdays', enabled: '1' });
-  await a.post('/system/modules/toggle', { key: 'dashboard.birthdays', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.birthdays', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'calendar.birthdays', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'dashboard.birthdays', enabled: '1' });
 
   // دانش‌آموز آزمایشی با تولد امروز و یکی با تولد ۵ روز دیگر (دمو: 40001 امروز، 40002 سه روز دیگر — ولی به زمان نصب وابسته است، پس خودمان می‌سازیم)
   const tag = Math.floor(Math.random() * 1e6);
@@ -104,10 +104,10 @@ const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.in
   if (r.status === 302) { r = await s2.get('/dashboard'); assert(r.status === 200 && (/تا تولدت/.test(r.text) || /تولدت مبارک/.test(r.text) || !/birthday/.test(r.text)), 'student 40002 dashboard renders birthday widget (countdown or banner)'); }
 
   // ---- خاموش کردن قابلیت
-  await a.post('/system/modules/toggle', { key: 'students.birthdays', enabled: '0' });
+  await superPost('/system/modules/toggle', { key: 'students.birthdays', enabled: '0' });
   r = await a.get('/students/birthdays'); assert(r.status === 404 || r.status === 403, 'birthdays page hidden when feature disabled');
   r = await a.get('/dashboard'); assert(!/تولدهای این هفته/.test(r.text), 'dashboard card hidden when disabled');
-  await a.post('/system/modules/toggle', { key: 'students.birthdays', enabled: '1' });
+  await superPost('/system/modules/toggle', { key: 'students.birthdays', enabled: '1' });
 
   // پاک‌سازی
   for (const id of [idToday, idSoon]) if (id) await a.post(`/students/${id}/delete`, {});
