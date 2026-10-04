@@ -43,7 +43,7 @@
     <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-door-open me-1"></i>کلاس‌های تحت سرپرستی</h6></div>
       <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>کلاس</th><th>پایه</th><th>دانش‌آموزان</th><th>وضعیت</th><th></th></tr></thead>
         <tbody><% homeroom.forEach(function (c) { %><tr><td class="fw-semibold"><a href="/academic/classes/<%= c.id %>"><%= c.title %></a></td><td><%= c.grade_title %></td><td><%= J.toPersianDigits(c.cnt) %></td><td><%- c.is_active ? '<span class="badge badge-soft-success">فعال</span>' : '<span class="badge badge-soft-secondary">بایگانی</span>' %></td><td class="text-end"><% if (enabled('attendance')) { %><a href="/attendance/take?class_id=<%= c.id %>" class="btn btn-sm btn-light">حضور و غیاب</a><% } %></td></tr><% }); if (!homeroom.length) { %><tr><td colspan="5" class="text-center text-secondary py-3">کلاسی تحت سرپرستی ندارد</td></tr><% } %></tbody></table></div></div>
-    <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-book me-1"></i>دروس تدریسی</h6></div>
+    <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-book me-1"></i>دروس تدریسی</h6><% if (typeof canAssign !== 'undefined' && canAssign) { %><button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignModal"><i class="bi bi-plus-lg me-1"></i>تخصیص درس جدید</button><% } %></div>
       <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>درس</th><th>کلاس</th><th>ساعت/هفته</th><th></th></tr></thead>
         <tbody><% teaching.forEach(function (r) { %><tr><td class="fw-semibold"><%= r.subject_title %></td><td><a href="/academic/classes/<%= r.class_id %>"><%= r.class_title %></a></td><td><%= J.toPersianDigits(r.weekly_hours || 0) %></td><td class="text-end"><% if (enabled('exams')) { %><a href="/exams?class_subject_id=<%= r.id %>" class="btn btn-sm btn-light">آزمون‌ها</a><% } %> <% if (enabled('homework')) { %><a href="/homework?class_subject_id=<%= r.id %>" class="btn btn-sm btn-light">تکالیف</a><% } %></td></tr><% }); if (!teaching.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">درسی تخصیص داده نشده</td></tr><% } %></tbody></table></div></div>
     <% if (enabled('teachers.documents')) { %>
@@ -58,3 +58,27 @@
     <% } %>
   </div>
 </div>
+<% if (typeof canAssign !== 'undefined' && canAssign) { %>
+<div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignTitle"><div class="modal-dialog"><form method="post" id="assignForm" class="modal-content">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="teacher_id" value="<%= t.id %>"><input type="hidden" name="back" value="/teachers/<%= t.id %>">
+  <div class="modal-header"><h6 class="modal-title" id="assignTitle"><i class="bi bi-book ms-1"></i>تخصیص درس به <%= t.name %></h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+  <div class="modal-body">
+    <div class="mb-3"><label class="form-label required" for="asClass">کلاس</label><select class="form-select" id="asClass" required aria-label="کلاس"><option value="">— انتخاب کنید —</option><% assignClasses.forEach(function (c) { %><option value="<%= c.id %>" data-grade="<%= c.grade_level_id || '' %>"><%= c.title %><%= c.grade_title ? ' — ' + c.grade_title : '' %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label required" for="asSubject">درس</label><select class="form-select" name="subject_id" id="asSubject" required aria-label="درس"><option value="">— ابتدا کلاس را انتخاب کنید —</option><% assignSubjects.forEach(function (sb) { %><option value="<%= sb.id %>" data-grade="<%= sb.grade_level_id || '' %>" data-hours="<%= sb.weekly_hours || '' %>" hidden><%= sb.title %></option><% }); %></select><div class="form-text">فقط دروس همان پایه نمایش داده می‌شود. اگر این درس قبلاً به معلم دیگری در آن کلاس تخصیص داشته باشد، جایگزین می‌شود.</div></div>
+    <div class="mb-2"><label class="form-label" for="asHours">ساعت در هفته</label><input class="form-control en-digits" name="weekly_hours" id="asHours" type="number" min="0" max="20" placeholder="پیش‌فرض درس"></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div>
+</form></div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var cls = document.getElementById('asClass'), sub = document.getElementById('asSubject'), form = document.getElementById('assignForm'); if (!cls) return;
+  cls.addEventListener('change', function () {
+    var g = cls.options[cls.selectedIndex].getAttribute('data-grade') || ''; form.action = cls.value ? '/academic/classes/' + cls.value + '/subjects' : '';
+    var any = false; Array.prototype.forEach.call(sub.options, function (o) { if (!o.value) { o.textContent = cls.value ? '— انتخاب کنید —' : '— ابتدا کلاس را انتخاب کنید —'; return; } var show = !g || !o.getAttribute('data-grade') || o.getAttribute('data-grade') === g; o.hidden = !show; if (show) any = true; });
+    sub.value = ''; if (!any) sub.options[0].textContent = '— درسی برای این پایه تعریف نشده —';
+  });
+  sub.addEventListener('change', function () { var h = sub.options[sub.selectedIndex].getAttribute('data-hours'); document.getElementById('asHours').placeholder = h ? 'پیش‌فرض: ' + h : 'پیش‌فرض درس'; });
+  form.addEventListener('submit', function (e) { if (!cls.value) { e.preventDefault(); cls.focus(); } });
+});
+</script>
+<% } %>

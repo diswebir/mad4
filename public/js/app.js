@@ -178,3 +178,62 @@
   });
   var active = nav.querySelector('.nav-link.active'); if (active && active.scrollIntoView) { try { active.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ } }
 })();
+
+/* انتخاب‌گر جستجوپذیر: برای select های بلند (≥ ۱۲ گزینه) یا دارای data-searchable — بدون وابستگی خارجی */
+(function () {
+  'use strict';
+  var MIN = 12;
+  function norm(s) { return String(s || '').replace(/[يك]/g, function (c) { return c === 'ي' ? 'ی' : 'ک'; }).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }).replace(/\u200c/g, ' ').toLowerCase().trim(); }
+  function enhance(sel) {
+    if (sel.multiple || sel.dataset.enhanced || sel.hasAttribute('data-no-search') || sel.closest('.no-search')) return;
+    var optCount = sel.querySelectorAll('option').length;
+    if (!sel.hasAttribute('data-searchable') && optCount < MIN) return;
+    sel.dataset.enhanced = '1';
+    var wrap = document.createElement('div'); wrap.className = 'ssel' + (sel.classList.contains('form-select-sm') ? ' ssel-sm' : '');
+    var btn = document.createElement('button'); btn.type = 'button'; btn.className = sel.className.replace('form-select', 'form-select ssel-btn'); btn.setAttribute('aria-haspopup', 'listbox');
+    if (sel.disabled) btn.disabled = true;
+    var menu = document.createElement('div'); menu.className = 'ssel-menu'; menu.setAttribute('role', 'listbox');
+    var search = document.createElement('input'); search.type = 'search'; search.className = 'form-control form-control-sm ssel-search'; search.placeholder = 'جستجو…'; search.setAttribute('aria-label', 'جستجو در گزینه‌ها');
+    var list = document.createElement('div'); list.className = 'ssel-list';
+    menu.appendChild(search); menu.appendChild(list);
+    sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(sel); wrap.appendChild(btn); wrap.appendChild(menu);
+    sel.classList.add('ssel-native'); sel.tabIndex = -1;
+    var label = (sel.labels && sel.labels[0]) ? sel.labels[0] : null; if (label && label.htmlFor) { btn.id = sel.id + '_btn'; label.htmlFor = btn.id; }
+    function current() { var o = sel.options[sel.selectedIndex]; return o ? o.textContent : ''; }
+    function render() { btn.innerHTML = '<span class="ssel-text">' + esc(current() || '—') + '</span>'; btn.classList.toggle('text-secondary', !sel.value); }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function build(q) {
+      list.innerHTML = ''; var n = 0; var nq = norm(q);
+      Array.prototype.forEach.call(sel.options, function (o, i) {
+        if (o.hidden) return;
+        var txt = o.textContent; if (nq && norm(txt).indexOf(nq) < 0 && norm(o.value).indexOf(nq) < 0) return;
+        var it = document.createElement('div'); it.className = 'ssel-item' + (i === sel.selectedIndex ? ' active' : '') + (o.disabled ? ' disabled' : ''); it.setAttribute('role', 'option'); it.dataset.i = i; it.textContent = txt || '\u00a0'; list.appendChild(it); n++;
+      });
+      if (!n) { var e = document.createElement('div'); e.className = 'ssel-empty text-secondary'; e.textContent = 'موردی یافت نشد'; list.appendChild(e); }
+    }
+    function open() { if (btn.disabled) return; document.querySelectorAll('.ssel.open').forEach(function (w) { if (w !== wrap) close(w); }); wrap.classList.add('open'); search.value = ''; build(''); setTimeout(function () { search.focus(); var act = list.querySelector('.active'); if (act) act.scrollIntoView({ block: 'nearest' }); }, 0); }
+    function close(w) { (w || wrap).classList.remove('open'); }
+    btn.addEventListener('click', function () { wrap.classList.contains('open') ? close() : open(); });
+    search.addEventListener('input', function () { build(search.value); });
+    search.addEventListener('keydown', function (e) {
+      var items = list.querySelectorAll('.ssel-item:not(.disabled)'); var idx = Array.prototype.findIndex.call(items, function (x) { return x.classList.contains('hover'); });
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!items.length) return; items.forEach(function (x) { x.classList.remove('hover'); }); idx = e.key === 'ArrowDown' ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1); items[idx].classList.add('hover'); items[idx].scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'Enter') { e.preventDefault(); var t = idx >= 0 ? items[idx] : items[0]; if (t) pick(t); }
+      else if (e.key === 'Escape') { close(); btn.focus(); }
+    });
+    function pick(it) { sel.selectedIndex = Number(it.dataset.i); render(); close(); sel.dispatchEvent(new Event('change', { bubbles: true })); btn.focus(); }
+    list.addEventListener('click', function (e) { var it = e.target.closest('.ssel-item'); if (it && !it.classList.contains('disabled')) pick(it); });
+    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); });
+    sel.addEventListener('change', render);
+    sel.addEventListener('ssel:refresh', render);
+    sel.addEventListener('invalid', function (e) { e.preventDefault(); btn.classList.add('is-invalid'); open(); });
+    sel.addEventListener('change', function () { btn.classList.remove('is-invalid'); });
+    new MutationObserver(function () { render(); }).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
+    render();
+  }
+  function scan(root) { (root || document).querySelectorAll('select.form-select').forEach(enhance); }
+  document.addEventListener('DOMContentLoaded', function () { scan(); });
+  document.addEventListener('shown.bs.modal', function (e) { e.target.querySelectorAll('select.ssel-native').forEach(function (s) { s.dispatchEvent(new Event('ssel:refresh')); }); });
+  document.addEventListener('show.bs.modal', function (e) { setTimeout(function () { e.target.querySelectorAll('select.ssel-native').forEach(function (s) { s.dispatchEvent(new Event('ssel:refresh')); }); }, 0); });
+  window.App = window.App || {}; window.App.enhanceSelects = scan;
+})();

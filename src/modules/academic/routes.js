@@ -199,6 +199,32 @@ router.get('/classes/:id', modules.requireEnabled('academic.classes'), async (re
   res.render(v('class'), { title: 'کلاس ' + cls.title, cls, students, subjects, stats, teachersOpts, subjectsOpts, schedule, studentExtra, isAdmin: req.user.role === 'admin' });
 });
 
+// افزودن دانش‌آموزان موجود به کلاس (انتقال از کلاس دیگر یا بدون کلاس)
+router.post('/classes/:id/students', auth.requireRoleOrPermission(['admin'], 'academic.manage', 'students.manage'), async (req, res) => {
+  const cls = await db.findById('classes', req.params.id);
+  if (!cls) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const back = `/academic/classes/${cls.id}`;
+  const raw = [].concat(req.body.student_ids || req.body['student_ids[]'] || []).join(',');
+  const ids = [...new Set(raw.split(',').map((x) => Number(J.toEnglishDigits(String(x).trim()))).filter((x) => Number.isInteger(x) && x > 0))];
+  if (!ids.length) { req.flash('danger', 'دانش‌آموزی انتخاب نشده است.'); return res.redirect(back); }
+  const notify = require('../../core/notify');
+  const rows = await db.table('students').whereIn('id', ids).all();
+  let moved = 0; const skipped = [];
+  const active = await db.table('students').where('class_id', cls.id).where('status', 'active').count();
+  if (cls.capacity && active + rows.filter((r) => r.class_id !== cls.id).length > cls.capacity && req.body.ignore_capacity !== '1') { req.flash('warning', `ظرفیت کلاس ${J.toPersianDigits(cls.capacity)} نفر است و با این افزودن به ${J.toPersianDigits(active + rows.length)} نفر می‌رسد. برای ادامه، گزینهٔ «نادیده‌گرفتن ظرفیت» را فعال کنید.`); return res.redirect(back); }
+  for (const row of rows) {
+    if (row.class_id === cls.id) { skipped.push(`${row.first_name} ${row.last_name} (قبلاً در این کلاس)`); continue; }
+    await db.update('students', { class_id: cls.id, grade_level_id: cls.grade_level_id, updated_at: db.now() }, { id: row.id });
+    if (modules.isEnabled('enrollments')) await enrollments.ensureActive(row.id, cls.id, { userId: req.user.id });
+    if (modules.isEnabled('students.transfer')) await db.insert('student_transfers', { student_id: row.id, from_class_id: row.class_id, to_class_id: cls.id, reason: row.class_id ? 'افزودن از صفحهٔ کلاس' : 'تعیین کلاس', transferred_by: req.user.id, created_at: db.now() });
+    if (row.user_id && modules.isEnabled('notifications.inapp')) await notify.push([row.user_id], { title: 'تعیین کلاس', body: `شما در کلاس «${cls.title}» قرار گرفتید.`, link: '/students/me', type: 'info' });
+    moved++;
+  }
+  await activity.log(req, 'update', 'classes', cls.id, `افزودن ${moved} دانش‌آموز به کلاس ${cls.title}`);
+  let msg = `${J.toPersianDigits(moved)} دانش‌آموز به کلاس افزوده شد.`; if (skipped.length) msg += ` ${J.toPersianDigits(skipped.length)} مورد رد شد: ${skipped.slice(0, 5).join('، ')}`;
+  req.flash(moved ? 'success' : 'warning', msg); res.redirect(back);
+});
+
 // تخصیص درس و معلم به کلاس
 router.post('/classes/:id/subjects', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.class_subjects'), async (req, res) => {
   const cls = await db.findById('classes', req.params.id);
@@ -212,7 +238,8 @@ router.post('/classes/:id/subjects', auth.requireRoleOrPermission(['admin'], 'ac
   else await db.insert('class_subjects', Object.assign({ class_id: cls.id, subject_id, created_at: db.now() }, data));
   await activity.log(req, 'update', 'class_subjects', cls.id, `تخصیص درس ${subj ? subj.title : subject_id} به کلاس ${cls.title}`);
   req.flash('success', 'تخصیص درس ذخیره شد.');
-  res.redirect(`/academic/classes/${cls.id}#subjects`);
+  const back = typeof req.body.back === 'string' && /^\/[a-z0-9/_-]*$/i.test(req.body.back) ? req.body.back : `/academic/classes/${cls.id}#subjects`;
+  res.redirect(back);
 });
 router.post('/classes/:id/subjects/:csId/delete', auth.requireRoleOrPermission(['admin'], 'academic.manage'), modules.requireEnabled('academic.class_subjects'), async (req, res) => {
   const cs = await db.table('class_subjects').where({ id: req.params.csId, class_id: req.params.id }).first();

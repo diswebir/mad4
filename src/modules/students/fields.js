@@ -89,6 +89,21 @@ async function sections() {
   return out.filter((s) => s.fields.length);
 }
 
+/** فیلدهای «ویرایش سریع» در صفحهٔ پرونده (گروه‌بندی‌شده بر اساس سرفصل) */
+const QUICK_KEYS = ['first_name', 'last_name', 'national_id', 'birth_date', 'gender', 'mobile', 'home_phone', 'email', 'postal_code', 'address', 'father_name', 'father_phone', 'mother_name', 'mother_phone', 'guardian_phone', 'emergency_name', 'emergency_phone', 'notes'];
+async function quickSections(keys = QUICK_KEYS) {
+  const out = [];
+  let cur = null;
+  for (const f of all) {
+    if (f.type === 'heading') { cur = { heading: f, fields: [] }; out.push(cur); continue; }
+    if (!keys.includes(f.name) || (f.feature && !modules.isEnabled(f.feature))) continue;
+    const g = Object.assign({}, f, { col: f.type === 'textarea' ? 12 : 6 });
+    if (typeof g.options === 'function') g.options = await g.options();
+    if (cur) cur.fields.push(g);
+  }
+  return out.filter((s) => s.fields.length);
+}
+
 const IMPORT_KEYS = ['first_name', 'last_name', 'student_number', 'national_id', 'gender', 'birth_date', 'birth_place', 'mobile', 'home_phone', 'email', 'postal_code', 'address', 'father_name', 'father_national_id', 'father_phone', 'father_job', 'mother_name', 'mother_national_id', 'mother_phone', 'mother_job', 'emergency_name', 'emergency_phone', 'blood_type', 'allergies', 'medical_conditions', 'previous_school', 'enrollment_date', 'notes'];
 function importColumns() { return IMPORT_KEYS.map((k) => { const f = all.find((x) => x.name === k); return { key: k, label: f ? f.label : k }; }); }
 function exportColumns() {
@@ -104,4 +119,4 @@ function exportColumns() {
   return cols;
 }
 
-module.exports = { all, sections, importColumns, exportColumns };
+module.exports = { QUICK_KEYS, quickSections, all, sections, importColumns, exportColumns };

@@ -121,7 +121,10 @@ router.get('/:id', modules.requireEnabled('teachers.profile'), async (req, res) 
   const staffAtt = modules.isEnabled('attendance.staff') ? await db.table('staff_attendance').select('status', 'COUNT(*) as c').where('user_id', t.user_id).groupBy('status').all() : [];
   const hours = teaching.reduce((a, r) => a + Number(r.weekly_hours || 0), 0);
   const tickets = modules.isEnabled('tickets') ? await db.count('tickets', { assigned_to: t.user_id, status: 'open' }) : 0;
-  res.render(v('show'), { title: t.name, t, homeroom, teaching, documents, leaves, staffAtt, hours, tickets, mine, isAdmin: req.user.role === 'admin' });
+  const canAssign = req.user.role === 'admin' && modules.isEnabled('academic.class_subjects');
+  const assignClasses = canAssign ? await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.id', 'c.title', 'c.grade_level_id', 'g.title as grade_title').where('c.is_active', 1).orderBy('g.sort_order').orderBy('c.title').all() : [];
+  const assignSubjects = canAssign ? await db.table('subjects').select('id', 'title', 'grade_level_id', 'weekly_hours').orderBy('title').all() : [];
+  res.render(v('show'), { title: t.name, t, homeroom, teaching, documents, leaves, staffAtt, hours, tickets, mine, isAdmin: req.user.role === 'admin', canAssign, assignClasses, assignSubjects });
 });
 
 // ---- مدارک ----

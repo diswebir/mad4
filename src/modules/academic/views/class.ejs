@@ -17,7 +17,7 @@
   <div class="col-lg-8">
     <div class="card table-card">
       <div class="card-header"><h6><i class="bi bi-people me-1"></i>دانش‌آموزان (<%= J.toPersianDigits(students.length) %>)</h6>
-        <% if (isAdmin && enabled('students')) { %><a href="/students/new?class_id=<%= cls.id %>" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>ثبت‌نام در این کلاس</a><% } %></div>
+        <% if (isAdmin && enabled('students')) { %><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addStudentsModal"><i class="bi bi-person-plus me-1"></i>افزودن دانش‌آموز موجود</button><a href="/students/new?class_id=<%= cls.id %>" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>ثبت‌نام جدید</a></div><% } %></div>
       <div class="table-responsive"><table class="table table-hover align-middle mb-0">
         <thead><tr><th>#</th><th>نام</th><th>شماره</th><th>ولی</th><th>تماس</th><% if (enabled('attendance')) { %><th>غیبت</th><% } %><th>وضعیت</th></tr></thead>
         <tbody><% students.forEach(function (s, i) { var ex = studentExtra[s.id] || {}; %>
@@ -76,6 +76,49 @@
 document.getElementById('csModal').addEventListener('show.bs.modal', function (e) {
   var b = e.relatedTarget || {}; var d = b.dataset || {};
   document.getElementById('csSubject').value = d.subject || ''; document.getElementById('csTeacher').value = d.teacher || ''; document.getElementById('csHours').value = d.hours || '';
+});
+</script>
+<% } %>
+<% if (isAdmin && enabled('students')) { %>
+<div class="modal fade" id="addStudentsModal" tabindex="-1" aria-labelledby="addStudentsTitle"><div class="modal-dialog modal-lg"><form method="post" action="/academic/classes/<%= cls.id %>/students" class="modal-content" id="addStudentsForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="student_ids" id="addStudentIds" value="">
+  <div class="modal-header"><h6 class="modal-title" id="addStudentsTitle"><i class="bi bi-person-plus ms-1"></i>افزودن دانش‌آموز به کلاس <%= cls.title %></h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+  <div class="modal-body">
+    <div class="row g-2 align-items-center mb-2">
+      <div class="col-md-7"><input type="search" class="form-control" id="addStudentSearch" placeholder="جستجوی نام، شماره دانش‌آموزی یا کد ملی…" autocomplete="off" aria-label="جستجو"></div>
+      <div class="col-md-5"><div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="addOnlyNoClass" checked><label class="form-check-label fs-7" for="addOnlyNoClass">فقط دانش‌آموزان بدون کلاس</label></div></div>
+    </div>
+    <div class="border rounded" style="max-height:300px;overflow:auto"><table class="table table-sm table-hover mb-0 fs-7 align-middle"><tbody id="addStudentResults"><tr><td class="text-secondary text-center py-3">برای جستجو تایپ کنید یا منتظر فهرست بمانید…</td></tr></tbody></table></div>
+    <div class="mt-3"><div class="fs-7 text-secondary mb-1">انتخاب‌شده‌ها (<span id="addSelCount">۰</span>):</div><div id="addSelected" class="d-flex flex-wrap gap-1"></div></div>
+    <% if (cls.capacity) { %><div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="ignore_capacity" value="1" id="ignoreCap"><label class="form-check-label fs-7" for="ignoreCap">نادیده‌گرفتن ظرفیت کلاس (<%= J.toPersianDigits(cls.capacity) %> نفر؛ اکنون <%= J.toPersianDigits(stats.active || students.length) %> نفر)</label></div><% } %>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary" id="addStudentsBtn" disabled><i class="bi bi-check2 ms-1"></i>افزودن به کلاس</button></div>
+</form></div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modal = document.getElementById('addStudentsModal'); if (!modal) return;
+  var sel = {}; var inp = document.getElementById('addStudentSearch'), res = document.getElementById('addStudentResults'), box = document.getElementById('addSelected'), timer = null;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderSel() {
+    box.innerHTML = ''; var ids = Object.keys(sel);
+    ids.forEach(function (id) { var s = sel[id]; box.insertAdjacentHTML('beforeend', '<span class="badge badge-soft-primary d-inline-flex align-items-center gap-1 fs-7">' + esc(s.name) + ' <button type="button" class="btn-close btn-close-sm" style="font-size:.55rem" aria-label="حذف" data-rm="' + id + '"></button></span>'); });
+    document.getElementById('addSelCount').textContent = App.fa(ids.length); document.getElementById('addStudentIds').value = ids.join(','); document.getElementById('addStudentsBtn').disabled = !ids.length;
+    res.querySelectorAll('input[type=checkbox]').forEach(function (c) { c.checked = !!sel[c.value]; });
+  }
+  box.addEventListener('click', function (e) { var b = e.target.closest('[data-rm]'); if (b) { delete sel[b.getAttribute('data-rm')]; renderSel(); } });
+  function search() {
+    var q = inp.value.trim(); var url = '/students/api/search?exclude_class=<%= cls.id %>&limit=40&q=' + encodeURIComponent(q) + (document.getElementById('addOnlyNoClass').checked ? '&no_class=1' : '');
+    fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (list) {
+      res.innerHTML = '';
+      if (!list.length) { res.innerHTML = '<tr><td class="text-secondary text-center py-3">موردی یافت نشد' + (document.getElementById('addOnlyNoClass').checked ? ' — گزینهٔ «فقط بدون کلاس» را خاموش کنید تا دانش‌آموزان سایر کلاس‌ها هم نمایش داده شوند' : '') + '</td></tr>'; return; }
+      list.forEach(function (s) { res.insertAdjacentHTML('beforeend', '<tr><td style="width:32px"><input class="form-check-input" type="checkbox" value="' + s.id + '" data-name="' + esc(s.name) + '" aria-label="انتخاب"' + (sel[s.id] ? ' checked' : '') + '></td><td>' + esc(s.name) + '</td><td class="ltr text-end text-secondary">' + App.fa(s.student_number) + '</td><td>' + (s.class_title ? '<span class="badge badge-soft-secondary">' + esc(s.class_title) + '</span>' : '<span class="text-secondary">بدون کلاس</span>') + '</td></tr>'); });
+    }).catch(function () { res.innerHTML = '<tr><td class="text-danger text-center py-3">خطا در جستجو</td></tr>'; });
+  }
+  res.addEventListener('change', function (e) { var c = e.target; if (c.type !== 'checkbox') return; if (c.checked) sel[c.value] = { name: c.getAttribute('data-name') }; else delete sel[c.value]; renderSel(); });
+  res.addEventListener('click', function (e) { var tr = e.target.closest('tr'); if (!tr || e.target.type === 'checkbox') return; var c = tr.querySelector('input[type=checkbox]'); if (c) { c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); } });
+  inp.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 250); });
+  document.getElementById('addOnlyNoClass').addEventListener('change', search);
+  modal.addEventListener('shown.bs.modal', function () { inp.focus(); search(); });
 });
 </script>
 <% } %>

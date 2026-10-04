@@ -99,6 +99,18 @@ router.get('/me', auth.requireRole('student', 'parent'), modules.requireEnabled(
   res.redirect(s ? '/students/' + s.id + (qs ? '?' + qs : '') : '/dashboard');
 });
 
+// جستجوی سریع دانش‌آموز (برای افزودن به کلاس، انتخاب‌گرها)
+router.get('/api/search', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage', 'academic.manage'), async (req, res) => {
+  const term = utils.normalizePersian(String(req.query.q || '')).trim();
+  const q = db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').select('s.id', 's.first_name', 's.last_name', 's.student_number', 's.class_id', 's.status', 'c.title as class_title');
+  if (req.query.exclude_class) q.where((b) => b.whereNull('s.class_id').orWhere('s.class_id', '!=', Number(req.query.exclude_class)));
+  if (req.query.status) q.where('s.status', String(req.query.status)); else q.whereIn('s.status', ['active', 'pending']);
+  if (req.query.no_class === '1') q.whereNull('s.class_id');
+  if (term) { const en = J.toEnglishDigits(term); q.where((b) => b.where('s.first_name', 'like', `%${term}%`).orWhere('s.last_name', 'like', `%${term}%`).orWhere('s.student_number', 'like', `%${en}%`).orWhere('s.national_id', 'like', `%${en}%`).orWhereRaw(db.concat('s.first_name', "' '", 's.last_name') + ' LIKE ?', ['%' + term + '%'])); }
+  const rows = await q.orderBy('s.last_name').orderBy('s.first_name').limit(Math.min(50, Number(req.query.limit) || 30)).all();
+  res.json(rows.map((r) => ({ id: r.id, name: `${r.first_name} ${r.last_name}`, student_number: r.student_number, class_id: r.class_id, class_title: r.class_title || '', status: r.status })));
+});
+
 /** اعمال فیلترهای فهرست (مشترک بین فهرست، خروجی و عملیات گروهی «همهٔ نتایج») */
 function applyFilters(q, params) {
   const search = utils.normalizePersian(params.q || '');
@@ -405,6 +417,7 @@ router.get('/:id', async (req, res) => {
   data.parentAccounts = E('parents') && !isStudent ? await parentsSvc.parentsOfStudent(s.id) : null;
   data.RELATIONS = utils.RELATIONS;
   data.classes = canManage(req) ? await db.table('classes').where('is_active', 1).orderBy('title').all() : [];
+  data.quickSections = canManage(req) && E('students.manage') ? await fields.quickSections() : null;
   const print = req.query.print === '1' && E('students.profile_print') && !isStudent;
   res.render(v(print ? 'print' : 'show'), Object.assign({ title: `${s.first_name} ${s.last_name}`, layout: print ? 'layouts/print' : undefined, tab: req.query.tab || 'overview' }, data));
 });
@@ -466,6 +479,29 @@ router.post('/:id', auth.requireRoleOrPermission(['admin'], 'students.manage'), 
     req.flash('success', 'پرونده به‌روزرسانی شد.');
     res.redirect('/students/' + row.id);
   } catch (e) { req.flash('danger', e.message); req.keepInput(); res.redirect(`/students/${row.id}/edit`); }
+});
+// ویرایش سریع از صفحهٔ پرونده (فقط فیلدهای مجاز)
+router.post('/:id/quick', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
+  const row = await db.findById('students', req.params.id);
+  if (!row) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const back = `/students/${row.id}` + (req.body._tab ? `?tab=${encodeURIComponent(String(req.body._tab).replace(/[^a-z_]/g, ''))}` : '');
+  const allowed = (await fields.quickSections()).flatMap((sec) => sec.fields.map((f) => f.name));
+  const present = allowed.filter((k) => Object.prototype.hasOwnProperty.call(req.body, k));
+  if (!present.length) { req.flash('danger', 'فیلدی برای ذخیره ارسال نشد.'); return res.redirect(back); }
+  const data = utils.cleanBody(req.body, { fields: present, dates: fields.all.filter((f) => f.type === 'date' && present.includes(f.name)).map((f) => f.name), numbers: fields.all.filter((f) => f.type === 'number' && present.includes(f.name)).map((f) => f.name) });
+  for (const k of ['father_phone', 'mother_phone', 'guardian_phone', 'emergency_phone', 'mobile', 'home_phone']) if (data[k]) data[k] = utils.normalizePhone(data[k]);
+  const merged = Object.assign({}, row, data);
+  const val = validateStudent(merged, false);
+  if (!val.ok) { req.flash('danger', val.message); return res.redirect(back); }
+  const changed = Object.keys(data).filter((k) => String(data[k] == null ? '' : data[k]) !== String(row[k] == null ? '' : row[k]));
+  if (!changed.length) { req.flash('info', 'تغییری ثبت نشد.'); return res.redirect(back); }
+  const patch = {}; for (const k of changed) patch[k] = data[k]; patch.updated_at = db.now();
+  await db.update('students', patch, { id: row.id });
+  if (row.user_id) { const u = { updated_at: db.now() }; if (changed.includes('first_name') || changed.includes('last_name')) u.name = `${merged.first_name} ${merged.last_name}`; if (changed.includes('mobile')) u.phone = data.mobile || null; if (changed.includes('email')) u.email = data.email || null; await db.update('users', u, { id: row.user_id }); }
+  const labels = changed.map((k) => { const f = fields.all.find((x) => x.name === k); return f ? f.label : k; });
+  await activity.log(req, 'update', 'students', row.id, `ویرایش سریع ${merged.first_name} ${merged.last_name}: ${labels.join('، ')}`);
+  req.flash('success', `ذخیره شد (${labels.join('، ')}).`);
+  res.redirect(back);
 });
 router.post('/:id/delete', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.manage'), async (req, res) => {
   const row = await db.findById('students', req.params.id);
