@@ -90,7 +90,7 @@ router.post('/database', guardNotInstalled, async (req, res) => {
 router.post('/run', guardNotInstalled, async (req, res) => {
   const body = req.body;
   const dbCfg = dbConfigFromBody(body);
-  const form = utils.cleanBody(body, { fields: ['school_name', 'school_type', 'school_gender', 'school_phone', 'school_address', 'admin_name', 'admin_username', 'admin_password', 'admin_password2', 'admin_email', 'admin_phone', 'timezone_offset', 'demo'] });
+  const form = utils.cleanBody(body, { fields: ['school_name', 'school_type', 'school_gender', 'school_phone', 'school_address', 'admin_name', 'admin_username', 'admin_password', 'admin_password2', 'admin_email', 'admin_phone', 'timezone_offset', 'demo', 'super_username', 'super_password', 'super_name'] });
   const errors = installer.validateForm(form);
   if (errors.length) {
     return res.render(v('school'), { title: 'اطلاعات مدرسه و مدیر', step: 3, dbCfg, driver: '', form: body, error: errors.join('؛ '), defaultYear: J.currentAcademicYear().title });

@@ -7,9 +7,9 @@
     <% (menu || []).forEach(function (group, gi) {
          var groupActive = false; var groupBadge = 0;
          group.items.forEach(function (item) {
-           item._active = item.href === '/dashboard' ? currentPath === '/dashboard' : (currentPath === item.href || currentPath.startsWith(item.href + '/') || (item.match && currentPath.startsWith(item.match)));
+           item._active = (item.href === '/dashboard' || item.href === '/console') ? currentPath === item.href : (currentPath === item.href || currentPath.startsWith(item.href + '/') || (item.match && currentPath.startsWith(item.match)));
            if (item._active) groupActive = true;
-           var b = item.badge === 'notifications' ? (unreadNotifications || 0) : item.badge === 'tickets' ? (badgeTickets || 0) : item.badge === 'messages' ? (unreadMessages || 0) : 0; item._badge = b; groupBadge += b;
+           var b = item.badge === 'notifications' ? (unreadNotifications || 0) : item.badge === 'tickets' ? (badgeTickets || 0) : item.badge === 'messages' ? (unreadMessages || 0) : item.badge === 'reports' ? (typeof badgeReports !== 'undefined' ? badgeReports : 0) : item.badge === 'requests' ? (typeof badgeRequests !== 'undefined' ? badgeRequests : 0) : 0; item._badge = b; groupBadge += b;
          });
          var pinned = group.key === 'main';
     %>
@@ -32,5 +32,5 @@
       </div>
     <% }); %>
   </nav>
-  <div class="footer">نسخه <%= J.toPersianDigits(appVersion) %> · <%= currentUser ? utils.ROLES[currentUser.role] : '' %></div>
+  <div class="footer">نسخه <%= J.toPersianDigits(appVersion) %> · <%= currentUser ? (isSuper ? 'سازندهٔ سامانه' : utils.ROLES[currentUser.role]) : '' %></div>
 </aside>

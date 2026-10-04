@@ -6,10 +6,18 @@
  */
 const GROUPS = {
   school: 'مدرسه', academic: 'آموزشی', attendance: 'حضور و غیاب', grading: 'نمرات', students: 'دانش‌آموزان و کاربران', communication: 'ارتباطات و تیکت', services: 'خدمات', finance: 'مالی', payment: 'درگاه پرداخت',
-  appearance: 'ظاهر', security: 'امنیت', sms: 'پیامک', email: 'ایمیل', birthdays: 'تولدها', backup: 'پشتیبان‌گیری', maintenance: 'نگهداری و دیسک', documents: 'اسناد', admissions: 'پیش‌ثبت‌نام', system: 'سیستم (داخلی)'
+  appearance: 'ظاهر', security: 'امنیت', sms: 'پیامک', email: 'ایمیل', birthdays: 'تولدها', backup: 'پشتیبان‌گیری', maintenance: 'نگهداری و دیسک', documents: 'اسناد', admissions: 'پیش‌ثبت‌نام', system: 'سیستم (داخلی)',
+  console: 'کنسول سازنده'
 };
 const T = (group, label, type, help) => ({ group, label, type: type || 'text', help: help || '' });
 const META = {
+  // کنسول سازنده (فقط از /console/security قابل ویرایش است)
+  superadmin_allow_ips: T('console', 'IPهای مجاز ورود به کنسول', 'textarea', 'خالی = همه؛ هر خط یک IP یا پیشوند (مثل 5.112.)'),
+  superadmin_alert_email: T('console', 'ایمیل هشدار ورود به کنسول', 'text', 'با هر ورود موفق/ناموفق کنسول ایمیل می‌شود (نیاز به SMTP)'),
+  superadmin_session_hours: T('console', 'مدت اعتبار نشست کنسول (ساعت)', 'number', '۱ تا ۷۲'),
+  support_contact_text: T('console', 'متن تماس با پشتیبانی', 'textarea', 'زیر فرم گزارش خطا و صفحهٔ ماژول‌ها نمایش داده می‌شود'),
+  support_max_per_hour: T('console', 'سقف گزارش هر کاربر در ساعت', 'number'),
+  module_request_note: T('console', 'توضیح صفحهٔ ماژول‌ها برای مدیر', 'textarea', 'مثلاً شرایط و هزینهٔ فعال‌سازی ماژول‌ها'),
   // مدرسه
   school_name: T('school', 'نام مدرسه'), school_slogan: T('school', 'شعار / زیرعنوان'), school_short_name: T('school', 'نام کوتاه (آیکون اپلیکیشن)', 'text', 'برای PWA وقتی نام مدرسه طولانی است'),
   school_type: T('school', 'مقطع'), school_gender: T('school', 'جنسیت مدرسه', 'select'), school_code: T('school', 'کد مدرسه'), school_phone: T('school', 'تلفن'), school_email: T('school', 'ایمیل'),

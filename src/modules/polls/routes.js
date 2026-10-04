@@ -47,8 +47,8 @@ router.post('/', modules.requireEnabled('polls.manage'), async (req, res) => {
   if (E('notifications.inapp')) {
     let uids = [];
     if (audience === 'class') uids = await db.table('students').where('class_id', Number(b.class_id)).where('status', 'active').whereNotNull('user_id').pluck('user_id');
-    else if (audience === 'students') uids = await db.table('users').where({ role: 'student', status: 'active' }).pluck('id');
-    else if (audience === 'teachers') uids = await db.table('users').where({ role: 'teacher', status: 'active' }).pluck('id');
+    else if (audience === 'students') uids = await db.table('users').where({ role: 'student', status: 'active', is_super: 0 }).pluck('id');
+    else if (audience === 'teachers') uids = await db.table('users').where({ role: 'teacher', status: 'active', is_super: 0 }).pluck('id');
     else uids = await db.table('users').where('status', 'active').where('id', '!=', req.user.id).pluck('id');
     await notify.push(uids, { title: 'نظرسنجی جدید', body: b.question, link: '/polls/' + id, type: 'info' });
   }

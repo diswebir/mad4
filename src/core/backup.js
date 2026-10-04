@@ -72,16 +72,40 @@ function prune(keep, prefix) {
   return removed;
 }
 /** بازیابی جدول‌ها از ساختار JSON (جایگزینی کامل) → تعداد سطرها */
-async function restoreTables(data) {
+/**
+ * بازیابی جدول‌ها. opts.trusted=false (بازیابی توسط مدیر مدرسه):
+ *  - حساب‌های سازنده (is_super) حفظ می‌شوند و هیچ سطر بازیابی‌شده‌ای نمی‌تواند super شود
+ *  - جدول module_states دست نمی‌خورد (فعال‌سازی ماژول‌ها فقط از کنسول سازنده)
+ *  - کلیدهای تنظیمات فنی (opts.protectedSettings) با مقدار فعلی بازنویسی می‌شوند
+ */
+async function restoreTables(data, opts) {
+  opts = opts || {};
   if (!data || !data.tables || typeof data.tables !== 'object') throw new Error('ساختار فایل پشتیبان نامعتبر است');
   const utils = require('./utils');
+  const trusted = !!opts.trusted;
+  const SUPER_COLS = ['is_super', 'totp_secret', 'totp_enabled', 'backup_codes'];
+  const supers = trusted ? [] : await db.table('users').where('is_super', 1).all();
+  const protectedKeys = trusted ? [] : (opts.protectedSettings || []);
+  const keep = protectedKeys.length ? await db.table('settings').whereIn('key', protectedKeys).all() : [];
   let restored = 0;
   await db.transaction(async (tx) => {
     for (const [t, rows] of Object.entries(data.tables)) {
       if (!schema[t] || t === 'sessions' || !Array.isArray(rows)) continue;
+      if (!trusted && t === 'module_states') continue;
       await tx.remove(t);
-      const cols = Object.keys(schema[t]).filter((c) => !c.startsWith('__'));
-      restored += await tx.insertMany(t, rows.map((row) => utils.pick(row, cols)));
+      const cols = Object.keys(schema[t]).filter((c) => !c.startsWith('__') && (trusted || t !== 'users' || !SUPER_COLS.includes(c)));
+      let list = rows.map((row) => utils.pick(row, cols));
+      if (!trusted && t === 'users') {
+        const superNames = new Set(supers.map((u) => String(u.username).toLowerCase()));
+        const superIds = new Set(supers.map((u) => u.id));
+        list = list.filter((r) => !superNames.has(String(r.username || '').toLowerCase()) && !superIds.has(Number(r.id)));
+      }
+      restored += await tx.insertMany(t, list);
+      if (!trusted && t === 'users' && supers.length) await tx.insertMany(t, supers);
+      if (!trusted && t === 'settings' && keep.length) {
+        await tx.table('settings').whereIn('key', keep.map((k) => k.key)).delete();
+        await tx.insertMany('settings', keep.map((k) => ({ key: k.key, value: k.value })));
+      }
     }
   });
   return restored;
@@ -109,7 +133,7 @@ async function restoreFromFile(absPath, originalName, opts) {
   const isZip = head[0] === 0x50 && head[1] === 0x4b;
   if (!isZip) {
     if (!opts.db) return out;
-    out.rows = await restoreTables(parseBackupBuffer(fs.readFileSync(absPath)));
+    out.rows = await restoreTables(parseBackupBuffer(fs.readFileSync(absPath)), opts);
     return out;
   }
   out.type = 'zip';
@@ -117,7 +141,7 @@ async function restoreFromFile(absPath, originalName, opts) {
   try {
     const dbEntry = r.find('database.json');
     if (!dbEntry && !r.entries().some((e) => e.name.startsWith('uploads/'))) throw new Error('این فایل ZIP پشتیبان سامانه نیست (database.json یافت نشد)');
-    if (opts.db && dbEntry) out.rows = await restoreTables(parseBackupBuffer(r.read(dbEntry)));
+    if (opts.db && dbEntry) out.rows = await restoreTables(parseBackupBuffer(r.read(dbEntry)), opts);
     if (opts.files) {
       const root = config.get().uploads.dir;
       for (const e of r.entries()) {

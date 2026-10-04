@@ -26,12 +26,14 @@
     <div class="dropdown">
       <button class="btn d-flex align-items-center gap-2 p-1 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         <%- include('avatar', { user: currentUser, size: '' }) %>
-        <span class="d-none d-md-block text-start lh-sm"><span class="d-block fw-500 fs-7"><%= currentUser.name %></span><span class="d-block text-secondary" style="font-size:.7rem"><%= utils.ROLES[currentUser.role] %></span></span>
+        <span class="d-none d-md-block text-start lh-sm"><span class="d-block fw-500 fs-7"><%= currentUser.name %></span><span class="d-block text-secondary" style="font-size:.7rem"><%= isSuper ? 'سازندهٔ سامانه' : utils.ROLES[currentUser.role] %></span></span>
         <i class="bi bi-chevron-down fs-7 d-none d-md-block"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu-start">
         <li><a class="dropdown-item" href="/auth/profile"><i class="bi bi-person"></i>پروفایل من</a></li>
         <li><a class="dropdown-item" href="/auth/password"><i class="bi bi-key"></i>تغییر رمز عبور</a></li>
+        <% if (!isSuper && enabled('support') && enabled('support.my_reports')) { %><li><a class="dropdown-item" href="/support/my"><i class="bi bi-life-preserver"></i>گزارش‌های من</a></li><% } %>
+        <% if (isSuper) { %><li><a class="dropdown-item" href="/console"><i class="bi bi-shield-lock"></i>کنسول سازنده</a></li><% } %>
         <% if (currentUser.role === 'admin' || can('system.settings')) { %><li><a class="dropdown-item" href="/system/settings"><i class="bi bi-gear"></i>تنظیمات</a></li><% } %>
         <% if (enabled('system.pwa')) { %><li class="d-none" data-pwa-install><a class="dropdown-item" href="#"><i class="bi bi-phone"></i>نصب به‌عنوان اپلیکیشن</a></li><% } %>
         <li><hr class="dropdown-divider"></li>

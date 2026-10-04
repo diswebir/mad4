@@ -22,7 +22,7 @@ crud(router, {
   path: '/leaves', table: 'leave_requests', alias: 'l', title: 'درخواست مرخصی', plural: 'مرخصی‌ها', icon: 'bi-person-badge', feature: 'hr.leaves', orderBy: 'id', dir: 'desc', roles: ['admin', 'staff', 'teacher'], viewRoles: ['admin', 'staff', 'teacher'], permission: 'hr.manage',
   query: (q, req) => { q.join('users as u', 'u.id', 'l.user_id').leftJoin('users as r', 'r.id', 'l.reviewed_by').select('l.*', 'u.name as user_name', 'u.role as user_role', 'r.name as reviewer_name'); if (req && !isAdmin(req)) q.where('l.user_id', req.user.id); return q; },
   fields: [
-    { name: 'user_id', label: 'درخواست‌کننده', type: 'select', list: true, readonly: true, hideInForm: true, search: true, searchColumn: 'u.name', options: async () => (await db.table('users').whereIn('role', ['teacher', 'staff', 'admin']).orderBy('name').all()).map((u) => ({ value: u.id, label: u.name })) },
+    { name: 'user_id', label: 'درخواست‌کننده', type: 'select', list: true, readonly: true, hideInForm: true, search: true, searchColumn: 'u.name', options: async () => (await db.table('users').whereIn('role', ['teacher', 'staff', 'admin']).where('is_super', 0).orderBy('name').all()).map((u) => ({ value: u.id, label: u.name })) },
     { name: 'type', label: 'نوع', type: 'select', required: true, list: true, filter: true, options: TYPES },
     { name: 'from_date', label: 'از تاریخ', type: 'date', required: true, list: true },
     { name: 'to_date', label: 'تا تاریخ', type: 'date', required: true, list: true },

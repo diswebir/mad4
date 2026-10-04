@@ -25,7 +25,7 @@ async function classOptions(req) {
   return (await q.all()).map((c) => ({ value: c.id, label: c.title }));
 }
 async function staffOptions() {
-  return (await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff', 'teacher']).where('status', 'active').orderBy('role').orderBy('name').all()).map((u) => ({ value: u.id, label: u.name }));
+  return (await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff', 'teacher']).where('status', 'active').where('is_super', 0).orderBy('role').orderBy('name').all()).map((u) => ({ value: u.id, label: u.name }));
 }
 /** فرزندان یک ولی (بر اساس کاربر) */
 async function childrenOf(userId) {

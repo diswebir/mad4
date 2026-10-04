@@ -1,0 +1,27 @@
+<%- include('partials/page-header', { title: 'فعال‌سازی ورود دومرحله‌ای', icon: 'bi-qr-code', breadcrumbs: [{ title: 'کنسول سازنده', href: '/console' }, { title: 'امنیت', href: '/console/security' }, { title: 'ورود دومرحله‌ای' }] }) %>
+<div class="row g-3 justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <ol class="fs-7 mb-3">
+          <li>برنامهٔ احراز هویت (Google Authenticator، Microsoft Authenticator، Aegis، FreeOTP و…) را روی گوشی باز کنید.</li>
+          <li>کد QR زیر را اسکن کنید یا کلید را دستی وارد کنید.</li>
+          <li>کد ۶ رقمی نمایش‌داده‌شده را در کادر زیر وارد و تأیید کنید. سپس کدهای پشتیبان را در جای امن نگه دارید.</li>
+        </ol>
+        <div class="row g-3 align-items-center">
+          <div class="col-md-5 text-center"><div class="d-inline-block bg-white p-2 rounded border"><%- qr %></div></div>
+          <div class="col-md-7">
+            <div class="mb-2 fs-7 text-secondary">کلید دستی (Base32):</div>
+            <code class="d-block ltr text-start fs-6 mb-3 p-2 bg-light rounded border" data-copy><%= secretPretty %></code>
+            <form method="post" action="/console/security/2fa" autocomplete="off">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label class="form-label" for="code">کد ۶ رقمی برنامه</label>
+              <div class="d-flex gap-2"><input class="form-control totp-code" name="code" id="code" required inputmode="numeric" maxlength="6" pattern="[0-9۰-۹]{6}" autofocus data-digits style="max-width:200px"><button class="btn btn-dark text-nowrap"><i class="bi bi-check2-circle me-1"></i>تأیید و فعال‌سازی</button></div>
+            </form>
+            <a href="/console/security" class="fs-7 d-inline-block mt-3"><i class="bi bi-arrow-right me-1"></i>انصراف</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

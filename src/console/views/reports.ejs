@@ -1,0 +1,27 @@
+<%- include('partials/page-header', { title: 'گزارش‌های خطا', icon: 'bi-bug', breadcrumbs: [{ title: 'کنسول سازنده', href: '/console' }, { title: 'گزارش‌های خطا' }], subtitle: 'گزارش‌هایی که کاربران با دکمهٔ شناور «گزارش خطا» ارسال کرده‌اند. فقط در کنسول سازنده دیده می‌شوند.' }) %>
+<div class="card table-card">
+  <div class="card-header">
+    <form class="toolbar" data-auto-submit>
+      <input type="search" class="form-control form-control-sm" name="q" value="<%= query.q || '' %>" placeholder="جستجو در عنوان، شرح، کاربر، صفحه…">
+      <select class="form-select form-select-sm" name="kind" aria-label="نوع"><option value="">همهٔ انواع</option><% ['bug', 'suggestion', 'question'].forEach(function (k) { %><option value="<%= k %>" <%= query.kind === k ? 'selected' : '' %>><%= KINDS[k] %></option><% }); %></select>
+      <select class="form-select form-select-sm" name="status" aria-label="وضعیت"><option value="">باز (جدید/دیده‌شده/در حال بررسی)</option><% Object.keys(STATUSES).forEach(function (k) { %><option value="<%= k %>" <%= query.status === k ? 'selected' : '' %>><%= STATUSES[k] %></option><% }); %></select>
+      <div class="form-check form-switch m-0 text-nowrap"><input class="form-check-input" type="checkbox" name="all" value="1" id="allRep" <%= query.all === '1' ? 'checked' : '' %>><label class="form-check-label fs-7" for="allRep">همه</label></div>
+    </form>
+  </div>
+  <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>#</th><th>نوع</th><th>عنوان و شرح</th><th>کاربر</th><th>صفحه</th><th>زمان</th><th>وضعیت</th><th></th></tr></thead><tbody>
+    <% if (!result.data.length) { %><tr><td colspan="8" class="text-center text-secondary py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>گزارشی یافت نشد</td></tr><% } %>
+    <% result.data.forEach(function (r) { %>
+    <tr class="<%= r.status === 'new' ? 'fw-500' : '' %>">
+      <td class="text-secondary fs-7"><%= J.toPersianDigits(r.id) %></td>
+      <td><span class="badge badge-soft-<%= r.kind === 'bug' ? 'danger' : r.kind === 'suggestion' ? 'info' : 'secondary' %>"><%= KINDS[r.kind] || r.kind %></span></td>
+      <td><a href="/console/reports/<%= r.id %>" class="text-body d-block"><%= r.subject %></a><div class="text-secondary fs-7 text-truncate fw-normal" style="max-width:380px"><%= r.message %></div><% if (r.image) { %><span class="fs-7 text-secondary"><i class="bi bi-image me-1"></i>تصویر</span><% } %></td>
+      <td class="fs-7"><%= r.user_name || '—' %><div class="text-secondary"><%= utils.ROLES[r.role] || r.role %><% if (r.user_username) { %> · <span class="ltr d-inline-block"><%= r.user_username %></span><% } %></div></td>
+      <td class="fs-7 ltr text-start text-truncate" style="max-width:180px"><%= r.page_url || '' %></td>
+      <td class="fs-7 text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><span class="badge badge-soft-<%= STATUS_COLOR[r.status] || 'secondary' %>"><%= STATUSES[r.status] || r.status %></span></td>
+      <td class="text-nowrap"><a href="/console/reports/<%= r.id %>" class="btn btn-sm btn-light"><i class="bi bi-eye"></i></a></td>
+    </tr>
+    <% }); %>
+  </tbody></table></div>
+  <%- include('partials/pagination', { result: result }) %>
+</div>

@@ -9,7 +9,7 @@ const settings = require('./settings');
 
 const attempts = new Map(); // key: ip|username → { count, lockedUntil }
 
-async function hashPassword(plain) { return bcrypt.hash(String(plain), 10); }
+async function hashPassword(plain, rounds) { return bcrypt.hash(String(plain), rounds || 10); }
 async function verifyPassword(plain, hash) { try { return await bcrypt.compare(String(plain), String(hash || '')); } catch (e) { return false; } }
 
 function clientIp(req) {
@@ -37,23 +37,33 @@ function recordFailure(req, username) {
 }
 function clearFailures(req, username) { attempts.delete(throttleKey(req, username)); }
 
+/** خالی‌کردن نشست بدون نابودی آن (برای ادامهٔ کار flash/CSRF) */
+function clearSession(req) { for (const k of ['userId', 'role', 'loginAt', 'impersonatorId', 'superAuth', 'consolePending']) delete req.session[k]; }
+
 /** بارگذاری کاربر جاری از نشست */
 function loadUser() {
   return async (req, res, next) => {
     req.user = null;
     res.locals.currentUser = null;
     res.locals.impersonator = null;
+    res.locals.isSuper = false;
     if (!req.session || !req.session.userId) return next();
     try {
+      // نشست کنسول سازنده پس از مدت مشخص (superadmin_session_hours) منقضی می‌شود — حتی هنگام «ورود به جای کاربر»
+      if (req.session.superAuth && Date.now() - req.session.superAuth > superSessionMs()) { clearSession(req); return next(); }
       const user = await db.table('users').where('id', req.session.userId).first();
       if (!user || user.status !== 'active') { req.session.userId = null; return next(); }
-      delete user.password;
+      // حساب سازنده فقط با نشست کنسول معتبر است (نشست‌های قدیمی یا دست‌کاری‌شده رد می‌شوند)
+      if (user.is_super && !req.session.superAuth && !req.session.impersonatorId) { clearSession(req); return next(); }
+      delete user.password; delete user.totp_secret; delete user.backup_codes;
+      user.is_super = Number(user.is_super) ? 1 : 0;
       user.perms = await permissions.permissionsOf(user);
       req.user = user;
       req.can = (...keys) => permissions.can(user, ...keys);
       res.locals.currentUser = user;
       res.locals.can = req.can;
-      if (req.session.impersonatorId) res.locals.impersonator = await db.table('users').select('id', 'name', 'role').where('id', req.session.impersonatorId).first();
+      res.locals.isSuper = !!user.is_super;
+      if (req.session.impersonatorId) res.locals.impersonator = await db.table('users').select('id', 'name', 'role', 'is_super').where('id', req.session.impersonatorId).first();
       // پروفایل دانش‌آموز/معلم (در صورت نیاز)
       req.profile = async () => {
         if (req._profile !== undefined) return req._profile;
@@ -73,7 +83,8 @@ function wantsJson(req) { return req.xhr || (req.get('accept') || '').includes('
 function requireAuth(req, res, next) {
   if (req.user) {
     const full = (req.baseUrl || '') + req.path; // req.path داخل روترهای mount‌شده نسبی است
-    if (req.user.must_change_password && !full.startsWith('/auth/password') && !full.startsWith('/auth/logout')) {
+    // هنگام «ورود به جای کاربر» اجبار تغییر رمز اعمال نمی‌شود (مدیر/سازنده رمز کاربر را نمی‌داند)
+    if (req.user.must_change_password && !req.session.impersonatorId && !full.startsWith('/auth/password') && !full.startsWith('/auth/logout')) {
       return res.redirect('/auth/password?force=1');
     }
     return next();
@@ -119,20 +130,38 @@ function requireRoleOrPermission(roles, ...keys) {
 }
 
 function requireGuest(req, res, next) {
-  if (req.user) return res.redirect('/dashboard');
+  if (req.user) return res.redirect(req.user.is_super ? '/console' : '/dashboard');
   next();
 }
 
-/** ورود کاربر: بازسازی نشست برای جلوگیری از session fixation */
-function login(req, user, remember) {
+/** مدت اعتبار نشست کنسول سازنده (میلی‌ثانیه) */
+function superSessionMs() { return Math.min(72, Math.max(1, settings.getInt('superadmin_session_hours', 12))) * 3600000; }
+/** آیا کاربر جاری حساب سازنده با نشست کنسول معتبر است؟ */
+function isSuper(req) { return !!(req.user && req.user.is_super && req.session && req.session.superAuth && !req.session.impersonatorId); }
+/**
+ * فقط حساب سازنده؛ برای بقیه پاسخ «۴۰۴» است (نه ۴۰۳) تا وجود کنسول/بخش‌های سازنده برای سایر کاربران آشکار نشود
+ */
+function requireSuper(req, res, next) {
+  if (isSuper(req)) return next();
+  if (!req.user) return requireAuth(req, res, next);
+  if (wantsJson(req)) return res.status(404).json({ ok: false, error: 'یافت نشد' });
+  res.status(404);
+  return res.render('errors/404', { title: 'یافت نشد' });
+}
+
+/** ورود کاربر: بازسازی نشست برای جلوگیری از session fixation؛ keep: کلیدهایی از نشست قبلی که باید بمانند */
+function login(req, user, remember, keep) {
   return new Promise((resolve, reject) => {
     const impersonatorId = req.session.impersonatorId;
+    const superAuth = req.session.superAuth;
     req.session.regenerate((err) => {
       if (err) return reject(err);
       req.session.userId = user.id;
       req.session.role = user.role;
       req.session.loginAt = Date.now();
       if (impersonatorId) req.session.impersonatorId = impersonatorId;
+      if (superAuth) req.session.superAuth = superAuth;
+      if (keep && typeof keep === 'object') Object.assign(req.session, keep);
       if (remember) req.session.cookie.maxAge = settings.getInt('session_days', 7) * 86400000;
       else req.session.cookie.expires = false;
       req.session.save((e) => (e ? reject(e) : resolve()));
@@ -152,11 +181,11 @@ async function authenticate(username, password) {
   return { ok: true, user };
 }
 
-async function logLogin(req, user, username, success) {
+async function logLogin(req, user, username, success, kind) {
   try {
-    await db.insert('login_logs', { user_id: user ? user.id : null, username: username || (user && user.username), ip: clientIp(req), user_agent: String(req.get('user-agent') || '').slice(0, 250), success: success ? 1 : 0, created_at: db.now() });
+    await db.insert('login_logs', { user_id: user ? user.id : null, username: username || (user && user.username), ip: clientIp(req), user_agent: String(req.get('user-agent') || '').slice(0, 250), success: success ? 1 : 0, kind: kind || 'web', created_at: db.now() });
     if (success && user) await db.table('users').where('id', user.id).update({ last_login_at: db.now(), login_count: (user.login_count || 0) + 1 });
   } catch (e) { /* ignore */ }
 }
 
-module.exports = { hashPassword, verifyPassword, clientIp, isLocked, recordFailure, clearFailures, loadUser, requireAuth, requireRole, requireAdmin, requireStaff, requirePermission, requireRoleOrPermission, requireGuest, login, logout, authenticate, logLogin, wantsJson };
+module.exports = { isSuper, requireSuper, superSessionMs, hashPassword, verifyPassword, clientIp, isLocked, recordFailure, clearFailures, loadUser, requireAuth, requireRole, requireAdmin, requireStaff, requirePermission, requireRoleOrPermission, requireGuest, login, logout, authenticate, logLogin, wantsJson };

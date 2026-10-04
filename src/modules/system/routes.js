@@ -25,22 +25,23 @@ const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireRoleOrPermission(['admin'], 'system.settings', 'system.modules', 'system.backup', 'system.logs', 'system.jobs'));
 const P = (...k) => auth.requireRoleOrPermission(['admin'], ...k);
 router.use('/settings', P('system.settings'));
-router.use('/modules', P('system.modules'));
+// بخش‌های فنی فقط برای حساب سازنده (super admin): ماژول‌ها، خطاهای سرور، اطلاعات سامانه، به‌روزرسانی، حالت نگهداری — برای بقیه «۴۰۴»
+router.use('/modules', auth.requireSuper);
 router.use('/activity', P('system.logs'));
 router.use('/backup', P('system.backup'));
 router.use('/demo', auth.requireAdmin);
-router.use('/info', P('system.settings', 'system.logs'));
+router.use('/info', auth.requireSuper);
 router.use('/jobs', P('system.jobs'), modules.requireEnabled('system.scheduler'));
 router.use('/sms-log', P('system.logs'), modules.requireEnabled('system.sms_log'));
-router.use('/logs', P('system.logs'), modules.requireEnabled('system.error_log'));
+router.use('/logs', auth.requireSuper, modules.requireEnabled('system.error_log'));
 router.use('/notify-queue', P('system.logs'), modules.requireEnabled('notifications.retry_queue'));
 const logger = require('../../core/logger');
 const maintenance = require('../../core/maintenance');
 const health = require('../../core/health');
 const updater = require('../../core/updater');
 const settingsMeta = require('../../core/settings-meta');
-router.use('/maintenance', P('system.settings'), modules.requireEnabled('system.maintenance'));
-router.use('/update', P('system.settings'), modules.requireEnabled('system.updates'));
+router.use('/maintenance', auth.requireSuper, modules.requireEnabled('system.maintenance'));
+router.use('/update', auth.requireSuper, modules.requireEnabled('system.updates'));
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },
@@ -51,30 +52,41 @@ const TABS = [
   { key: 'users', title: 'کاربران و رمزها', icon: 'bi-people' },
   { key: 'appearance', title: 'ظاهر', icon: 'bi-palette', feature: 'system.appearance' },
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
-  { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
-  { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'birthdays', title: 'تولدها', icon: 'bi-cake2', feature: 'students.birthdays' },
   { key: 'payment', title: 'درگاه پرداخت', icon: 'bi-credit-card', feature: 'finance.online_payment' },
-  { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
   { key: 'admissions', title: 'پیش‌ثبت‌نام', icon: 'bi-person-plus', feature: 'admissions.public_form' },
-  { key: 'maintenance', title: 'نگهداری و دیسک', icon: 'bi-tools' },
-  { key: 'advanced', title: 'همهٔ تنظیمات', icon: 'bi-list-ul', feature: 'system.advanced_settings' },
-  { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
+  { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' },
+  // زبانه‌های فنی — فقط حساب سازنده (super: true)؛ برای مدیر مدرسه وجود ندارند
+  { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings', super: true },
+  { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings', super: true },
+  { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite', super: true },
+  { key: 'maintenance', title: 'نگهداری و دیسک', icon: 'bi-tools', super: true },
+  { key: 'advanced', title: 'همهٔ تنظیمات', icon: 'bi-list-ul', feature: 'system.advanced_settings', super: true }
 ];
 const tabEnabled = (t) => !t.feature || [].concat(t.feature).some((f) => modules.isEnabled(f));
+/** زبانه‌های قابل مشاهده برای کاربر جاری (زبانه‌های فنی فقط برای سازنده) */
+const tabsFor = (req) => TABS.filter((t) => tabEnabled(t) && (!t.super || auth.isSuper(req)));
+/** کلیدهای تنظیماتی که فقط سازنده می‌تواند تغییر دهد (در بازیابی پشتیبان توسط مدیر حفظ می‌شوند) */
+function protectedKeys() {
+  const keys = new Set();
+  for (const t of TABS) if (t.super) for (const k of FIELDS[t.key] || []) keys.add(k);
+  for (const k of ['site_url', 'notify_retry_max', 'log_keep_days']) keys.delete(k); // کلیدهای مشترک با زبانه‌های مدیر
+  for (const k of Object.keys(settings.DEFAULTS)) if (k.startsWith('superadmin_') || k.startsWith('support_') || k === 'module_request_note') keys.add(k);
+  return [...keys];
+}
 const FIELDS = {
   school: ['school_name', 'school_slogan', 'school_short_name', 'site_url', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
-  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'attendance_edit_days', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'max_weekly_hours', 'homework_late_allowed', 'homework_reminder_days'],
+  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'sms_template_absent', 'attendance_edit_days', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'max_weekly_hours', 'homework_late_allowed', 'homework_reminder_days'],
   communication: ['ticket_categories', 'ticket_auto_close_days', 'allow_student_tickets_to_admin', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'announcement_days_on_dashboard', 'dashboard_announcements_count', 'dashboard_events_days', 'reminder_interval_days', 'notify_retry_max'],
   services: ['library_loan_days', 'library_max_loans', 'leave_days_per_year', 'discipline_report_days'],
   finance: ['currency_unit', 'invoice_prefix', 'invoice_due_days'],
   users: ['student_number_prefix', 'student_number_next', 'student_default_password', 'parent_default_password', 'parent_force_change_password', 'force_password_change', 'password_min_length', 'items_per_page'],
   appearance: ['primary_color', 'default_theme', 'sidebar_style', 'sidebar_mode', 'sidebar_single', 'items_per_page'],
-  security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
+  security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'upload_max_mb'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
-  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price', 'notify_retry_max'],
+  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'site_url', 'sms_price', 'notify_retry_max'],
   payment: ['payment_gateway', 'zarinpal_merchant_id', 'zarinpal_sandbox', 'zarinpal_base_url', 'payment_min_amount', 'payment_allow_partial', 'payment_description', 'site_url'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
   maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent', 'upload_max_mb', 'log_keep_days', 'cleanup_notifications_days', 'cleanup_login_logs_days', 'cleanup_job_runs_days'],
@@ -83,16 +95,17 @@ const FIELDS = {
 };
 
 router.get('/settings', async (req, res) => {
-  const tab = TABS.find((t) => t.key === req.query.tab && tabEnabled(t)) || TABS[0];
+  const visible = tabsFor(req);
+  const tab = visible.find((t) => t.key === req.query.tab) || visible[0];
   const extra = {};
   if (tab.key === 'maintenance') { extra.healthInfo = modules.isEnabled('system.disk_alert') ? await health.check() : null; extra.maintenanceActive = maintenance.isOn(); extra.maintenanceReason = maintenance.reason(); }
   if (tab.key === 'advanced') { extra.allKeys = advancedList(); extra.groupTitle = settingsMeta.groupTitle; extra.q = utils.normalizePersian(String(req.query.q || '')).trim(); }
   if (tab.key === 'birthdays') { const bd = require('../students/birthdays'); extra.birthdayPreview = bd.preview(); extra.birthdayDefaults = bd.DEFAULT_TPL; }
   if (tab.key === 'admissions') { extra.gradeLevels = await db.table('grade_levels').orderBy('sort_order').all(); extra.years = await db.table('academic_years').orderBy('id', 'desc').all(); extra.appCount = await db.table('applications').count(); }
-  res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter(tabEnabled), tab: tab.key, s: settings.all() }, extra));
+  res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: visible, tab: tab.key, s: settings.all() }, extra));
 });
 
-const advancedGuard = [P('system.settings'), modules.requireEnabled('system.advanced_settings')];
+const advancedGuard = [auth.requireSuper, modules.requireEnabled('system.advanced_settings')];
 const KEY_RE = /^[a-z][a-z0-9_]{1,60}$/;
 router.post('/settings/advanced/set', ...advancedGuard, async (req, res) => {
   const key = String(req.body.key || '').trim();
@@ -153,6 +166,7 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
   const tab = req.params.tab;
   const keys = FIELDS[tab];
   if (!keys) return res.redirect('/system/settings');
+  if (!tabsFor(req).some((t) => t.key === tab)) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const data = {};
   for (const k of keys) {
     let val = req.body[k];
@@ -195,17 +209,17 @@ function advancedList() {
   return keys.map((key) => { const m = settingsMeta.meta(key); const value = all[key] == null ? '' : String(all[key]); const def = settings.DEFAULTS[key] == null ? '' : String(settings.DEFAULTS[key]); return { key, value, display: m.type === 'secret' && value ? '••••••' : value, label: m.label, group: m.group, groupTitle: settingsMeta.groupTitle(m.group), type: m.type, help: m.help, stored: storedSet.has(key), isDefault: value === def, defaultValue: def }; })
     .sort((a, b) => a.group.localeCompare(b.group) || a.key.localeCompare(b.key));
 }
-router.post('/settings/test/offsite', modules.requireEnabled('system.backup_offsite'), async (req, res) => {
+router.post('/settings/test/offsite', auth.requireSuper, modules.requireEnabled('system.backup_offsite'), async (req, res) => {
   const r = await offsite.test();
   req.flash(r.ok ? 'success' : 'danger', r.ok ? 'اتصال برقرار است: ' + (r.detail || '') : 'آزمایش ناموفق: ' + (r.error || ''));
   res.redirect('/system/settings?tab=offsite');
 });
-router.post('/settings/test/sms', async (req, res) => {
+router.post('/settings/test/sms', auth.requireSuper, async (req, res) => {
   const r = await notify.sms(req.body.to, 'پیام آزمایشی از سامانه مدیریت مدرسه ' + settings.get('school_name'), 'test');
   req.flash(r.ok ? 'success' : (r.queued ? 'warning' : 'danger'), r.ok ? 'پیامک آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || (r.skipped ? 'پیامک غیرفعال است' : 'خطای درگاه')) + (r.queued ? ' — در <a href="/system/notify-queue">صف تلاش مجدد</a> قرار گرفت.' : ''));
   res.redirect('/system/settings?tab=sms');
 });
-router.post('/settings/test/email', async (req, res) => {
+router.post('/settings/test/email', auth.requireSuper, async (req, res) => {
   const r = await notify.email(req.body.to, 'ایمیل آزمایشی', '<p>این یک ایمیل آزمایشی از سامانه مدیریت مدرسه است.</p>');
   req.flash(r.ok ? 'success' : (r.queued ? 'warning' : 'danger'), r.ok ? 'ایمیل آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || 'ایمیل غیرفعال است') + (r.queued ? ' — در <a href="/system/notify-queue">صف تلاش مجدد</a> قرار گرفت.' : ''));
   res.redirect('/system/settings?tab=email');
@@ -239,12 +253,16 @@ router.post('/modules/bulk', async (req, res) => {
 
 // گزارش فعالیت
 router.get('/activity', modules.requireEnabled('system.activity_log'), async (req, res) => {
-  const q = db.table('activity_logs as a').select('a.*', 'u.name as user_name', 'u.role as user_role').leftJoin('users as u', 'a.user_id', 'u.id').orderBy('a.id', 'desc');
+  const q = db.table('activity_logs as a').select('a.*', 'u.name as user_name', 'u.role as user_role', 'i.name as impersonator_name', 'i.is_super as impersonator_super').leftJoin('users as u', 'a.user_id', 'u.id').leftJoin('users as i', 'a.impersonator_id', 'i.id').orderBy('a.id', 'desc');
   if (req.query.action) q.where('a.action', req.query.action);
   if (req.query.user) q.where('a.user_id', req.query.user);
   if (req.query.q) q.search(req.query.q, ['a.description', 'u.name', 'a.entity']);
+  // فعالیت‌های حساب سازنده برای سایر کاربران نمایش داده نمی‌شود
+  if (!auth.isSuper(req)) q.where((b) => b.whereNull('u.id').orWhere('u.is_super', 0));
   const result = await q.paginate(req.query.page, 30);
-  const logins = modules.isEnabled('auth.login_history') ? await db.table('login_logs as l').select('l.*', 'u.name as user_name').leftJoin('users as u', 'l.user_id', 'u.id').orderBy('l.id', 'desc').limit(15).all() : [];
+  const lq = db.table('login_logs as l').select('l.*', 'u.name as user_name').leftJoin('users as u', 'l.user_id', 'u.id').orderBy('l.id', 'desc').limit(15);
+  if (!auth.isSuper(req)) lq.where('l.kind', 'web').where((b) => b.whereNull('u.id').orWhere('u.is_super', 0));
+  const logins = modules.isEnabled('auth.login_history') ? await lq.all() : [];
   res.render(v('activity'), { title: 'گزارش فعالیت', result, logins, actions: activity.ACTIONS });
 });
 router.post('/activity/clear', async (req, res) => {
@@ -297,7 +315,8 @@ router.post('/backup/restore', modules.requireEnabled('system.backup'), ...uploa
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/system/backup'); }
   if (!req.file) { req.flash('danger', 'فایلی انتخاب نشده است.'); return res.redirect('/system/backup'); }
   if (!/\.(json|gz|zip)$/i.test(req.file.originalname || '')) { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } req.flash('danger', 'فقط فایل‌های .json، .json.gz یا .zip (پشتیبان کامل) پذیرفته می‌شوند.'); return res.redirect('/system/backup'); }
-  const opts = { db: req.body.restore_db !== '0', files: req.body.restore_files !== '0' };
+  // بازیابی توسط مدیر مدرسه نمی‌تواند حساب سازنده، وضعیت ماژول‌ها یا تنظیمات فنی را تغییر دهد
+  const opts = { db: req.body.restore_db !== '0', files: req.body.restore_files !== '0', trusted: auth.isSuper(req), protectedSettings: protectedKeys() };
   try {
     const r = await backup.restoreFromFile(req.file.path, req.file.originalname, opts);
     if (opts.db) { await settings.load(); await modules.loadStates(); }

@@ -19,10 +19,10 @@ const isStaff = (req) => req.user.role === 'admin' || req.can('messages.broadcas
 /** گیرندگان مجاز برای کاربر جاری: [{group, users:[{id,name,role}]}] */
 async function recipientsFor(req) {
   const groups = [];
-  const admins = await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff']).where('status', 'active').where('id', '!=', req.user.id).orderBy('name').all();
+  const admins = await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff']).where('status', 'active').where('is_super', 0).where('id', '!=', req.user.id).orderBy('name').all();
   if (admins.length) groups.push({ group: 'مدیریت و کارکنان', users: admins });
   if (isStaff(req)) {
-    const teachers = await db.table('users').select('id', 'name', 'role').where({ role: 'teacher', status: 'active' }).orderBy('name').all();
+    const teachers = await db.table('users').select('id', 'name', 'role').where({ role: 'teacher', status: 'active', is_super: 0 }).orderBy('name').all();
     if (teachers.length) groups.push({ group: 'معلمان', users: teachers });
     const studs = await db.table('students as s').join('users as u', 'u.id', 's.user_id').leftJoin('classes as c', 'c.id', 's.class_id').select('u.id', 'u.name', 'u.role', 'c.title as class_title').where('s.status', 'active').orderBy('c.title').orderBy('u.name').all();
     if (studs.length) groups.push({ group: 'دانش‌آموزان', users: studs.map((s) => ({ id: s.id, name: s.name + (s.class_title ? ' — ' + s.class_title : ''), role: 'student' })) });
@@ -30,7 +30,7 @@ async function recipientsFor(req) {
     if (pars.length) groups.push({ group: 'اولیا', users: pars });
   } else if (req.user.role === 'teacher') {
     const t = await db.table('teachers').where('user_id', req.user.id).first();
-    const teachers = await db.table('users').select('id', 'name', 'role').where({ role: 'teacher', status: 'active' }).where('id', '!=', req.user.id).orderBy('name').all();
+    const teachers = await db.table('users').select('id', 'name', 'role').where({ role: 'teacher', status: 'active', is_super: 0 }).where('id', '!=', req.user.id).orderBy('name').all();
     if (teachers.length) groups.push({ group: 'همکاران', users: teachers });
     if (t) {
       const classIds = [...new Set((await db.table('class_subjects').where('teacher_id', t.id).pluck('class_id')).concat(await db.table('classes').where('teacher_id', t.id).pluck('id')))];
@@ -99,7 +99,7 @@ router.post('/compose', async (req, res) => {
       receivers = b.target === 'parents' ? pids : [...new Set(receivers.concat(pids))];
     }
   } else if (b.mode === 'role' && E('messages.broadcast') && isStaff(req)) {
-    receivers = await db.table('users').where({ role: b.role || 'teacher', status: 'active' }).where('id', '!=', req.user.id).pluck('id');
+    receivers = await db.table('users').where({ role: b.role || 'teacher', status: 'active', is_super: 0 }).where('id', '!=', req.user.id).pluck('id');
   } else {
     if (!b.receiver_id || !(await canSendTo(req, b.receiver_id))) { req.flash('danger', 'گیرندهٔ نامعتبر'); return res.redirect('/messages/compose'); }
     receivers = [Number(b.receiver_id)];

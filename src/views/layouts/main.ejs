@@ -19,7 +19,7 @@
 </head>
 <body<%= enabled('search.live') ? ' data-live-search' : '' %>>
 <% if (typeof impersonator !== 'undefined' && impersonator) { %>
-<div class="impersonate-bar">شما به‌عنوان «<%= currentUser.name %>» وارد شده‌اید (توسط <%= impersonator.name %>). <a href="#" data-post="/auth/impersonate/stop" class="text-dark text-decoration-underline">بازگشت به حساب خودم</a></div>
+<div class="impersonate-bar"><i class="bi bi-person-badge me-1"></i>شما به‌عنوان «<%= currentUser.name %>» (<%= utils.ROLES[currentUser.role] %>) وارد شده‌اید<% if (!impersonator.is_super) { %> (توسط <%= impersonator.name %>)<% } %>. <a href="#" data-post="/auth/impersonate/stop" class="text-dark text-decoration-underline"><%= impersonator.is_super ? 'بازگشت به کنسول سازنده' : 'بازگشت به حساب خودم' %></a></div>
 <% } %>
 <div class="app">
   <%- include('../partials/sidebar') %>
@@ -37,6 +37,7 @@
     </footer>
   </div>
 </div>
+<% if (currentUser && !isSuper && enabled('support') && enabled('support.widget')) { %><%- include('../partials/support-widget') %><% } %>
 <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/jalali.js?v=<%= appVersion %>"></script>
 <script src="/assets/js/app.js?v=<%= appVersion %>"></script>

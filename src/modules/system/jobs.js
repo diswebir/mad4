@@ -38,7 +38,9 @@ module.exports = [
       const title = (h.level === 'critical' ? 'فضای دیسک سرور تقریباً پر شده است' : 'هشدار: فضای دیسک سرور رو به اتمام است') + ' — ' + J.toJalali(J.todayISO());
       const db = require('../../core/db');
       const already = await db.table('notifications').where('title', title).first();
-      const sent = already ? 0 : await notify.pushRole('admin', { title, body: h.message + ' ' + summary, link: '/system/info', type: h.level === 'critical' ? 'danger' : 'warning' });
+      // مدیر مدرسه: لینک به پشتیبان‌ها (پاک‌سازی)؛ سازنده: جزئیات فنی در /system/info
+      const sent = already ? 0 : await notify.pushRole('admin', { title, body: h.message + ' ' + summary, link: '/system/backup', type: h.level === 'critical' ? 'danger' : 'warning' });
+      if (!already) await notify.pushSuper({ title, body: h.message + ' ' + summary, link: '/system/info', type: h.level === 'critical' ? 'danger' : 'warning' }, { email: false });
       return `${h.level === 'critical' ? 'بحرانی' : 'هشدار'} — ${summary}؛ ${already ? 'اعلان امروز قبلاً ارسال شده' : `اعلان برای ${Number(sent) || 0} مدیر`}`;
     }
   },

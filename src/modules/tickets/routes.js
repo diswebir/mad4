@@ -52,7 +52,7 @@ function baseQuery() {
     .select('t.*', 'u.name as creator_name', 'u.role as creator_role', 'u.avatar as creator_avatar', 'a.name as assignee_name', 'c.title as class_title', 's.first_name', 's.last_name', '(SELECT COUNT(*) FROM ticket_replies r WHERE r.ticket_id = t.id AND r.is_internal = 0) as replies_count');
 }
 async function assignees() {
-  const staff = await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff']).where('status', 'active').orderBy('name').all();
+  const staff = await db.table('users').select('id', 'name', 'role').whereIn('role', ['admin', 'staff']).where('status', 'active').where('is_super', 0).orderBy('name').all();
   const teachers = await db.table('users as u').join('teachers as t', 't.user_id', 'u.id').select('u.id', 'u.name', 'u.role').where('u.status', 'active').orderBy('u.name').all();
   return staff.concat(teachers);
 }

@@ -49,7 +49,7 @@ async function run(req, term, limit) {
     if (rows.length) groups.push({ title: 'اطلاعیه‌ها', icon: 'bi-megaphone', items: rows.map((a) => ({ title: a.title, sub: J.formatDate(a.created_at), href: '/announcements/' + a.id })) });
   }
   if (req.user.role === 'admin' && E('users')) {
-    const rows = await db.table('users').select('id', 'name', 'username', 'role').where((b) => b.search(t, ['name', 'username', 'email'])).limit(limit).all();
+    const rows = await db.table('users').select('id', 'name', 'username', 'role').where('is_super', 0).where((b) => b.search(t, ['name', 'username', 'email'])).limit(limit).all();
     if (rows.length) groups.push({ title: 'کاربران', icon: 'bi-people', items: rows.map((u) => ({ title: u.name, sub: `${u.username} · ${utils.ROLES[u.role] || u.role}`, href: '/users/' + u.id + '/edit' })) });
   }
   return groups;

@@ -7,7 +7,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
 <div class="row g-3">
   <div class="col-lg-3">
     <div class="card"><div class="list-group list-group-flush">
-      <% tabs.forEach(function (t) { %><a href="?tab=<%= t.key %>" class="list-group-item list-group-item-action <%= tab === t.key ? 'active' : '' %>"><i class="bi <%= t.icon %> me-2"></i><%= t.title %></a><% }); %>
+      <% var sepDone = false; tabs.forEach(function (t) { if (t.super && !sepDone) { sepDone = true; %><div class="list-group-item fs-7 text-secondary bg-light"><i class="bi bi-shield-lock me-1"></i>تنظیمات فنی (فقط سازنده)</div><% } %><a href="?tab=<%= t.key %>" class="list-group-item list-group-item-action <%= tab === t.key ? 'active' : '' %>"><i class="bi <%= t.icon %> me-2"></i><%= t.title %></a><% }); %>
     </div></div>
   </div>
   <div class="col-lg-9">
@@ -34,6 +34,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('late_threshold_minutes', 'آستانهٔ تأخیر (دقیقه)', { col: 4, ltr: true }) %><%- inp('attendance_alert_threshold', 'هشدار پس از چند غیبت در ماه', { col: 4, ltr: true }) %>
         <% if (enabled('attendance.edit_window')) { %><%- inp('attendance_edit_days', 'مهلت ویرایش حضور و غیاب توسط معلم (روز)', { col: 4, ltr: true, help: 'پس از این مدت فقط مدیر می‌تواند تغییر دهد' }) %><% } %>
         <%- sw('attendance_absent_notify', 'ارسال اعلان غیبت به دانش‌آموز/ولی') %>
+        <%- inp('sms_template_absent', 'قالب پیامک غیبت به ولی', { col: 12, type: 'textarea', help: 'متغیرها: {name} {date} {school} {class}' }) %>
         <%- sel('attendance_sms_mode', 'زمان ارسال پیامک غیبت به ولی', { scheduled: 'تجمیعی روزانه با زمان‌بند (پیش‌فرض ۰۹:۳۰)', immediate: 'بلافاصله پس از ثبت' }) %>
         <div class="col-12"><h6 class="text-brand mt-2">نمرات، گزارش تدریس و تکالیف</h6></div>
         <%- inp('grading_max_score', 'نمرهٔ کامل', { col: 4, ltr: true }) %><%- inp('grading_pass_score', 'نمرهٔ قبولی', { col: 4, ltr: true }) %>
@@ -109,7 +110,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
       <% } else if (tab === 'security') { %>
         <%- sw('login_captcha', 'سؤال امنیتی در صفحهٔ ورود') %>
         <%- inp('login_max_attempts', 'حداکثر تلاش ناموفق', { col: 4, ltr: true }) %><%- inp('login_lock_minutes', 'مدت قفل (دقیقه)', { col: 4, ltr: true }) %><%- inp('session_days', 'طول نشست «مرا به خاطر بسپار» (روز)', { col: 4, ltr: true }) %>
-        <%- inp('log_keep_days', 'نگه‌داری فایل‌های لاگ خطا (روز)', { col: 4, ltr: true, help: 'فایل‌های storage/logs قدیمی‌تر از این مدت در کار «پاک‌سازی» حذف می‌شوند' }) %>
+        <%- inp('upload_max_mb', 'سقف حجم پیوست‌های کاربران (مگابایت)', { col: 4, ltr: true, help: 'تکالیف، مدارک، تیکت‌ها، گواهی غیبت و پیش‌ثبت‌نام؛ ۰ = سقف پیش‌فرض هر فرم (۵ تا ۲۰ مگابایت)' }) %>
         <%- sw('password_reset_enabled', 'بازیابی رمز عبور توسط خود کاربر (کد یک‌بارمصرف پیامکی/ایمیلی)') %><%- inp('password_min_length', 'حداقل طول رمز عبور', { col: 4, ltr: true, help: 'بین ۴ تا ۳۲' }) %>
         <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>توکن CSRF، هدرهای امنیتی (helmet)، هش رمز عبور (bcrypt) و بازسازی نشست پس از ورود همیشه فعال هستند. بازیابی رمز نیازمند فعال بودن قابلیت «بازیابی رمز عبور» در ماژول احراز هویت و یک کانال ارسال (پیامک یا ایمیل) است؛ در حالت درگاه «لاگ»، کد در «لاگ پیامک» قابل مشاهده است تا مدیر آن را به کاربر اعلام کند.</div></div>
       <% } else if (tab === 'admissions') { %>
@@ -168,7 +169,6 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('sms_api_key', 'کلید API', { ltr: true }) %><%- inp('sms_sender', 'شمارهٔ فرستنده', { ltr: true }) %>
         <%- inp('sms_webhook_url', 'آدرس وب‌هوک (در صورت انتخاب وب‌هوک)', { col: 12, ltr: true }) %>
         <%- inp('site_url', 'نشانی عمومی سامانه (برای لینک داخل پیامک‌ها)', { col: 12, ltr: true, placeholder: 'https://school.example.com' }) %>
-        <%- inp('sms_template_absent', 'قالب پیامک غیبت', { col: 12, type: 'textarea', help: 'متغیرها: {name} {date} {school} {class}' }) %>
         <%- inp('sms_price', 'هزینهٔ هر بخش پیامک (ریال/تومان — برای برآورد هزینه در گزارش مصرف)', { col: 6, ltr: true, help: 'صفر = برآورد هزینه نمایش داده نمی‌شود' }) %>
         <% if (enabled('notifications.retry_queue')) { %><%- inp('notify_retry_max', 'سقف تلاش مجدد برای ارسال ناموفق', { type: 'number', col: 4, help: 'پیامک/ایمیل‌هایی که به خاطر خطای شبکه یا درگاه ارسال نشده‌اند، تا این تعداد بار با فاصلهٔ افزایشی دوباره ارسال می‌شوند (صف ارسال)' }) %><% } %>
       <% } else if (tab === 'email') { %>
@@ -207,7 +207,6 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('disk_alert_percent', 'حداکثر درصد استفاده', { col: 3, ltr: true, help: 'بین ۵۰ تا ۹۹' }) %>
         <% } %>
         <div class="col-12 mt-4"><h6 class="text-brand"><i class="bi bi-folder2-open me-1"></i>فایل‌ها و نگه‌داری داده‌های موقت</h6></div>
-        <%- inp('upload_max_mb', 'سقف حجم پیوست‌های کاربران (مگابایت)', { col: 4, ltr: true, help: 'تکالیف، مدارک، تیکت‌ها، گواهی غیبت و پیش‌ثبت‌نام؛ ۰ = سقف پیش‌فرض هر فرم (۵ تا ۲۰ مگابایت)' }) %>
         <%- inp('log_keep_days', 'نگه‌داری فایل‌های لاگ خطا (روز)', { col: 4, ltr: true }) %><%- inp('cleanup_notifications_days', 'حذف اعلان‌های خوانده‌شده پس از (روز)', { col: 4, ltr: true }) %>
         <%- inp('cleanup_login_logs_days', 'حذف لاگ ورود کاربران پس از (روز)', { col: 4, ltr: true }) %><%- inp('cleanup_job_runs_days', 'حذف سابقهٔ اجرای کارها پس از (روز)', { col: 4, ltr: true }) %>
         <div class="col-12"><div class="form-text">این مقادیر در کار زمان‌بندی‌شدهٔ «پاک‌سازی داده‌های موقت» اعمال می‌شوند.</div></div>

@@ -47,6 +47,8 @@ router.post('/login', auth.requireGuest, async (req, res) => {
     if (ans !== req.session.captcha) { req.session.captcha = null; return fail('پاسخ سؤال امنیتی نادرست است.'); }
   }
   const result = await auth.authenticate(username, password);
+  // حساب سازنده از فرم عمومی وارد نمی‌شود (فقط /console) — پاسخ مانند رمز نادرست است تا وجود حساب فاش نشود
+  if (result.ok && Number(result.user.is_super)) { result.ok = false; result.reason = 'password'; }
   if (!result.ok) {
     await auth.logLogin(req, result.user, username, false);
     if (result.reason === 'inactive') return fail('حساب کاربری شما غیرفعال است. با مدیر تماس بگیرید.');
@@ -121,7 +123,7 @@ router.post('/forgot', auth.requireGuest, guardReset, async (req, res) => {
   const emailOn = modules.isEnabled('notifications.email') && settings.getBool('email_enabled');
   const user = await db.table('users').where('username', username).first();
   let channel = null, target = null;
-  if (user && user.status === 'active') {
+  if (user && user.status === 'active' && !Number(user.is_super)) {
     const t = await resetTargets(user);
     const asPhone = utils.normalizePhone(contact), asEmail = contact.toLowerCase();
     if (smsOn && t.phones.includes(asPhone)) { channel = 'sms'; target = asPhone; }
@@ -197,12 +199,14 @@ router.post('/password', auth.requireAuth, async (req, res) => {
     if (!(await auth.verifyPassword(req.body.current, user.password))) { req.flash('danger', 'رمز عبور فعلی نادرست است.'); return res.redirect('/auth/password'); }
   }
   const pw = String(req.body.password || '');
-  if (pw.length < minPwLen()) { req.flash('danger', `رمز عبور باید حداقل ${J.toPersianDigits(minPwLen())} کاراکتر باشد.`); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
+  const isSuperUser = Number(user.is_super) === 1;
+  const minLen = isSuperUser ? Math.max(10, minPwLen()) : minPwLen(); // حساب سازنده: حداقل ۱۰ کاراکتر
+  if (pw.length < minLen) { req.flash('danger', `رمز عبور باید حداقل ${J.toPersianDigits(minLen)} کاراکتر باشد.`); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
   if (pw !== req.body.password2) { req.flash('danger', 'تکرار رمز عبور مطابقت ندارد.'); return res.redirect('/auth/password' + (force ? '?force=1' : '')); }
-  await db.update('users', { password: await auth.hashPassword(pw), must_change_password: 0, updated_at: db.now() }, { id: user.id });
+  await db.update('users', { password: await auth.hashPassword(pw, isSuperUser ? 12 : 10), must_change_password: 0, updated_at: db.now() }, { id: user.id });
   await activity.log(req, 'password', 'user', user.id, 'تغییر رمز عبور');
   req.flash('success', 'رمز عبور با موفقیت تغییر کرد.');
-  res.redirect('/dashboard');
+  res.redirect(isSuperUser ? '/console' : '/dashboard');
 });
 
 router.get('/profile', auth.requireAuth, async (req, res) => {
@@ -232,16 +236,23 @@ router.post('/profile', auth.requireAuth, ...upload.form('avatars', 'single', 'a
 router.post('/impersonate/stop', async (req, res) => {
   if (!req.session.impersonatorId) return res.redirect('/dashboard');
   const admin = await db.findById('users', req.session.impersonatorId);
-  if (!admin) return res.redirect('/auth/login');
+  if (!admin || admin.status !== 'active') { await auth.logout(req); return res.redirect('/auth/login'); }
+  if (req.user) await activity.log(req, 'impersonate', 'user', req.user.id, `پایان ورود به جای ${req.user.name}`);
+  const isSuper = Number(admin.is_super) && req.session.superAuth;
   await auth.login(req, admin, false);
   delete req.session.impersonatorId;
-  req.session.save(() => res.redirect('/dashboard'));
+  req.session.save(() => res.redirect(isSuper ? '/console' : '/dashboard'));
 });
-router.post('/impersonate/:id', auth.requireAdmin, modules.requireEnabled('auth.impersonate'), async (req, res) => {
+// مدیر: فقط به جای غیرمدیران و با قابلیت auth.impersonate؛ سازنده (نشست کنسول): به جای هر کاربری جز حساب‌های سازنده، مستقل از قابلیت
+const impersonateGate = (req, res, next) => (auth.isSuper(req) ? next() : modules.requireEnabled('auth.impersonate')(req, res, next));
+router.post('/impersonate/:id', auth.requireAdmin, impersonateGate, async (req, res) => {
+  if (req.session.impersonatorId) { req.flash('danger', 'ابتدا به حساب خودتان بازگردید.'); return res.redirect(req.get('referer') || '/'); }
   const target = await db.findById('users', req.params.id);
-  if (!target || target.role === 'admin') { req.flash('danger', 'امکان ورود به جای این کاربر وجود ندارد.'); return res.redirect(req.get('referer') || '/'); }
+  const superViewer = auth.isSuper(req);
+  const blocked = !target || target.id === req.user.id || Number(target.is_super) || (!superViewer && target.role === 'admin') || target.status !== 'active';
+  if (blocked) { req.flash('danger', 'امکان ورود به جای این کاربر وجود ندارد.'); return res.redirect(req.get('referer') || '/'); }
   const adminId = req.user.id;
-  await activity.log(req, 'impersonate', 'user', target.id, `ورود به جای ${target.name}`);
+  await activity.log(req, 'impersonate', 'user', target.id, `ورود به جای ${target.name}${superViewer ? ' (کنسول سازنده)' : ''}`);
   await auth.login(req, target, false);
   req.session.impersonatorId = adminId;
   req.session.save(() => res.redirect('/dashboard'));

@@ -96,14 +96,31 @@ function requireEnabled(key) {
 }
 
 /** ساخت منوی کناری برای کاربر جاری */
-function menuFor(user) {
+/** منوی کنسول سازنده (فقط برای حساب super با نشست کنسول؛ خارج از نظام ماژول‌ها تا قابل خاموش‌کردن نباشد) */
+const CONSOLE_MENU = [
+  { title: 'داشبورد کنسول', href: '/console', icon: 'bi-speedometer' },
+  { title: 'گزارش‌های خطا', href: '/console/reports', icon: 'bi-bug', badge: 'reports' },
+  { title: 'درخواست‌های ماژول', href: '/console/requests', icon: 'bi-bag-plus', badge: 'requests' },
+  { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2' },
+  { title: 'تنظیمات فنی', href: '/system/settings?tab=sms', icon: 'bi-sliders' },
+  { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-cloud-arrow-down' },
+  { title: 'خطاهای سرور', href: '/system/logs', icon: 'bi-journal-x' },
+  { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-cpu' },
+  { title: 'امنیت کنسول', href: '/console/security', icon: 'bi-shield-lock' }
+];
+function menuFor(user, opts) {
+  opts = opts || {};
   const groups = [];
+  const superUser = !!(user && user.is_super && opts.superSession);
+  if (superUser) groups.push({ key: 'console', title: 'کنسول سازنده', icon: 'bi-shield-lock', items: CONSOLE_MENU.map((i) => Object.assign({ module: 'console' }, i)) });
   for (const cat of CATEGORIES) {
     const items = [];
     for (const mod of registry.modules) {
       if ((mod.category || 'main') !== cat.key) continue;
       if (!isEnabled(mod.key)) continue;
       for (const item of mod.menu) {
+        if (item.super && !superUser) continue; // آیتم‌های مخصوص سازنده برای بقیه وجود ندارند
+        if (item.super) continue; // در گروه «کنسول سازنده» فهرست شده‌اند
         if (item.roles && user && !item.roles.includes(user.role) && !(item.permission && permissions.can(user, item.permission))) continue;
         if (!item.roles && item.permission && !permissions.can(user, item.permission)) continue;
         if (item.feature && !isEnabled(mod.key + '.' + item.feature)) continue;
@@ -128,7 +145,7 @@ function stats() {
 }
 
 module.exports = {
-  CATEGORIES, loadManifests, loadStates, isEnabled, setState, requireEnabled, menuFor, allFeatures, stats,
+  CATEGORIES, CONSOLE_MENU, loadManifests, loadStates, isEnabled, setState, requireEnabled, menuFor, allFeatures, stats,
   get modules() { return registry.modules; },
   getModule(key) { return registry.byKey.get(key); }
 };

@@ -32,7 +32,7 @@ async function computeFresh() {
   add({ key: 'logo', title: 'لوگوی مدرسه بارگذاری شود', desc: 'در منو، صفحهٔ ورود، کارت‌ها و اسناد رسمی نمایش داده می‌شود', href: '/system/settings?tab=school', icon: 'bi-image', done: !!settings.get('school_logo'), required: false });
 
   // ۲) امنیت
-  const admin = await db.table('users').where('role', 'admin').orderBy('id').first();
+  const admin = await db.table('users').where('role', 'admin').where('is_super', 0).orderBy('id').first();
   let weak = false;
   if (admin) weak = await auth.verifyPassword('admin123', admin.password) || await auth.verifyPassword('123456', admin.password) || await auth.verifyPassword(admin.username, admin.password);
   add({ key: 'password', title: 'رمز عبور پیش‌فرض مدیر تغییر کند', desc: 'رمز فعلی مدیر، یکی از رمزهای پیش‌فرض/ساده است', href: '/auth/password', icon: 'bi-shield-lock', done: !!admin && !weak });

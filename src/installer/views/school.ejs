@@ -24,6 +24,13 @@
       <div class="col-md-6"><label class="form-label" for="f_admin_email">ایمیل</label><input class="form-control ltr" type="email" name="admin_email" value="<%= form.admin_email || '' %>" id="f_admin_email"></div>
       <div class="col-md-6"><label class="form-label" for="f_admin_phone">موبایل</label><input class="form-control ltr" name="admin_phone" value="<%= form.admin_phone || '' %>" id="f_admin_phone"></div>
     </div>
+    <h6 class="text-brand border-bottom pb-2 d-flex justify-content-between align-items-center">حساب سازنده / پشتیبانی فنی <span class="fs-7 fw-normal text-secondary">اختیاری</span></h6>
+    <div class="row g-3 mb-4">
+      <div class="col-12 fs-7 text-secondary">یک حساب فنی جداگانه که برای کاربران مدرسه نامرئی است و فقط از نشانی <code>/console</code> وارد می‌شود؛ مدیریت ماژول‌ها، تنظیمات فنی و گزارش‌های خطا با آن انجام می‌شود. اگر مدرسه را خودتان پشتیبانی می‌کنید، اینجا بسازید (بعداً هم با <code class="ltr">scripts/superadmin.js</code> ممکن است).</div>
+      <div class="col-md-4"><label class="form-label" for="f_super_username">نام کاربری سازنده</label><input class="form-control ltr" name="super_username" value="<%= form.super_username || '' %>" pattern="[a-zA-Z0-9_.]{3,40}" id="f_super_username" autocomplete="off"></div>
+      <div class="col-md-4"><label class="form-label" for="f_super_password">رمز عبور (حداقل ۱۰ کاراکتر)</label><input class="form-control ltr" type="password" name="super_password" minlength="10" id="f_super_password" autocomplete="new-password"></div>
+      <div class="col-md-4"><label class="form-label" for="f_super_name">نام نمایشی</label><input class="form-control" name="super_name" value="<%= form.super_name || '' %>" placeholder="پشتیبانی سامانه" id="f_super_name"></div>
+    </div>
     <h6 class="text-brand border-bottom pb-2">دادهٔ نمونه</h6>
     <div class="form-check form-switch">
       <input type="hidden" name="demo" value="0">

@@ -50,7 +50,7 @@
     enabled('calendar') && { href: '/calendar', icon: 'bi-calendar3', t: 'تقویم' },
     enabled('academic.schedule') && { href: '/academic/schedule', icon: 'bi-table', t: 'برنامه هفتگی' },
     enabled('messages') && { href: '/messages/compose', icon: 'bi-send', t: 'ارسال پیام' },
-    { href: '/system/modules', icon: 'bi-grid-1x2', t: 'ماژول‌ها' }
+    isSuper ? { href: '/system/modules', icon: 'bi-grid-1x2', t: 'ماژول‌ها' } : (enabled('support') && enabled('support.module_requests') ? { href: '/support/modules', icon: 'bi-grid-1x2', t: 'ماژول‌ها' } : null)
   ].filter(Boolean); qa.forEach(function (a) { %>
   <div class="col-4 col-md-3 col-xl-1"><a href="<%= a.href %>"><i class="bi <%= a.icon %>"></i><span><%= a.t %></span></a></div>
   <% }); %>

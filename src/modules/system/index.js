@@ -30,14 +30,15 @@ module.exports = {
   ],
   menu: [
     { title: 'تنظیمات مدرسه', href: '/system/settings', icon: 'bi-sliders', roles: ['admin'], permission: 'system.settings' },
-    { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2', roles: ['admin'], permission: 'system.modules' },
+    // بخش‌های فنی (super: true) فقط در گروه «کنسول سازنده» برای حساب سازنده نمایش داده می‌شوند
+    { title: 'ماژول‌ها و قابلیت‌ها', href: '/system/modules', icon: 'bi-grid-1x2', roles: ['admin'], super: true },
     { title: 'گزارش فعالیت', href: '/system/activity', icon: 'bi-clock-history', roles: ['admin'], permission: 'system.logs', feature: 'activity_log' },
     { title: 'پشتیبان‌گیری', href: '/system/backup', icon: 'bi-cloud-arrow-down', roles: ['admin'], permission: 'system.backup', feature: 'backup' },
     { title: 'کارهای زمان‌بندی‌شده', href: '/system/jobs', icon: 'bi-alarm', roles: ['admin'], permission: 'system.jobs', feature: 'scheduler' },
     { title: 'لاگ پیامک', href: '/system/sms-log', icon: 'bi-chat-left-dots', roles: ['admin'], permission: 'system.logs', feature: 'sms_log' },
-    { title: 'گزارش خطاها', href: '/system/logs', icon: 'bi-bug', roles: ['admin'], permission: 'system.logs', feature: 'error_log' },
-    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], permission: ['system.settings', 'system.logs'], feature: 'system_info' },
-    { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-arrow-repeat', roles: ['admin'], permission: 'system.settings', feature: 'updates' }
+    { title: 'گزارش خطاها', href: '/system/logs', icon: 'bi-bug', roles: ['admin'], feature: 'error_log', super: true },
+    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], feature: 'system_info', super: true },
+    { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-arrow-repeat', roles: ['admin'], feature: 'updates', super: true }
   ],
   jobs: require('./jobs'),
   routes: require('./routes')

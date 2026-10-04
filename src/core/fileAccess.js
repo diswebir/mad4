@@ -128,8 +128,13 @@ function isPublic(rel) { return !!rel && rel === settings.get('school_logo'); }
 /** تصمیم نهایی برای کاربر واردشده */
 async function canAccess(req, rel) {
   if (!req.user) return isPublic(rel);
-  if (req.user.role === 'admin') return true;
   const parts = String(rel).split('/');
+  // تصاویر گزارش خطا (ماژول support): فقط سازنده و خودِ گزارش‌دهنده — حتی مدیر مدرسه هم نه
+  if (parts[0] === 'support') {
+    if (req.user.is_super) return true;
+    try { return !!(await db.table('support_reports').where('image', rel).where('user_id', req.user.id).first()); } catch (e) { return false; }
+  }
+  if (req.user.role === 'admin') return true;
   const rule = RULES[parts[0]];
   if (!rule) return false;
   try { return !!(await rule(req, rel, parts)); } catch (e) { return false; }

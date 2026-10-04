@@ -282,6 +282,16 @@ a { text-decoration: none; }
 .quick-actions a:hover { border-color: var(--brand); box-shadow: var(--shadow); transform: translateY(-2px); }
 .kbd { font-size: .72rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
 .impersonate-bar { background: #f59e0b; color: #111; text-align: center; padding: .4rem; font-size: .85rem; font-weight: 600; }
+/* دکمهٔ شناور گزارش خطا (پایین-چپ همهٔ صفحات) */
+.support-fab { position: fixed; left: 1rem; bottom: 1rem; z-index: 1035; width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 0; background: #f59e0b; color: #1f2937; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.22); opacity: .85; transition: opacity .15s, transform .15s; }
+.support-fab:hover, .support-fab:focus-visible { opacity: 1; transform: translateY(-2px); color: #111; }
+[data-bs-theme="dark"] .support-fab { background: #d97706; color: #fff; }
+@media (max-width: 575.98px) { .support-fab { width: 2.25rem; height: 2.25rem; font-size: 1rem; left: .75rem; bottom: .75rem; } }
+/* کنسول سازنده */
+.console-badge { background: linear-gradient(135deg, #7c3aed, #2563eb); color: #fff; }
+.console-login { max-width: 420px; margin: 6vh auto; }
+.totp-code { font-family: ui-monospace, Consolas, monospace; letter-spacing: .25rem; font-size: 1.4rem; text-align: center; direction: ltr; }
+.backup-codes { font-family: ui-monospace, Consolas, monospace; direction: ltr; columns: 2; font-size: 1rem; }
 
 @media (max-width: 991.98px) {
   .sidebar { transform: translateX(100%); }
@@ -295,7 +305,7 @@ a { text-decoration: none; }
 }
 
 @media print {
-  .sidebar, .topbar, .footer-app, .no-print, .btn, .page-actions, .sidebar-backdrop, .impersonate-bar { display: none !important; }
+  .sidebar, .topbar, .footer-app, .no-print, .btn, .page-actions, .sidebar-backdrop, .impersonate-bar, .support-fab { display: none !important; }
   .main { margin: 0 !important; }
   .content { padding: 0 !important; }
   .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }

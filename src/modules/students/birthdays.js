@@ -153,7 +153,7 @@ async function runDaily(todayIso) {
   const soon = daysBefore > 0 ? all.filter((s) => s.bday.days === daysBefore) : [];
   const stats = { today: todays.length, soon: soon.length, admin: 0, teacher: 0, student: 0, parent: 0, sms: 0 };
   const parentsSvc = modules.isEnabled('parents') ? require('../parents/service') : null;
-  const adminIds = settings.getBool('birthday_notify_admin', true) ? await db.table('users').where({ role: 'admin', status: 'active' }).pluck('id') : [];
+  const adminIds = settings.getBool('birthday_notify_admin', true) ? await db.table('users').where({ role: 'admin', status: 'active', is_super: 0 }).pluck('id') : [];
   const smsOn = modules.isEnabled('notifications.sms') && settings.getBool('sms_enabled');
 
   // ۱) یادآوری چند روز قبل برای مدیر (یک اعلان تجمیعی)

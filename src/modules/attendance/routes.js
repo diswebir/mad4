@@ -260,7 +260,7 @@ router.post('/excuses', auth.requireRole('student', 'parent'), modules.requireEn
   await db.insert('absence_excuses', { student_id: me.id, date: att.date, attendance_id: att.id, reason, file_path: req.file ? upload.relPath(req.file) : null, status: 'pending', created_at: db.now() });
   // اعلان به مدیر و معلم راهنما
   const cls = me.class_id ? await db.table('classes as c').leftJoin('teachers as t', 't.id', 'c.teacher_id').select('t.user_id').where('c.id', me.class_id).first() : null;
-  const admins = await db.table('users').where({ role: 'admin', status: 'active' }).pluck('id');
+  const admins = await db.table('users').where({ role: 'admin', status: 'active', is_super: 0 }).pluck('id');
   await notify.push([...admins, cls && cls.user_id], { title: 'درخواست موجه‌شدن غیبت', body: `${me.first_name} ${me.last_name} برای غیبت ${J.formatDate(att.date)} درخواست ثبت کرد.`, link: '/attendance/excuses', type: 'info' });
   req.flash('success', 'درخواست شما ثبت شد و پس از بررسی نتیجه اعلام می‌شود.');
   res.redirect('/attendance/excuses');
@@ -281,7 +281,7 @@ router.post('/excuses/:id/review', auth.requireRoleOrPermission(['admin', 'teach
 // ---------- حضور کارکنان ----------
 router.get('/staff', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('attendance.staff'), async (req, res) => {
   const date = parseDate(req.query.date);
-  const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').orderBy('role').orderBy('name').all();
+  const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').where('is_super', 0).orderBy('role').orderBy('name').all();
   const rows = Object.fromEntries((await db.table('staff_attendance').where('date', date).all()).map((r) => [r.user_id, r]));
   const month = J.currentJalali(); const range = J.jalaliMonthRange(month.jy, month.jm);
   const monthStats = {}; (await db.table('staff_attendance').select('user_id', 'status', 'COUNT(*) as c').whereBetween('date', range.start, range.end).groupBy('user_id', 'status').all()).forEach((r) => { monthStats[r.user_id] = monthStats[r.user_id] || {}; monthStats[r.user_id][r.status] = Number(r.c); });
@@ -289,7 +289,7 @@ router.get('/staff', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modul
 });
 router.post('/staff', auth.requireRoleOrPermission(['admin'], 'hr.manage'), modules.requireEnabled('attendance.staff'), async (req, res) => {
   const date = parseDate(req.body.date);
-  const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').all();
+  const staff = await db.table('users').whereIn('role', ['teacher', 'staff']).where('status', 'active').where('is_super', 0).all();
   const now = db.now();
   for (const u of staff) {
     const status = ['present', 'absent', 'late', 'leave', 'mission'].includes(req.body['status_' + u.id]) ? req.body['status_' + u.id] : 'present';

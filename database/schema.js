@@ -13,10 +13,18 @@ module.exports = {
     id: 'increments', username: 'string:60 unique notnull', password: 'string:255 notnull', role: 'string:20 index notnull default:student',
     name: 'string:120', email: 'string:150', phone: 'string:20', avatar: 'string:255', status: 'string:20 default:active index',
     must_change_password: 'boolean default:0', last_login_at: 'datetime', login_count: 'integer default:0', theme: 'string:10', position_id: 'integer', permissions: 'text',
+    // حساب سازنده (super admin): نامرئی برای سایر کاربران؛ ورود فقط از /console با رمز یکبارمصرف اختیاری
+    is_super: 'boolean default:0 index', totp_secret: 'string:255', totp_enabled: 'boolean default:0', backup_codes: 'text',
     created_at: 'datetime', updated_at: 'datetime'
   },
-  login_logs: { id: 'increments', user_id: 'integer index', username: 'string:60', ip: 'string:45', user_agent: 'string:255', success: 'boolean default:1', created_at: 'datetime index' },
-  activity_logs: { id: 'increments', user_id: 'integer index', action: 'string:40', entity: 'string:40', entity_id: 'integer', description: 'string:255', ip: 'string:45', created_at: 'datetime index' },
+  login_logs: { id: 'increments', user_id: 'integer index', username: 'string:60', ip: 'string:45', user_agent: 'string:255', success: 'boolean default:1', kind: 'string:20 default:web', created_at: 'datetime index' },
+  activity_logs: { id: 'increments', user_id: 'integer index', action: 'string:40', entity: 'string:40', entity_id: 'integer', description: 'string:255', ip: 'string:45', impersonator_id: 'integer', created_at: 'datetime index' },
+  // گزارش خطا / پیشنهاد / درخواست ماژول کاربران برای کنسول سازنده (ماژول support)
+  support_reports: {
+    id: 'increments', user_id: 'integer index', role: 'string:20', kind: 'string:20 index default:bug', subject: 'string:200', message: 'text',
+    page_url: 'string:255', user_agent: 'string:255', screen: 'string:40', app_version: 'string:20', image: 'string:255', module_key: 'string:80',
+    status: 'string:20 index default:new', reply: 'text', replied_at: 'datetime', note: 'text', handled_by: 'integer', created_at: 'datetime index', updated_at: 'datetime'
+  },
 
   academic_years: { id: 'increments', title: 'string:50 notnull', start_date: 'date', end_date: 'date', is_current: 'boolean default:0', created_at: 'datetime', updated_at: 'datetime' },
   terms: { id: 'increments', academic_year_id: 'integer index', title: 'string:50', number: 'integer default:1', start_date: 'date', end_date: 'date', is_current: 'boolean default:0', is_locked: 'boolean default:0', locked_at: 'datetime', locked_by: 'integer', created_at: 'datetime', updated_at: 'datetime' },

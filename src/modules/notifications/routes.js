@@ -48,7 +48,7 @@ router.post('/:id/delete', async (req, res) => { await db.table('notifications')
 const sendGuards = [auth.requireRoleOrPermission(['admin'], 'notifications.send'), modules.requireEnabled('notifications.broadcast')];
 async function sendForm(req, res, extra) {
   const classes = await db.table('classes').where('is_active', 1).orderBy('title').all();
-  const users = await db.table('users').select('id', 'name', 'role', 'username').where('status', 'active').orderBy('role').orderBy('name').all();
+  const users = await db.table('users').select('id', 'name', 'role', 'username').where('status', 'active').where('is_super', 0).orderBy('role').orderBy('name').all();
   res.render(v('send'), Object.assign({ title: 'ارسال اعلان', classes, users, ROLES: utils.ROLES, smsOn: modules.isEnabled('notifications.sms') && settings.getBool('sms_enabled'), emailOn: modules.isEnabled('notifications.email') && settings.getBool('email_enabled'), form: {} }, extra || {}));
 }
 router.get('/send', ...sendGuards, (req, res) => sendForm(req, res));
@@ -57,10 +57,10 @@ router.post('/send', ...sendGuards, async (req, res) => {
   if (!b.title) { req.flash('danger', 'عنوان الزامی است'); return res.redirect('/notifications/send'); }
   let uids = [];
   let phones = []; let emails = [];
-  if (b.audience === 'role') uids = await db.table('users').where({ role: b.role || 'student', status: 'active' }).pluck('id');
+  if (b.audience === 'role') uids = await db.table('users').where({ role: b.role || 'student', status: 'active', is_super: 0 }).pluck('id');
   else if (b.audience === 'class') { const studs = await db.table('students').where('class_id', Number(b.class_id) || 0).where('status', 'active').all(); uids = studs.map((s) => s.user_id).filter(Boolean); phones = studs.map((s) => s.father_phone || s.mobile || s.guardian_phone).filter(Boolean); }
   else if (b.audience === 'user') uids = [Number(b.user_id) || 0];
-  else uids = await db.table('users').where('status', 'active').pluck('id');
+  else uids = await db.table('users').where('status', 'active').where('is_super', 0).pluck('id');
   if (b.audience !== 'class') { const us = await db.table('users').whereIn('id', uids).all(); phones = us.map((u) => u.phone).filter(Boolean); emails = us.map((u) => u.email).filter(Boolean); }
   const n = await notify.push(uids, { title: b.title, body: b.body, link: b.link && b.link.startsWith('/') ? b.link : null, type: ['info', 'success', 'warning', 'danger'].includes(b.type) ? b.type : 'info' });
   let extra = '';

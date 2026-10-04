@@ -22,6 +22,12 @@ function validateForm(form) {
   if (!form.admin_username || !/^[a-zA-Z0-9_.]{3,30}$/.test(form.admin_username)) errors.push('نام کاربری باید ۳ تا ۳۰ کاراکتر لاتین باشد');
   if (!form.admin_password || String(form.admin_password).length < 6) errors.push('رمز عبور باید حداقل ۶ کاراکتر باشد');
   if (form.admin_password2 !== undefined && form.admin_password !== form.admin_password2) errors.push('تکرار رمز عبور مطابقت ندارد');
+  // حساب سازنده (اختیاری)
+  if (form.super_username || form.super_password) {
+    if (!form.super_username || !/^[a-zA-Z0-9_.]{3,40}$/.test(form.super_username)) errors.push('نام کاربری حساب سازنده باید ۳ تا ۴۰ کاراکتر لاتین باشد');
+    if (String(form.super_username || '').toLowerCase() === String(form.admin_username || '').toLowerCase()) errors.push('نام کاربری حساب سازنده نباید با مدیر یکی باشد');
+    if (!form.super_password || String(form.super_password).length < 10) errors.push('رمز حساب سازنده باید حداقل ۱۰ کاراکتر باشد');
+  }
   return errors;
 }
 
@@ -63,6 +69,14 @@ async function performInstall({ dbCfg, form, log }) {
     if (existing) { await db.update('users', adminData, { id: existing.id }); adminId = existing.id; }
     else adminId = await db.insert('users', Object.assign({ username: form.admin_username, created_at: db.now() }, adminData));
     log('حساب مدیر ایجاد شد');
+    // ۵-ب) حساب سازنده (super admin) — اختیاری؛ نامرئی برای کاربران مدرسه، ورود فقط از /console
+    if (form.super_username && form.super_password) {
+      const su = String(form.super_username).toLowerCase();
+      const superData = { password: await auth.hashPassword(form.super_password, 12), role: 'admin', is_super: 1, name: form.super_name || 'پشتیبانی سامانه', status: 'active', updated_at: db.now() };
+      const ex = await db.findOne('users', { username: su });
+      if (ex) await db.update('users', superData, { id: ex.id }); else await db.insert('users', Object.assign({ username: su, created_at: db.now() }, superData));
+      log('حساب سازنده (کنسول /console) ایجاد شد');
+    }
     // ۶) دادهٔ نمونه
     await modules.loadStates();
     if (form.demo === '1' || form.demo === true) {

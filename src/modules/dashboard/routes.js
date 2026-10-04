@@ -48,7 +48,7 @@ async function adminDashboard(req, res, { today, year }) {
   d.students = await db.count('students', { status: 'active' });
   d.teachers = await db.count('teachers', { status: 'active' });
   d.classes = year ? await db.table('classes').where({ academic_year_id: year.id, is_active: 1 }).count() : await db.count('classes', { is_active: 1 });
-  d.users = await db.count('users', { status: 'active' });
+  d.users = await db.count('users', { status: 'active', is_super: 0 });
   d.boys = await db.count('students', { status: 'active', gender: 'male' });
   d.girls = await db.count('students', { status: 'active', gender: 'female' });
   if (on('attendance')) {
@@ -81,7 +81,7 @@ async function adminDashboard(req, res, { today, year }) {
   d.events = await upcomingEvents();
   if (on('exams.schedule')) d.exams = await db.table('exams as e').select('e.*', 'c.title as class_title', 's.title as subject_title').leftJoin('classes as c', 'e.class_id', 'c.id').leftJoin('subjects as s', 'e.subject_id', 's.id').where('e.date', '>=', today).orderBy('e.date').limit(6).all();
   if (on('dashboard.birthdays') && on('students.birthdays')) d.birthdays = await require('../students/birthdays').upcoming({ today, days: 7, limit: 8 });
-  if (on('system.activity_log')) d.activity = await db.table('activity_logs as a').select('a.*', 'u.name as user_name').leftJoin('users as u', 'a.user_id', 'u.id').orderBy('a.id', 'desc').limit(8).all();
+  if (on('system.activity_log')) d.activity = await db.table('activity_logs as a').select('a.*', 'u.name as user_name').leftJoin('users as u', 'a.user_id', 'u.id').where((b) => b.whereNull('u.id').orWhere('u.is_super', 0)).orderBy('a.id', 'desc').limit(8).all();
   if (on('discipline')) d.discipline = await db.table('discipline_records').where('date', '>=', J.addDays(today, -7)).count();
   if (on('finance')) d.finance = { collected: await db.table('payments').where('paid_at', '>=', today.slice(0, 7) + '-01').sum('amount'), due: (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('amount')) - (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('paid_amount')) };
   if (on('help.checklist') && !settings.getBool('setup_checklist_dismissed')) { try { const c = await require('../help/checklist').compute(); if (c.percent < 100) d.setup = c; } catch (e) { /* ignore */ } }

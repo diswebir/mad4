@@ -15,9 +15,25 @@ async function push(userIds, { title, body, link, type }) {
   await db.insert('notifications', ids.map((user_id) => ({ user_id, title: String(title).slice(0, 200), body: body || null, link: link || null, type: type || 'info', is_read: 0, created_at: now })));
   return ids.length;
 }
+/** اعلان به همهٔ کاربران فعال یک نقش (حساب سازنده مستثناست — نامرئی برای سامانهٔ مدرسه) */
 async function pushRole(role, payload) {
-  const ids = await db.table('users').where({ role, status: 'active' }).pluck('id');
+  const ids = await db.table('users').where({ role, status: 'active' }).where('is_super', 0).pluck('id');
   return push(ids, payload);
+}
+/** شناسهٔ حساب‌های سازنده (super admin) */
+async function superIds() { try { return await db.table('users').where({ is_super: 1, status: 'active' }).pluck('id'); } catch (e) { return []; } }
+/** اعلان درون‌برنامه‌ای به سازنده + ایمیل هشدار (در صورت تنظیم superadmin_alert_email و SMTP) */
+async function pushSuper(payload, opts) {
+  const ids = await superIds();
+  let n = 0;
+  if (ids.length && (!opts || opts.inapp !== false)) n = await push(ids, payload);
+  const to = settings.get('superadmin_alert_email');
+  if (to && (!opts || opts.email !== false)) {
+    const subject = `[${settings.get('school_name')}] ${payload.title}`;
+    const html = `<p>${payload.title}</p><p>${payload.body || ''}</p>` + (payload.link ? `<p><a href="${(settings.get('site_url') || '').replace(/\/$/, '')}${payload.link}">${payload.link}</a></p>` : '');
+    try { await email(to, subject, html, { context: 'console' }); } catch (e) { /* ignore */ }
+  }
+  return n;
 }
 async function unreadCount(userId) { return db.count('notifications', { user_id: userId, is_read: 0 }); }
 
@@ -126,4 +142,4 @@ function httpPostJson(url, payload) {
   });
 }
 
-module.exports = { push, pushRole, unreadCount, sms, email, template, deliverSms, deliverEmail, isTransient, httpGet, httpPostJson };
+module.exports = { push, pushRole, pushSuper, superIds, unreadCount, sms, email, template, deliverSms, deliverEmail, isTransient, httpGet, httpPostJson };

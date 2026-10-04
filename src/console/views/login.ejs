@@ -1,0 +1,16 @@
+<div class="card border-0 shadow-sm" style="border-top:4px solid #7c3aed !important">
+  <form method="post" action="/console/login" class="card-body" data-no-lock autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="d-flex align-items-center gap-2 mb-3"><span class="badge console-badge rounded-pill px-3 py-2"><i class="bi bi-shield-lock me-1"></i>کنسول سازنده</span><span class="text-secondary fs-7">ورود اختصاصی تیم فنی</span></div>
+    <div class="mb-3">
+      <label class="form-label" for="c_username">نام کاربری</label>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-person-gear"></i></span><input class="form-control ltr" name="username" required autofocus autocomplete="off" id="c_username"></div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="c_password">رمز عبور</label>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-key"></i></span><input class="form-control ltr" type="password" name="password" required autocomplete="current-password" id="c_password"></div>
+    </div>
+    <button class="btn btn-dark w-100 py-2"><i class="bi bi-box-arrow-in-left me-1"></i>ورود به کنسول</button>
+    <div class="text-center mt-3"><a href="/auth/login" class="fs-7 text-secondary"><i class="bi bi-arrow-right me-1"></i>ورود کاربران مدرسه</a></div>
+  </form>
+</div>

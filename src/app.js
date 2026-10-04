@@ -158,12 +158,19 @@ function createApp() {
 
   // داده‌های مشترک قالب
   app.use(async (req, res, next) => {
-    res.locals.menu = req.user ? modules.menuFor(req.user) : [];
+    res.locals.menu = req.user ? modules.menuFor(req.user, { superSession: auth.isSuper(req) }) : [];
     res.locals.diskWarning = null;
     res.locals.updatedFrom = null;
+    res.locals.badgeReports = 0; res.locals.badgeRequests = 0;
+    if (auth.isSuper(req)) {
+      try {
+        res.locals.badgeReports = await db.table('support_reports').where('status', 'new').where('kind', '!=', 'module_request').count();
+        res.locals.badgeRequests = await db.table('support_reports').where('status', 'new').where('kind', 'module_request').count();
+      } catch (e) { /* ignore */ }
+    }
     if (req.user && req.user.role === 'admin') {
       if (modules.isEnabled('system.disk_alert')) { try { const h = await health.cached(); if (h && h.level !== 'ok') res.locals.diskWarning = h; } catch (e) { /* ignore */ } }
-      if (modules.isEnabled('system.updates')) { const n = updater.notice(); if (n && req.session && req.session.updateSeen !== pkg.version) res.locals.updatedFrom = n.prevVersion; }
+      if (modules.isEnabled('system.updates') && auth.isSuper(req)) { const n = updater.notice(); if (n && req.session && req.session.updateSeen !== pkg.version) res.locals.updatedFrom = n.prevVersion; }
     }
     res.locals.theme = (req.user && req.user.theme) || (req.session && req.session.theme) || settings.get('default_theme') || 'light';
     res.locals.unreadNotifications = 0;
@@ -189,7 +196,9 @@ function createApp() {
 
   // مسیرهای احراز هویت و داشبورد
   app.use('/auth', require('./auth/routes'));
-  app.get('/', (req, res) => res.redirect(req.user ? '/dashboard' : '/auth/login'));
+  // کنسول سازنده (super admin) — بخش هسته؛ خارج از نظام ماژول‌ها تا قابل خاموش‌کردن نباشد
+  app.use('/console', require('./console/routes'));
+  app.get('/', (req, res) => res.redirect(req.user ? (auth.isSuper(req) ? '/console' : '/dashboard') : '/auth/login'));
 
   // ماژول‌ها
   for (const mod of modules.loadManifests()) {

@@ -7,7 +7,8 @@ async function log(req, action, entity, entityId, description) {
   try {
     await db.insert('activity_logs', {
       user_id: req && req.user ? req.user.id : null, action, entity: entity || null, entity_id: entityId || null,
-      description: description ? String(description).slice(0, 250) : null, ip: req ? auth.clientIp(req) : null, created_at: db.now()
+      description: description ? String(description).slice(0, 250) : null, ip: req ? auth.clientIp(req) : null,
+      impersonator_id: req && req.session && req.session.impersonatorId ? req.session.impersonatorId : null, created_at: db.now()
     });
   } catch (e) { /* ignore */ }
 }
