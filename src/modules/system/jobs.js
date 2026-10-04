@@ -7,7 +7,8 @@ module.exports = [
     key: 'backup_auto', name: 'پشتیبان‌گیری خودکار', description: 'ساخت نسخهٔ پشتیبان روزانه در storage/backups و نگه‌داشتن آخرین N نسخه (تنظیم backup_keep)', schedule: 'daily', defaultTime: '02:00',
     async run({ db, settings }) {
       if (!require('../../core/modules').isEnabled('system.auto_backup')) return 'قابلیت پشتیبان‌گیری خودکار غیرفعال است';
-      const name = await backup.create(db.info.client === 'sqlite' ? 'file' : 'json', 'auto');
+      const kind = settings.get('backup_auto_type', 'db');
+      const name = await backup.create(kind === 'full' ? 'full' : (db.info.client === 'sqlite' ? 'file' : 'json'), 'auto');
       const removed = backup.prune(Number(settings.get('backup_keep', 7)) || 7, 'auto');
       let off = '';
       if (require('../../core/modules').isEnabled('system.backup_offsite') && offsite.mode() !== 'none') {

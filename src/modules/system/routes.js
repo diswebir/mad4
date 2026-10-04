@@ -164,9 +164,10 @@ router.post('/activity/clear', async (req, res) => {
 // پشتیبان‌گیری
 router.get('/backup', modules.requireEnabled('system.backup'), async (req, res) => {
   const files = backup.list();
+  const up = backup.walkUploads(); const uploadsInfo = { count: up.length, bytes: up.reduce((a, f) => a + f.size, 0) };
   const counts = {};
   for (const t of ['users', 'students', 'teachers', 'classes', 'attendance', 'grades', 'tickets']) counts[t] = await db.count(t);
-  res.render(v('backup'), { title: 'پشتیبان‌گیری', files, counts, dbInfo: db.info, offsite: { enabled: modules.isEnabled('system.backup_offsite'), mode: offsite.mode(), modeTitle: offsite.MODES[offsite.mode()], configured: offsite.configured(), last: offsite.last() } });
+  res.render(v('backup'), { title: 'پشتیبان‌گیری', files, counts, uploadsInfo, dbInfo: db.info, offsite: { enabled: modules.isEnabled('system.backup_offsite'), mode: offsite.mode(), modeTitle: offsite.MODES[offsite.mode()], configured: offsite.configured(), last: offsite.last() } });
 });
 // ارسال دستی یک فایل پشتیبان به مقصد بیرونی
 router.post('/backup/offsite/:name', modules.requireEnabled('system.backup'), modules.requireEnabled('system.backup_offsite'), async (req, res) => {
@@ -179,7 +180,9 @@ router.post('/backup/offsite/:name', modules.requireEnabled('system.backup'), mo
   res.redirect('/system/backup');
 });
 router.post('/backup/create', modules.requireEnabled('system.backup'), async (req, res) => {
-  const name = await backup.create(req.body.type === 'file' ? 'file' : 'json');
+  const type = ['file', 'json', 'full'].includes(req.body.type) ? req.body.type : 'json';
+  let name;
+  try { name = await backup.create(type); } catch (e) { req.flash('danger', 'ساخت پشتیبان ناموفق: ' + e.message); return res.redirect('/system/backup'); }
   await activity.log(req, 'backup', 'system', null, 'ایجاد پشتیبان ' + name);
   req.flash('success', 'نسخهٔ پشتیبان ساخته شد: ' + name);
   res.redirect('/system/backup');
@@ -196,28 +199,16 @@ router.post('/backup/delete/:name', modules.requireEnabled('system.backup'), (re
   req.flash('success', 'فایل پشتیبان حذف شد.');
   res.redirect('/system/backup');
 });
-router.post('/backup/restore', modules.requireEnabled('system.backup'), ...upload.form('restore', 'single', 'file', { maxMb: 200, maxFiles: 1, types: ['application/json', 'text/json', 'text/plain', 'application/gzip', 'application/x-gzip', 'application/octet-stream'] }), async (req, res) => {
+router.post('/backup/restore', modules.requireEnabled('system.backup'), ...upload.form('restore', 'single', 'file', { maxMb: 2048, maxFiles: 1, types: ['application/json', 'text/json', 'text/plain', 'application/gzip', 'application/x-gzip', 'application/zip', 'application/x-zip-compressed', 'application/octet-stream'] }), async (req, res) => {
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/system/backup'); }
   if (!req.file) { req.flash('danger', 'فایلی انتخاب نشده است.'); return res.redirect('/system/backup'); }
-  if (!/\.(json|gz)$/i.test(req.file.originalname || '')) { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } req.flash('danger', 'فقط فایل‌های .json یا .json.gz پذیرفته می‌شوند.'); return res.redirect('/system/backup'); }
+  if (!/\.(json|gz|zip)$/i.test(req.file.originalname || '')) { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } req.flash('danger', 'فقط فایل‌های .json، .json.gz یا .zip (پشتیبان کامل) پذیرفته می‌شوند.'); return res.redirect('/system/backup'); }
+  const opts = { db: req.body.restore_db !== '0', files: req.body.restore_files !== '0' };
   try {
-    let buf = fs.readFileSync(req.file.path);
-    if (buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b) buf = require('zlib').gunzipSync(buf); // فایل‌های .json.gz (پشتیبان بیرونی)
-    const data = JSON.parse(buf.toString('utf8'));
-    if (!data || !data.tables || typeof data.tables !== 'object') throw new Error('ساختار فایل پشتیبان نامعتبر است');
-    let restored = 0;
-    await db.transaction(async (tx) => {
-      for (const [t, rows] of Object.entries(data.tables)) {
-        if (!schema[t] || t === 'sessions' || !Array.isArray(rows)) continue;
-        await tx.remove(t);
-        const cols = Object.keys(schema[t]).filter((c) => !c.startsWith('__'));
-        restored += await tx.insertMany(t, rows.map((row) => utils.pick(row, cols)));
-      }
-    });
-    await settings.load();
-    await modules.loadStates();
-    await activity.log(req, 'backup', 'system', null, `بازیابی پشتیبان (${restored} سطر)`);
-    req.flash('success', `بازیابی با موفقیت انجام شد (${J.toPersianDigits(restored)} سطر).`);
+    const r = await backup.restoreFromFile(req.file.path, req.file.originalname, opts);
+    if (opts.db) { await settings.load(); await modules.loadStates(); }
+    await activity.log(req, 'backup', 'system', null, `بازیابی پشتیبان ${r.type === 'zip' ? 'کامل' : 'JSON'} (${r.rows} سطر، ${r.files} فایل)`);
+    req.flash('success', `بازیابی با موفقیت انجام شد (${J.toPersianDigits(r.rows)} سطر${r.type === 'zip' ? `، ${J.toPersianDigits(r.files)} فایل` : ''}${r.skipped ? `، ${J.toPersianDigits(r.skipped)} مسیر نامعتبر نادیده گرفته شد` : ''}).`);
   } catch (e) { req.flash('danger', 'بازیابی ناموفق: ' + e.message); }
   finally { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } }
   res.redirect('/system/backup');
@@ -265,10 +256,10 @@ router.get('/jobs', async (req, res) => {
   const runs = await scheduler.recentRuns(40);
   const token = await scheduler.cronToken();
   const base = settings.get('site_url', '') || `${req.protocol}://${req.get('host')}`;
-  res.render(v('jobs'), { title: 'کارهای زمان‌بندی‌شده', jobs, runs, token, cronUrl: `${base.replace(/\/$/, '')}/cron?token=${token}`, mode: settings.get('scheduler_mode', 'internal'), keep: settings.get('backup_keep', 7), appRoot: process.cwd() });
+  res.render(v('jobs'), { title: 'کارهای زمان‌بندی‌شده', jobs, runs, token, cronUrl: `${base.replace(/\/$/, '')}/cron?token=${token}`, mode: settings.get('scheduler_mode', 'internal'), autoType: settings.get('backup_auto_type', 'db'), keep: settings.get('backup_keep', 7), appRoot: process.cwd() });
 });
 router.post('/jobs/settings', async (req, res) => {
-  await settings.setMany({ scheduler_mode: ['internal', 'external'].includes(req.body.scheduler_mode) ? req.body.scheduler_mode : 'internal', backup_keep: String(Math.max(1, Math.min(60, Number(req.body.backup_keep) || 7))) });
+  await settings.setMany({ scheduler_mode: ['internal', 'external'].includes(req.body.scheduler_mode) ? req.body.scheduler_mode : 'internal', backup_keep: String(Math.max(1, Math.min(60, Number(req.body.backup_keep) || 7))), backup_auto_type: req.body.backup_auto_type === 'full' ? 'full' : 'db' });
   await activity.log(req, 'update', 'system', null, 'تنظیمات زمان‌بند');
   req.flash('success', 'تنظیمات زمان‌بند ذخیره شد'); res.redirect('/system/jobs');
 });

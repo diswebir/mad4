@@ -94,7 +94,8 @@ async function send(backupFile) {
   if (!fs.existsSync(backupFile)) return { ok: false, error: 'فایل پشتیبان یافت نشد' };
   let tmp = null;
   try {
-    tmp = await gzipTo(backupFile);
+    const alreadyCompressed = /\.(zip|gz)$/i.test(backupFile);
+    tmp = alreadyCompressed ? backupFile : await gzipTo(backupFile); // ZIP کامل دوباره فشرده نمی‌شود
     const name = path.basename(tmp);
     const mb = fs.statSync(tmp).size / 1048576;
     const max = settings.getInt('backup_offsite_max_mb', m === 'email' ? 20 : 500);
@@ -109,7 +110,7 @@ async function send(backupFile) {
     await remember(r);
     logger.warn('offsite backup failed', { mode: m, error: e.message });
     return r;
-  } finally { if (tmp) { try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ } } }
+  } finally { if (tmp && tmp !== backupFile) { try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ } } }
 }
 
 /** آزمایش اتصال به مقصد (بدون ارسال پشتیبان واقعی) */

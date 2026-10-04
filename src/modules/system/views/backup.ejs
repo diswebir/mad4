@@ -6,18 +6,25 @@
       <div class="card-body">
         <p class="fs-7 text-secondary">پایگاه داده: <strong class="ltr"><%= dbInfo.driver %></strong><% if (dbInfo.filename) { %> — <span class="ltr"><%= dbInfo.filename %></span><% } %></p>
         <div class="info-list mb-3"><% Object.keys(counts).forEach(function (k) { %><div class="item"><div class="k"><%= k %></div><div class="v"><%= J.toPersianDigits(counts[k]) %></div></div><% }); %></div>
+        <% if (typeof uploadsInfo !== 'undefined' && uploadsInfo) { %><p class="fs-7 text-secondary mb-2"><i class="bi bi-folder2-open me-1"></i>فایل‌های بارگذاری‌شده: <strong><%= J.toPersianDigits(uploadsInfo.count) %></strong> فایل (<%= utils.fileSize(uploadsInfo.bytes) %>) — در «پشتیبان کامل» همراه داده‌ها فشرده می‌شوند.</p><% } %>
         <form method="post" action="/system/backup/create" class="d-flex gap-2 flex-wrap">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <button class="btn btn-primary" name="type" value="json"><i class="bi bi-filetype-json me-1"></i>پشتیبان JSON (همهٔ جدول‌ها)</button>
+          <button class="btn btn-primary" name="type" value="full"><i class="bi bi-file-earmark-zip me-1"></i>پشتیبان کامل (پایگاه داده + فایل‌ها)</button>
+          <button class="btn btn-outline-primary" name="type" value="json"><i class="bi bi-filetype-json me-1"></i>فقط پایگاه داده (JSON)</button>
           <% if (dbInfo.client === 'sqlite') { %><button class="btn btn-outline-primary" name="type" value="file"><i class="bi bi-file-earmark-binary me-1"></i>کپی فایل SQLite</button><% } %>
         </form>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h6>بازیابی از فایل JSON / JSON.GZ</h6></div>
-      <form method="post" action="/system/backup/restore" enctype="multipart/form-data" class="card-body" data-confirm="هشدار: داده‌های فعلی با محتوای فایل جایگزین می‌شوند. ادامه می‌دهید؟">
+      <div class="card-header"><h6>بازیابی از فایل پشتیبان (ZIP کامل / JSON / JSON.GZ)</h6></div>
+      <form method="post" action="/system/backup/restore" enctype="multipart/form-data" class="card-body" data-confirm="هشدار: داده‌های فعلی با محتوای فایل جایگزین می‌شوند (فایل‌های موجود با هم‌نام‌ها بازنویسی می‌شوند). ادامه می‌دهید؟">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="file" class="form-control mb-2" name="file" accept=".json,.gz" required aria-label="فایل"><div class="form-text mb-2">فایل JSON یا نسخهٔ فشردهٔ آن (.json.gz) که به مقصد بیرونی فرستاده شده است.</div>
+        <input type="file" class="form-control mb-2" name="file" accept=".zip,.json,.gz" required aria-label="فایل"><div class="form-text mb-2">پشتیبان کامل (.zip) شامل پایگاه داده و فایل‌ها، یا فایل JSON / JSON.GZ فقط پایگاه داده. متن‌های فارسی و نام فایل‌های یونیکد به‌طور کامل حفظ می‌شوند.</div>
+        <div class="d-flex gap-3 mb-2 fs-7">
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="restore_db" value="1" id="rsDb" checked><label class="form-check-label" for="rsDb">بازیابی داده‌ها (پایگاه داده)</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="restore_files" value="1" id="rsFiles" checked><label class="form-check-label" for="rsFiles">بازیابی فایل‌ها (از ZIP)</label></div>
+        </div>
+        <input type="hidden" name="restore_db" value="0"><input type="hidden" name="restore_files" value="0">
         <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>بازیابی</button>
       </form>
     </div>
@@ -38,9 +45,9 @@
     <% } %>
     <div class="card table-card">
       <div class="card-header"><h6>فایل‌های پشتیبان</h6><span class="fs-7 text-secondary">storage/backups/</span></div>
-      <table class="table table-hover"><thead><tr><th>نام فایل</th><th>حجم</th><th>زمان</th><th class="actions"></th></tr></thead><tbody>
-        <% if (!files.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">هنوز نسخهٔ پشتیبانی ساخته نشده است</td></tr><% } %>
-        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>" aria-label="دانلود" title="دانلود"><i class="bi bi-download"></i></a> <% if (offsite.enabled && offsite.mode !== 'none') { %><a class="btn btn-sm btn-light" href="#" data-post="/system/backup/offsite/<%= f.name %>" data-confirm="این فایل به مقصد بیرونی (<%= offsite.modeTitle %>) ارسال شود؟" aria-label="ارسال به بیرون" title="ارسال به بیرون (<%= offsite.modeTitle %>)"><i class="bi bi-cloud-upload"></i></a> <% } %><a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td></tr><% }); %>
+      <table class="table table-hover"><thead><tr><th>نام فایل</th><th>نوع</th><th>حجم</th><th>زمان</th><th class="actions"></th></tr></thead><tbody>
+        <% if (!files.length) { %><tr><td colspan="5" class="text-center text-secondary py-4">هنوز نسخهٔ پشتیبانی ساخته نشده است</td></tr><% } %>
+        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td class="fs-7"><span class="badge <%= f.type === 'zip' ? 'badge-soft-success' : (f.type === 'sqlite' ? 'badge-soft-warning' : 'badge-soft-primary') %>"><%= f.typeTitle %></span></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>" aria-label="دانلود" title="دانلود"><i class="bi bi-download"></i></a> <% if (offsite.enabled && offsite.mode !== 'none') { %><a class="btn btn-sm btn-light" href="#" data-post="/system/backup/offsite/<%= f.name %>" data-confirm="این فایل به مقصد بیرونی (<%= offsite.modeTitle %>) ارسال شود؟" aria-label="ارسال به بیرون" title="ارسال به بیرون (<%= offsite.modeTitle %>)"><i class="bi bi-cloud-upload"></i></a> <% } %><a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td></tr><% }); %>
       </tbody></table>
     </div>
   </div>
