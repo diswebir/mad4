@@ -178,15 +178,20 @@ function createApp() {
   // نشانی‌های کوتاه عمومی برای پیش‌ثبت‌نام
   app.get('/apply', (req, res) => res.redirect('/admissions/apply'));
   app.get('/apply/track', (req, res) => res.redirect('/admissions/track' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '')));
-  // فایل‌های بارگذاری‌شده (فقط برای کاربران واردشده)
-  // فایل‌های بارگذاری‌شده: فقط برای کاربران واردشده (به‌جز لوگوی مدرسه که در صفحات عمومی نمایش داده می‌شود)
-  const publicFile = (req, res, next) => { const rel = Array.isArray(req.params.rel) ? req.params.rel.join('/') : String(req.params.rel || ''); if (rel && rel === settings.get('school_logo')) return next(); return auth.requireAuth(req, res, next); };
-  app.get('/files/{*rel}', publicFile, (req, res) => {
-    const rel = Array.isArray(req.params.rel) ? req.params.rel.join('/') : String(req.params.rel || '');
-    const safe = path.normalize(rel).replace(/^(\.\.(\/|\\|$))+/, '');
-    const file = path.join(config.get().uploads.dir, safe);
-    if (!file.startsWith(config.get().uploads.dir) || !fs.existsSync(file)) return res.status(404).render('errors/404', { title: 'فایل یافت نشد' });
-    res.sendFile(file, { maxAge: '1d', headers: { 'Content-Disposition': req.query.dl ? 'attachment' : 'inline' } });
+  // فایل‌های بارگذاری‌شده: مجوز بر اساس رکورد صاحب فایل (src/core/fileAccess.js)؛ لوگوی مدرسه عمومی است
+  const fileAccess = require('./core/fileAccess');
+  const relOf = (req) => { const rel = Array.isArray(req.params.rel) ? req.params.rel.join('/') : String(req.params.rel || ''); return path.posix.normalize(rel).replace(/^(\.\.(\/|$))+/, '').replace(/^\/+/, ''); };
+  const fileGuard = (req, res, next) => { if (fileAccess.isPublic(relOf(req))) return next(); return auth.requireAuth(req, res, next); };
+  app.get('/files/{*rel}', fileGuard, async (req, res) => {
+    const rel = relOf(req);
+    const file = path.join(config.get().uploads.dir, rel);
+    if (!rel || rel.includes('\0') || !file.startsWith(config.get().uploads.dir + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return res.status(404).render('errors/404', { title: 'فایل یافت نشد' });
+    if (!(await fileAccess.canAccess(req, rel))) {
+      res.status(403);
+      if (auth.wantsJson(req)) return res.json({ ok: false, error: 'دسترسی به این فایل مجاز نیست' });
+      return res.render('errors/403', { title: 'دسترسی غیرمجاز' });
+    }
+    res.sendFile(file, { maxAge: fileAccess.isPublic(rel) ? '1d' : 0, headers: Object.assign({ 'Content-Disposition': req.query.dl ? 'attachment' : 'inline', 'X-Content-Type-Options': 'nosniff' }, fileAccess.isPublic(rel) ? {} : { 'Cache-Control': 'private, max-age=300' }) });
   });
 
   // ۴۰۴
