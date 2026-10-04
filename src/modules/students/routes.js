@@ -105,7 +105,7 @@ function applyFilters(q, params) {
   if (search) {
     const cols = E('students.search') ? ['s.first_name', 's.last_name', 's.student_number', 's.national_id', 's.father_name', 's.father_phone', 's.mother_phone', 's.mobile', 's.guardian_phone'] : ['s.first_name', 's.last_name', 's.student_number'];
     const parts = search.split(' ').filter(Boolean);
-    if (parts.length > 1) q.where((b) => b.whereRaw("(s.first_name || ' ' || s.last_name) LIKE ?", ['%' + search + '%']).orWhereRaw("(s.last_name || ' ' || s.first_name) LIKE ?", ['%' + search + '%']));
+    if (parts.length > 1) q.where((b) => b.whereRaw(db.concat('s.first_name', "' '", 's.last_name') + ' LIKE ?', ['%' + search + '%']).orWhereRaw(db.concat('s.last_name', "' '", 's.first_name') + ' LIKE ?', ['%' + search + '%']));
     else q.search(J.toEnglishDigits(search), cols);
   }
   const f = { class_id: params.class_id, grade_level_id: params.grade_level_id, status: params.status || (params.all ? '' : 'active'), gender: params.gender };

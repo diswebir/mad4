@@ -52,6 +52,8 @@ const api = {
   raw(sql, params) { return new Raw(sql, params); },
   get driver() { return state.driver; },
   get dialect() { return state.driver ? state.driver.dialect : null; },
+  /** عبارت الحاق رشته‌ها سازگار با هر دو پایگاه: concat('s.first_name', "' '", 's.last_name') → SQLite: (a || ' ' || b)، MySQL: CONCAT(a, ' ', b) */
+  concat(...parts) { return (state.driver && state.driver.dialect === 'mysql') ? `CONCAT(${parts.join(', ')})` : `(${parts.join(' || ')})`; },
   get info() { return state.info; },
   isReady() { return !!state.driver; },
   detectSqliteDrivers, mysqlAvailable,

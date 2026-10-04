@@ -40,3 +40,40 @@ jobs:
         run: |
           node scripts/features.js
           git diff --exit-code -- docs/FEATURES.md || (echo "docs/FEATURES.md قدیمی است؛ node scripts/features.js را اجرا کنید" && exit 1)
+
+  test-mysql:
+    name: نصب + تست‌های یکپارچه روی MySQL 8
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: madrese
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: نصب وابستگی‌ها
+        run: npm ci --no-audit --no-fund
+      - name: نصب سامانه با دادهٔ نمونه (MySQL)
+        run: node scripts/install.js --force --mysql --host 127.0.0.1 --port 3306 --db madrese --user root --pass root --school "مدرسهٔ آزمایشی CI" --admin admin --password admin123 --name "مدیر" --demo
+      - name: اجرای سرور
+        run: |
+          NODE_ENV=production PORT=3000 node app.js > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/healthz && break; sleep 1; done
+          curl -sf http://localhost:3000/healthz
+      - name: تست‌ها
+        run: BASE_URL=http://localhost:3000 npm test
+      - name: لاگ سرور در صورت خطا
+        if: failure()
+        run: tail -n 300 server.log || true
