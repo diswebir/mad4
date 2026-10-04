@@ -74,7 +74,7 @@ crud(router, {
     const s = await db.findById('students', data.student_id);
     if (!s) return;
     if (isNew && s.user_id && E('notifications.inapp')) await notify.push([s.user_id], { title: data.type === 'positive' ? 'تشویق ثبت شد' : 'مورد انضباطی ثبت شد', body: (CATEGORIES[data.category] || '') + (data.points ? ` (${J.toPersianDigits(data.points)} امتیاز)` : ''), link: '/discipline/my', type: data.type === 'positive' ? 'success' : 'warning' });
-    if (isNew && data.parent_notified && E('discipline.parent_notify')) { const phone = s.father_phone || s.mother_phone || s.guardian_phone; if (phone) await notify.sms(phone, `اولیای محترم ${s.first_name} ${s.last_name}، ${data.type === 'positive' ? 'تشویق' : 'مورد انضباطی'} «${CATEGORIES[data.category] || ''}» در تاریخ ${J.formatDate(data.date)} ثبت شد. ${data.description || ''}`.trim()); }
+    if (isNew && data.parent_notified && E('discipline.parent_notify')) { const phone = s.father_phone || s.mother_phone || s.guardian_phone; if (phone) await notify.sms(phone, `اولیای محترم ${s.first_name} ${s.last_name}، ${data.type === 'positive' ? 'تشویق' : 'مورد انضباطی'} «${CATEGORIES[data.category] || ''}» در تاریخ ${J.formatDate(data.date)} ثبت شد. ${data.description || ''}`.trim(), 'discipline'); }
   },
   labelField: 'category',
   pageActions: (req) => (E('discipline.report') ? [{ href: '/discipline/report', label: 'گزارش کلاس', icon: 'bi-bar-chart', class: 'btn-outline-primary' }] : []),

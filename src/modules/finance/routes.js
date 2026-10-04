@@ -162,7 +162,7 @@ router.post('/invoices/:id/remind', ...canWrite, modules.requireEnabled('finance
   const remaining = Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0);
   let msg = '';
   if (inv.user_id) { await notify.push([inv.user_id], { title: 'یادآوری پرداخت', body: `ماندهٔ ${inv.title}: ${utils.money(remaining, unit())} — سررسید ${J.formatDate(inv.due_date)}`, link: '/finance/my', type: 'warning' }); msg = 'اعلان ارسال شد.'; }
-  const phone = inv.father_phone || inv.mobile; if (phone) { const r = await notify.sms(phone, `${settings.get('school_name', '')}: یادآوری پرداخت ${inv.title} به مبلغ ${utils.money(remaining, unit())} (سررسید ${J.formatDate(inv.due_date)})`); if (r.ok) msg += ' پیامک ارسال شد.'; }
+  const phone = inv.father_phone || inv.mobile; if (phone) { const r = await notify.sms(phone, `${settings.get('school_name', '')}: یادآوری پرداخت ${inv.title} به مبلغ ${utils.money(remaining, unit())} (سررسید ${J.formatDate(inv.due_date)})`, 'finance'); if (r.ok) msg += ' پیامک ارسال شد.'; }
   req.flash('success', msg || 'کاربری برای یادآوری یافت نشد'); res.redirect('/finance/invoices/' + inv.id);
 });
 router.post('/overdue/remind-all', ...canWrite, modules.requireEnabled('finance.overdue_notify'), async (req, res) => {

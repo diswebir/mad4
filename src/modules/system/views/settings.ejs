@@ -88,6 +88,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('sms_webhook_url', 'آدرس وب‌هوک (در صورت انتخاب وب‌هوک)', { col: 12, ltr: true }) %>
         <%- inp('site_url', 'نشانی عمومی سامانه (برای لینک داخل پیامک‌ها)', { col: 12, ltr: true, placeholder: 'https://school.example.com' }) %>
         <%- inp('sms_template_absent', 'قالب پیامک غیبت', { col: 12, type: 'textarea', help: 'متغیرها: {name} {date} {school} {class}' }) %>
+        <%- inp('sms_price', 'هزینهٔ هر بخش پیامک (ریال/تومان — برای برآورد هزینه در گزارش مصرف)', { col: 6, ltr: true, help: 'صفر = برآورد هزینه نمایش داده نمی‌شود' }) %>
       <% } else if (tab === 'email') { %>
         <%- sw('email_enabled', 'فعال‌سازی ارسال ایمیل') %>
         <%- inp('smtp_host', 'سرور SMTP', { ltr: true, ph: 'mail.example.com' }) %><%- inp('smtp_port', 'پورت', { col: 3, ltr: true }) %>

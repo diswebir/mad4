@@ -64,7 +64,7 @@ router.post('/send', ...sendGuards, async (req, res) => {
   if (b.audience !== 'class') { const us = await db.table('users').whereIn('id', uids).all(); phones = us.map((u) => u.phone).filter(Boolean); emails = us.map((u) => u.email).filter(Boolean); }
   const n = await notify.push(uids, { title: b.title, body: b.body, link: b.link && b.link.startsWith('/') ? b.link : null, type: ['info', 'success', 'warning', 'danger'].includes(b.type) ? b.type : 'info' });
   let extra = '';
-  if (b.sms === '1' && phones.length) { const r = await notify.sms(phones, `${settings.get('school_name', '')}\n${b.title}\n${b.body || ''}`.trim()); extra += r.ok ? ` پیامک به ${J.toPersianDigits(phones.length)} شماره ارسال شد.` : ` (پیامک ارسال نشد: ${r.error || r.status || 'غیرفعال'})`; }
+  if (b.sms === '1' && phones.length) { const r = await notify.sms(phones, `${settings.get('school_name', '')}\n${b.title}\n${b.body || ''}`.trim(), 'broadcast'); extra += r.ok ? ` پیامک به ${J.toPersianDigits(phones.length)} شماره ارسال شد.` : ` (پیامک ارسال نشد: ${r.error || r.status || 'غیرفعال'})`; }
   if (b.email === '1' && emails.length) { const r = await notify.email(emails.join(','), b.title, `<p>${utils.escapeHtml(b.body || '')}</p>`); extra += r.ok ? ' ایمیل ارسال شد.' : ` (ایمیل ارسال نشد: ${r.error || 'غیرفعال'})`; }
   await activity.log(req, 'notify', 'notifications', null, `ارسال اعلان «${b.title}» به ${n} کاربر`);
   req.flash('success', `اعلان برای ${J.toPersianDigits(n)} کاربر ثبت شد.` + extra);

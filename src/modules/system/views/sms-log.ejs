@@ -12,6 +12,7 @@
       <select class="form-select form-select-sm w-auto" name="context" aria-label="نوع پیامک"><option value="">همهٔ انواع</option><% contexts.forEach(function (c) { %><option value="<%= c %>" <%= f.context === c ? 'selected' : '' %>><%= c %></option><% }) %></select>
       <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
     </form>
+    <% if (enabled('system.sms_report')) { %><a class="btn btn-sm btn-outline-primary" href="/system/sms-log/report"><i class="bi bi-graph-up me-1"></i>گزارش مصرف</a><% } %>
     <form method="post" action="/system/sms-log/clear" onsubmit="return confirm('لاگ‌های قدیمی‌تر از ۳۰ روز پاک شوند؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>پاک‌سازی قدیمی‌ها</button></form>
   </div>
   <div class="table-responsive"><table class="table table-hover mb-0 fs-7"><thead><tr><th>زمان</th><th>گیرنده</th><th>متن</th><th>نوع</th><th>درگاه</th><th>وضعیت</th></tr></thead><tbody>

@@ -54,7 +54,7 @@ const FIELDS = {
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
-  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
+  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };
@@ -78,7 +78,7 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
     if (Array.isArray(val)) val = val[val.length - 1];
     if (val === undefined) continue;
     val = utils.normalizePersian(String(val));
-    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year|mb)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
+    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year|mb|price)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
     data[k] = val;
   }
   if (tab === 'school' && file('school_logo')) { removeFile(settings.get('school_logo')); data.school_logo = relPath(file('school_logo')); }
@@ -103,7 +103,7 @@ router.post('/settings/test/offsite', modules.requireEnabled('system.backup_offs
   res.redirect('/system/settings?tab=offsite');
 });
 router.post('/settings/test/sms', async (req, res) => {
-  const r = await notify.sms(req.body.to, 'پیام آزمایشی از سامانه مدیریت مدرسه ' + settings.get('school_name'));
+  const r = await notify.sms(req.body.to, 'پیام آزمایشی از سامانه مدیریت مدرسه ' + settings.get('school_name'), 'test');
   req.flash(r.ok ? 'success' : 'danger', r.ok ? 'پیامک آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || r.skipped ? 'پیامک غیرفعال است' : 'خطای درگاه'));
   res.redirect('/system/settings?tab=sms');
 });
@@ -298,6 +298,35 @@ router.get('/sms-log', async (req, res) => {
   const stats = Object.fromEntries((await db.table('sms_log').select('status', 'COUNT(*) as c').groupBy('status').all()).map((r) => [r.status, Number(r.c)]));
   const contexts = await db.table('sms_log').select('context').whereNotNull('context').groupBy('context').pluck('context');
   res.render(v('sms-log'), { title: 'لاگ پیامک', rows, total, page, pages: Math.ceil(total / per), stats, contexts, f: { q: req.query.q || '', status: req.query.status || '', context: req.query.context || '' }, provider: settings.get('sms_provider', 'log'), smsEnabled: settings.getBool('sms_enabled') });
+});
+// ---------- گزارش مصرف پیامک ----------
+const SMS_CONTEXTS = { attendance: 'غیبت/تأخیر', finance: 'یادآوری شهریه', discipline: 'انضباطی/تشویق', broadcast: 'اطلاع‌رسانی گروهی', students_bulk: 'ارسال گروهی به دانش‌آموزان', parent_credentials: 'حساب اولیا', password_reset: 'بازیابی رمز', admissions: 'پیش‌ثبت‌نام', test: 'آزمایشی' };
+/** تعداد بخش‌های پیامک (استاندارد UCS-2 برای متن فارسی: ۷۰ نویسه تک‌بخشی، سپس ۶۷ نویسه در هر بخش) */
+function smsParts(text) { const len = [...String(text || '')].length; if (len <= 70) return len ? 1 : 0; return Math.ceil(len / 67); }
+router.get('/sms-log/report', modules.requireEnabled('system.sms_report'), async (req, res) => {
+  const cur = J.currentJalali(); const month = J.jalaliMonthRange(cur.jy, cur.jm);
+  const from = (req.query.from && J.toGregorian(req.query.from)) || month.start;
+  const to = (req.query.to && J.toGregorian(req.query.to)) || J.todayISO();
+  const rows = await db.table('sms_log').select('recipient', 'message', 'status', 'context', 'created_at', 'provider').whereRaw('created_at >= ? AND created_at < ?', [J.localToUtc(from + ' 00:00:00'), J.localToUtc(J.addDays(to, 1) + ' 00:00:00')]).orderBy('id').all();
+  const price = settings.getInt('sms_price', 0);
+  const byDay = new Map(); const byContext = new Map(); const byRecipient = new Map(); const byProvider = new Map();
+  const tot = { count: 0, sent: 0, failed: 0, parts: 0, partsSent: 0, cost: 0 };
+  for (const r of rows) {
+    const parts = smsParts(r.message); const day = J.localDateOf(r.created_at); const ok = r.status === 'sent'; const ctx = r.context || 'other';
+    tot.count++; tot.parts += parts; if (ok) { tot.sent++; tot.partsSent += parts; } else tot.failed++;
+    const bump = (m, k) => { const o = m.get(k) || { key: k, count: 0, sent: 0, failed: 0, parts: 0 }; o.count++; o.parts += ok ? parts : 0; if (ok) o.sent++; else o.failed++; m.set(k, o); };
+    bump(byDay, day); bump(byContext, ctx); bump(byRecipient, r.recipient); bump(byProvider, r.provider || '-');
+  }
+  tot.cost = tot.partsSent * price;
+  const days = [...byDay.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const contexts = [...byContext.values()].sort((a, b) => b.count - a.count).map((c) => Object.assign(c, { title: SMS_CONTEXTS[c.key] || (c.key === 'other' ? 'سایر' : c.key), cost: c.parts * price }));
+  const recipients = [...byRecipient.values()].sort((a, b) => b.count - a.count).slice(0, 10);
+  const providers = [...byProvider.values()].sort((a, b) => b.count - a.count);
+  if (req.query.export === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="sms-usage-${from}-${to}.csv"`);
+    return res.send(utils.toCSV(days.map((d) => ({ date: J.formatDate(d.key), count: d.count, sent: d.sent, failed: d.failed, parts: d.parts, cost: d.parts * price })), [{ key: 'date', label: 'تاریخ' }, { key: 'count', label: 'تعداد' }, { key: 'sent', label: 'موفق' }, { key: 'failed', label: 'ناموفق' }, { key: 'parts', label: 'بخش‌های ارسال‌شده' }, { key: 'cost', label: 'هزینهٔ تقریبی' }]));
+  }
+  res.render(v('sms-report'), { title: 'گزارش مصرف پیامک', from, to, tot, days, contexts, recipients, providers, price, provider: settings.get('sms_provider', 'log'), smsEnabled: settings.getBool('sms_enabled') });
 });
 router.post('/sms-log/clear', async (req, res) => { await db.table('sms_log').where('created_at', '<', J.addDays(J.todayISO(), -30)).delete(); req.flash('success', 'لاگ‌های قدیمی‌تر از ۳۰ روز پاک شد'); res.redirect('/system/sms-log'); });
 
