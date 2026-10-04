@@ -65,6 +65,17 @@ async function upload(a, path, filename, content, type, fields) {
   up = await upload(a, '/students/import', 'photo.jpg', 'xx', 'image/jpeg', {});
   r = await a.get('/students/import'); assert(/مجاز نیست|فقط فایل CSV/.test(r.text), 'image rejected');
 
+  // بارگذاری مدرک با نوع ناشناخته (octet-stream): پسوند امن پذیرفته، پسوند خطرناک رد
+  await a.post('/system/modules/toggle', { key: 'students.documents', enabled: '1' });
+  up = await upload(a, '/students/' + ids[0] + '/documents', 'madarek.zip', 'PK\u0003\u0004', 'application/octet-stream', { title: 'مدارک فشرده' });
+  r = await a.get('/students/' + ids[0] + '?tab=docs'); assert(/مدرک بارگذاری شد/.test(r.text) && /مدارک فشرده/.test(r.text), 'zip with octet-stream mime accepted (safe extension)');
+  up = await upload(a, '/students/' + ids[0] + '/documents', 'virus.exe', 'MZ', 'application/octet-stream', { title: 'x' });
+  r = await a.get('/students/' + ids[0] + '?tab=docs'); assert(/مجاز نیست/.test(r.text) && !/>x</.test(r.text), 'exe with octet-stream rejected');
+  up = await upload(a, '/students/' + ids[0] + '/documents', 'page.html', '<b>x</b>', 'text/html', { title: 'y' });
+  r = await a.get('/students/' + ids[0] + '?tab=docs'); assert(/مجاز نیست/.test(r.text), 'html rejected');
+  up = await upload(a, '/students/' + ids[0] + '/documents', 'scan.rar', 'Rar!', 'application/vnd.rar', { title: 'اسکن رار' });
+  r = await a.get('/students/' + ids[0] + '?tab=docs'); assert(/اسکن رار/.test(r.text), 'rar accepted');
+
   // پاک‌سازی: حذف دانش‌آموزان واردشده
   for (const id of ids) await a.post('/students/' + id + '/delete', {});
   r = await a.get('/students?q=' + encodeURIComponent(last)); assert(!(new RegExp('/students/' + ids[0] + '"').test(r.text)), 'cleanup: imported students removed');

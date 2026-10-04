@@ -8,7 +8,9 @@ const config = require('./config');
 const csrf = require('./csrf');
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const DOC_TYPES = [...IMAGE_TYPES, 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain', 'text/csv', 'application/zip', 'application/x-zip-compressed', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'audio/mpeg', 'video/mp4'];
+const DOC_TYPES = [...IMAGE_TYPES, 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain', 'text/csv', 'application/zip', 'application/x-zip-compressed', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'audio/mpeg', 'video/mp4', 'application/vnd.rar', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/rtf', 'image/bmp'];
+/** پسوندهای امن برای وقتی مرورگر نوع فایل را نمی‌شناسد (application/octet-stream) */
+const SAFE_EXT = /\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|csv|txt|rtf|jpe?g|png|webp|gif|bmp|mp3|mp4)$/i;
 const BLOCKED_EXT = /\.(php|phtml|js|mjs|cjs|exe|sh|bat|cmd|html|htm|svg|jsp|asp|aspx|pl|py|cgi)$/i;
 
 function uploader(folder, opts) {
@@ -30,7 +32,11 @@ function uploader(folder, opts) {
       // نام اصلی فایل را به UTF-8 برمی‌گردانیم (مرورگرها latin1 می‌فرستند)
       try { file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8'); } catch (e) { /* ignore */ }
       if (BLOCKED_EXT.test(file.originalname || '')) return cb(new Error('این نوع فایل مجاز نیست'));
-      if (!allowed.includes(file.mimetype)) return cb(new Error('نوع فایل مجاز نیست: ' + file.mimetype));
+      if (!allowed.includes(file.mimetype)) {
+        // برخی مرورگرها/سیستم‌عامل‌ها نوع فایل را نمی‌فرستند؛ در این حالت فقط با پسوند امن می‌پذیریم
+        if (file.mimetype === 'application/octet-stream' && !opts.images && SAFE_EXT.test(file.originalname || '')) return cb(null, true);
+        return cb(new Error('نوع فایل مجاز نیست: ' + file.mimetype));
+      }
       cb(null, true);
     }
   });
