@@ -14,6 +14,7 @@
     <% actions.forEach(function (a) { %>
       <% if (a.post) { %><a href="#" data-post="<%= a.post %>" <% if (a.confirm) { %>data-confirm="<%= a.confirm %>"<% } %> <% if (a.params) { %>data-params="<%= JSON.stringify(a.params) %>"<% } %> class="btn <%= a.class || 'btn-outline-secondary' %>"><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></a>
       <% } else if (a.print) { %><button type="button" class="btn <%= a.class || 'btn-outline-secondary' %>" data-print><i class="bi bi-printer me-1"></i><%= a.label || 'چاپ' %></button>
+      <% } else if (a.modal) { %><button type="button" class="btn <%= a.class || 'btn-outline-secondary' %>" data-bs-toggle="modal" data-bs-target="<%= a.modal %>"><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></button>
       <% } else { %><a href="<%= a.href %>" class="btn <%= a.class || 'btn-outline-secondary' %>" <%- a.target ? 'target="' + a.target + '"' : '' %>><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></a><% } %>
     <% }); %>
   </div>

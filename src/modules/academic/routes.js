@@ -226,9 +226,9 @@ router.post('/classes/:id/subjects/:csId/delete', auth.requireRoleOrPermission([
 });
 
 // ---------- برنامه هفتگی ----------
-const PERIODS = () => Math.min(12, Math.max(1, settings.getInt('weekly_periods', 4)));
-const periodTimes = () => { const t = settings.getList('period_times'); return t.length ? t : ['07:45-08:30', '08:40-09:25', '09:45-10:30', '10:40-11:25', '11:35-12:20', '12:30-13:15']; };
-const SCHOOL_DAYS = () => { const d = settings.getList('school_days'); const n = d.map(Number).filter((x) => x >= 0 && x <= 6); return n.length ? n : [0, 1, 2, 3, 4]; };
+const timetable = require('./timetable');
+const { PERIODS, periodTimes, SCHOOL_DAYS } = timetable;
+const scheduleAdmin = [auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule')];
 
 function buildGrid(slots) {
   const grid = {};
@@ -242,7 +242,9 @@ router.get('/schedule', modules.requireEnabled('academic.schedule'), async (req,
   const yearId = await currentYearId();
   const classes = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.*', 'g.title as grade_title', '(SELECT COUNT(*) FROM schedule_slots ss WHERE ss.class_id = c.id) as slots').where('c.is_active', 1).where((b) => (yearId ? b.where('c.academic_year_id', yearId) : b)).orderBy('g.sort_order').orderBy('c.title').all();
   const teachers = await db.table('teachers as t').join('users as u', 'u.id', 't.user_id').select('t.id', 'u.name', '(SELECT COUNT(*) FROM schedule_slots ss JOIN class_subjects cs ON cs.id = ss.class_subject_id WHERE cs.teacher_id = t.id) as slots').where('t.status', 'active').orderBy('u.name').all();
-  res.render(v('schedule-index'), { title: 'برنامه هفتگی', classes, teachers });
+  const cov = modules.isEnabled('academic.schedule_auto') && req.user.role === 'admin' ? await timetable.coverage(null, yearId) : null;
+  const covMap = cov ? Object.fromEntries(cov.classes.map((c) => [c.class_id, c])) : {};
+  res.render(v('schedule-index'), { title: 'برنامه هفتگی', classes, teachers, covMap, isAdmin: req.user.role === 'admin' });
 });
 
 router.get('/schedule/class/:id', modules.requireEnabled('academic.schedule'), async (req, res) => {
@@ -253,7 +255,25 @@ router.get('/schedule/class/:id', modules.requireEnabled('academic.schedule'), a
     .select('ss.*', 's.title as subject_title', 'u.name as teacher_name', 'r.title as room_title').where('ss.class_id', cls.id).all();
   const classSubjects = req.user.role === 'admin' ? await db.table('class_subjects as cs').join('subjects as s', 's.id', 'cs.subject_id').leftJoin('teachers as t', 't.id', 'cs.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').select('cs.id', 's.title', 'u.name as teacher_name').where('cs.class_id', cls.id).orderBy('s.title').all() : [];
   const print = req.query.print === '1' && modules.isEnabled('academic.schedule_print');
-  res.render(v('schedule-class'), { title: 'برنامه هفتگی ' + cls.title, layout: print ? 'layouts/print' : undefined, print, cls, grid: buildGrid(slots), periods: PERIODS(), times: periodTimes(), days: SCHOOL_DAYS(), classSubjects, rooms: req.user.role === 'admin' ? await db.table('rooms').orderBy('title').all() : [], isAdmin: req.user.role === 'admin' });
+  const cov = req.user.role === 'admin' ? (await timetable.coverage([cls.id])).classes[0] : null;
+  res.render(v('schedule-class'), { title: 'برنامه هفتگی ' + cls.title, layout: print ? 'layouts/print' : undefined, print, cls, grid: buildGrid(slots), periods: PERIODS(), times: periodTimes(), days: SCHOOL_DAYS(), classSubjects, rooms: req.user.role === 'admin' ? await db.table('rooms').orderBy('title').all() : [], isAdmin: req.user.role === 'admin', cov });
+});
+// وضعیت یک خانه برای مودال هوشمند
+router.get('/schedule/class/:id/slot-info', ...scheduleAdmin, async (req, res) => {
+  const cls = await db.findById('classes', req.params.id); if (!cls) return res.status(404).json({ ok: false, message: 'کلاس یافت نشد' });
+  const day = Number(req.query.day), period = Number(req.query.period);
+  if (!(day >= 0 && day <= 6) || !(period >= 1 && period <= 12)) return res.status(400).json({ ok: false, message: 'روز/زنگ نامعتبر' });
+  res.json(Object.assign({ ok: true }, await timetable.slotInfo(cls.id, day, period)));
+});
+// تولید خودکار برای یک کلاس
+router.post('/schedule/class/:id/auto', ...scheduleAdmin, modules.requireEnabled('academic.schedule_auto'), async (req, res) => {
+  const cls = await db.findById('classes', req.params.id); if (!cls) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const opts = autoOptions(req.body);
+  const result = await timetable.generate(Object.assign({ classIds: [cls.id] }, opts));
+  const n = await timetable.apply(result);
+  await activity.log(req, 'update', 'schedule_slots', cls.id, `تولید خودکار برنامه ${cls.title}: ${n} زنگ، ${result.unplaced.length} درس ناقص`);
+  req.flash(result.unplaced.length ? 'warning' : 'success', autoMessage(result, n));
+  res.redirect(`/academic/schedule/class/${cls.id}`);
 });
 
 router.get('/schedule/teacher/:id', modules.requireEnabled('academic.schedule'), async (req, res) => {
@@ -264,7 +284,32 @@ router.get('/schedule/teacher/:id', modules.requireEnabled('academic.schedule'),
   const slots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').join('subjects as s', 's.id', 'cs.subject_id').join('classes as c', 'c.id', 'ss.class_id').leftJoin('rooms as r', 'r.id', 'ss.room_id')
     .select('ss.*', 's.title as subject_title', 'c.title as class_title', 'r.title as room_title').where('cs.teacher_id', teacher.id).all();
   const print = req.query.print === '1' && modules.isEnabled('academic.schedule_print');
-  res.render(v('schedule-teacher'), { title: 'برنامه هفتگی ' + teacher.name, layout: print ? 'layouts/print' : undefined, print, teacher, grid: buildGrid(slots), periods: PERIODS(), times: periodTimes(), days: SCHOOL_DAYS(), totalHours: slots.length });
+  const availOn = modules.isEnabled('academic.teacher_availability');
+  const availability = {}; if (availOn) for (const a of await db.table('teacher_availability').where('teacher_id', teacher.id).all()) availability[`${a.day_of_week}:${a.period}`] = a;
+  const canEditAvail = availOn && !print && (req.user.role === 'admin' || (req.user.role === 'teacher' && teacher.id === req._teacherId) || req.can('academic.schedule'));
+  res.render(v('schedule-teacher'), { title: 'برنامه هفتگی ' + teacher.name, layout: print ? 'layouts/print' : undefined, print, teacher, grid: buildGrid(slots), periods: PERIODS(), times: periodTimes(), days: SCHOOL_DAYS(), totalHours: slots.length, availability, canEditAvail, availOn });
+});
+// علامت‌گذاری در دسترس‌نبودن معلم (مدیر یا خود معلم)
+router.post('/schedule/teacher/:id/availability', modules.requireEnabled('academic.schedule'), modules.requireEnabled('academic.teacher_availability'), async (req, res) => {
+  const teacher = await db.findById('teachers', req.params.id);
+  const wantsJson = req.is('json') || (req.get('accept') || '').includes('json');
+  const deny = (code, m) => (wantsJson ? res.status(code).json({ ok: false, message: m }) : (req.flash('danger', m), res.redirect('/academic/schedule')));
+  if (!teacher) return deny(404, 'معلم یافت نشد');
+  const allowed = req.user.role === 'admin' || req.can('academic.schedule') || (req.user.role === 'teacher' && teacher.id === req._teacherId);
+  if (!allowed) return deny(403, 'دسترسی غیرمجاز');
+  const day = Number(req.body.day), period = Number(req.body.period); const status = req.body.status === 'available' ? 'available' : 'unavailable';
+  if (!(day >= 0 && day <= 6) || !(period >= 1 && period <= 12)) return deny(400, 'روز/زنگ نامعتبر');
+  const note = String(req.body.note || '').trim().slice(0, 120);
+  const existing = await db.table('teacher_availability').where({ teacher_id: teacher.id, day_of_week: day, period }).first();
+  if (status === 'available') { if (existing) await db.remove('teacher_availability', { id: existing.id }); }
+  else if (existing) await db.update('teacher_availability', { status: 'unavailable', note }, { id: existing.id });
+  else await db.insert('teacher_availability', { teacher_id: teacher.id, day_of_week: day, period, status: 'unavailable', note, created_by: req.user.id, created_at: db.now() });
+  // اگر در همین زنگ درس دارد، هشدار بده
+  const clash = status === 'unavailable' ? await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').join('classes as c', 'c.id', 'ss.class_id').select('c.title').where('cs.teacher_id', teacher.id).where('ss.day_of_week', day).where('ss.period', period).first() : null;
+  await activity.log(req, 'update', 'teacher_availability', teacher.id, `${J.WEEKDAYS[day]} زنگ ${period}: ${status === 'unavailable' ? 'در دسترس نیست' : 'در دسترس'}`);
+  const warning = clash ? `توجه: در این زنگ در کلاس «${clash.title}» برنامه دارد؛ برنامه را اصلاح کنید.` : null;
+  if (wantsJson) return res.json({ ok: true, status, note, warning });
+  req.flash(warning ? 'warning' : 'success', warning || 'ذخیره شد.'); res.redirect(`/academic/schedule/teacher/${teacher.id}`);
 });
 
 router.post('/schedule/class/:id/slot', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
@@ -279,18 +324,16 @@ router.post('/schedule/class/:id/slot', auth.requireRoleOrPermission(['admin'], 
   if (!csId) { if (existing) await db.remove('schedule_slots', { id: existing.id }); return wantsJson ? res.json({ ok: true, cleared: true }) : res.redirect(back); }
   const cs = await db.table('class_subjects as cs').join('subjects as s', 's.id', 'cs.subject_id').leftJoin('teachers as t', 't.id', 'cs.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').select('cs.*', 's.title as subject_title', 'u.name as teacher_name').where('cs.id', csId).where('cs.class_id', cls.id).first();
   if (!cs) return fail('درس یافت نشد');
-  // تداخل معلم
-  if (cs.teacher_id) {
-    const conflict = await db.table('schedule_slots as ss').join('class_subjects as c2', 'c2.id', 'ss.class_subject_id').join('classes as c', 'c.id', 'ss.class_id').select('c.title').where('c2.teacher_id', cs.teacher_id).where('ss.day_of_week', day).where('ss.period', period).where('ss.class_id', '!=', cls.id).first();
-    if (conflict) return fail(`تداخل: ${cs.teacher_name} در این زنگ در کلاس «${conflict.title}» درس دارد`);
-  }
+  // تداخل معلم / در دسترس‌نبودن
+  const problem = await timetable.checkPlacement(cls.id, cs, day, period);
+  if (problem && !(req.body.force === '1' && /در دسترس نیست/.test(problem))) return fail(problem);
   const times = periodTimes()[period - 1] || '';
   const [start_time, end_time] = times.split('-');
   const data = { class_subject_id: cs.id, room_id: roomId, start_time: start_time || null, end_time: end_time || null };
   if (existing) await db.update('schedule_slots', data, { id: existing.id }); else await db.insert('schedule_slots', Object.assign({ class_id: cls.id, day_of_week: day, period, created_at: db.now() }, data));
   await activity.log(req, 'update', 'schedule_slots', cls.id, `برنامه ${cls.title}: ${J.WEEKDAYS[day]} زنگ ${period} → ${cs.subject_title}`);
-  if (wantsJson) return res.json({ ok: true, slot: { subject_title: cs.subject_title, teacher_name: cs.teacher_name } });
-  req.flash('success', 'برنامه ذخیره شد.'); res.redirect(back);
+  if (wantsJson) { const room = roomId ? await db.findById('rooms', roomId) : null; return res.json({ ok: true, slot: { class_subject_id: cs.id, subject_title: cs.subject_title, teacher_name: cs.teacher_name, room_id: roomId, room_title: room ? room.title : null }, forced: !!problem }); }
+  req.flash(problem ? 'warning' : 'success', problem ? 'ذخیره شد (با وجود در دسترس‌نبودن معلم).' : 'برنامه ذخیره شد.'); res.redirect(back);
 });
 router.post('/schedule/class/:id/clear', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
   await db.remove('schedule_slots', { class_id: req.params.id });
@@ -324,6 +367,42 @@ router.post('/schedule/class/:id/copy', auth.requireRoleOrPermission(['admin'], 
   if (skipped.length) msg += `<br>${J.toPersianDigits(skipped.length)} زنگ به‌دلیل تداخل معلم کپی نشد: ${skipped.slice(0, 6).join('؛ ')}${skipped.length > 6 ? ' و…' : ''}`;
   if (noSubject.size) msg += `<br>درس‌های بدون تخصیص در کلاس مقصد (کپی نشد): ${[...noSubject].join('، ')}`;
   req.flash(skipped.length || noSubject.size ? 'warning' : 'success', msg); res.redirect(`/academic/schedule/class/${dst}`);
+});
+
+// ---------- تولید خودکار برنامه (همهٔ کلاس‌ها) ----------
+function autoOptions(body) {
+  const maxPerDay = Math.min(3, Math.max(1, Number(body.max_per_day) || 2));
+  return { mode: body.mode === 'replace' ? 'replace' : 'fill', maxPerDay, allowDouble: body.allow_double !== '0', attempts: 40, seed: Number(body.seed) || Date.now() };
+}
+function autoMessage(result, n) {
+  let msg = `${J.toPersianDigits(n)} زنگ به برنامه افزوده شد` + (result.mode === 'replace' ? ' (برنامهٔ قبلی جایگزین شد)' : result.kept ? ` و ${J.toPersianDigits(result.kept)} زنگ قبلی حفظ شد` : '') + '.';
+  if (result.unplaced.length) msg += `<br>${J.toPersianDigits(result.unplaced.length)} درس کامل جا نشد: ` + result.unplaced.slice(0, 6).map((u) => `${u.title}${u.teacher_name ? ' (' + u.teacher_name + ')' : ''} ${J.toPersianDigits(u.missing)} زنگ — ${u.reason}`).join('؛ ') + (result.unplaced.length > 6 ? ' و…' : '');
+  return msg;
+}
+router.get('/schedule/auto', ...scheduleAdmin, modules.requireEnabled('academic.schedule_auto'), async (req, res) => {
+  const yearId = await currentYearId();
+  const cov = await timetable.coverage(null, yearId);
+  const report = req.session.scheduleReport || null; delete req.session.scheduleReport;
+  res.render(v('schedule-auto'), { title: 'تولید خودکار برنامهٔ هفتگی', cov, report, preview: null, opts: { mode: 'fill', max_per_day: 2, allow_double: '1' }, selected: [] });
+});
+router.post('/schedule/auto', ...scheduleAdmin, modules.requireEnabled('academic.schedule_auto'), async (req, res) => {
+  const yearId = await currentYearId();
+  const all = (await timetable.coverage(null, yearId)).classes.map((c) => c.class_id);
+  let ids = [].concat(req.body.class_ids || []).map(Number).filter((x) => all.includes(x));
+  if (req.body.scope === 'all' || !ids.length) ids = all;
+  const opts = autoOptions(req.body);
+  if (!ids.length) { req.flash('danger', 'کلاسی برای تولید برنامه وجود ندارد.'); return res.redirect('/academic/schedule/auto'); }
+  const result = await timetable.generate(Object.assign({ classIds: ids }, opts));
+  if (req.body.apply !== '1') {
+    // پیش‌نمایش
+    const cov = await timetable.coverage(null, yearId);
+    const perClass = {}; for (const pl of result.plan) perClass[pl.class_id] = (perClass[pl.class_id] || 0) + 1;
+    return res.render(v('schedule-auto'), { title: 'تولید خودکار برنامهٔ هفتگی', cov, report: null, preview: { result, perClass, ids, seed: opts.seed }, opts: { mode: opts.mode, max_per_day: opts.maxPerDay, allow_double: opts.allowDouble ? '1' : '0' }, selected: ids });
+  }
+  const n = await timetable.apply(result);
+  await activity.log(req, 'update', 'schedule_slots', 0, `تولید خودکار برنامه برای ${ids.length} کلاس: ${n} زنگ، ${result.unplaced.length} درس ناقص`);
+  req.session.scheduleReport = { n, classes: ids.length, mode: result.mode, kept: result.kept, unplaced: result.unplaced, gaps: result.gaps };
+  res.redirect('/academic/schedule/auto');
 });
 
 // ---------- ارتقای گروهی ----------

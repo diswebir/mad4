@@ -356,3 +356,12 @@ a { text-decoration: none; }
 .search-suggest .sg-title { padding: .4rem .75rem; font-size: .75rem; font-weight: 600; color: var(--bs-secondary-color); background: var(--bs-tertiary-bg); }
 .search-suggest .sg-item { display: flex; justify-content: space-between; gap: .5rem; padding: .45rem .75rem; color: var(--bs-body-color); text-decoration: none; font-size: .85rem; }
 .search-suggest .sg-item:hover { background: rgba(37, 99, 235, .08); }
+
+/* برنامهٔ هفتگی — وضعیت خانه‌ها */
+.schedule-table td.slot-flash { animation: slotFlash .9s ease-out; }
+@keyframes slotFlash { 0% { background: rgba(25,135,84,.35); } 100% { background: transparent; } }
+.schedule-table td.unavail { background: repeating-linear-gradient(45deg, rgba(255,193,7,.18) 0 6px, transparent 6px 12px); }
+.schedule-table td.unavail.has-slot { outline: 2px solid var(--bs-danger); outline-offset: -2px; }
+.schedule-table td.avail-cell { cursor: pointer; }
+.schedule-table td.avail-cell:hover { box-shadow: inset 0 0 0 2px rgba(255,193,7,.6); }
+.min-w-0 { min-width: 0; }

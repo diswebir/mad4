@@ -1,4 +1,4 @@
-<%- include('partials/page-header', { title: 'برنامه هفتگی', icon: 'bi-table', breadcrumbs: [{ title: 'برنامه هفتگی' }] }) %>
+<%- include('partials/page-header', { title: 'برنامه هفتگی', icon: 'bi-table', breadcrumbs: [{ title: 'برنامه هفتگی' }], actions: isAdmin && enabled('academic.schedule_auto') ? [{ href: '/academic/schedule/auto', label: 'تولید خودکار', icon: 'bi-magic', class: 'btn-primary' }] : [] }) %>
 <div class="row g-3">
   <div class="col-lg-7">
     <div class="card table-card">
@@ -7,7 +7,7 @@
         <thead><tr><th>کلاس</th><th>پایه</th><th>زنگ‌های تنظیم‌شده</th><th class="text-end">عملیات</th></tr></thead>
         <tbody><% classes.forEach(function (c) { %>
           <tr><td class="fw-semibold"><a href="/academic/classes/<%= c.id %>"><%= c.title %></a></td><td><%= c.grade_title %></td>
-            <td><% if (Number(c.slots)) { %><span class="badge badge-soft-success"><%= J.toPersianDigits(c.slots) %> زنگ</span><% } else { %><span class="badge badge-soft-warning">تنظیم نشده</span><% } %></td>
+            <td><% var cv = covMap[c.id]; if (cv && cv.need) { var color = cv.pct >= 100 ? 'success' : cv.pct >= 60 ? 'warning' : 'danger'; %><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:6px;min-width:70px" title="<%= J.toPersianDigits(cv.placed) %> از <%= J.toPersianDigits(cv.need) %> زنگ"><div class="progress-bar bg-<%= color %>" style="width:<%= Math.min(100, cv.pct) %>%"></div></div><span class="fs-7 text-<%= color %>"><%= J.toPersianDigits(cv.placed) %>/<%= J.toPersianDigits(cv.need) %></span></div><% } else if (Number(c.slots)) { %><span class="badge badge-soft-success"><%= J.toPersianDigits(c.slots) %> زنگ</span><% } else { %><span class="badge badge-soft-warning">تنظیم نشده</span><% } %></td>
             <td class="text-end"><a href="/academic/schedule/class/<%= c.id %>" class="btn btn-sm btn-primary"><i class="bi bi-table me-1"></i>مشاهده / ویرایش</a></td></tr>
         <% }); if (!classes.length) { %><tr><td colspan="4"><%- include('partials/empty', { message: 'کلاسی برای سال جاری تعریف نشده است' }) %></td></tr><% } %></tbody>
       </table></div>

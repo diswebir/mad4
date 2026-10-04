@@ -36,6 +36,7 @@ module.exports = {
     capacity: 'integer default:30', shift: 'string:10 default:morning', description: 'text', is_active: 'boolean default:1', created_at: 'datetime', updated_at: 'datetime'
   },
   class_subjects: { id: 'increments', class_id: 'integer index', subject_id: 'integer index', teacher_id: 'integer index', weekly_hours: 'integer default:2', created_at: 'datetime', __unique: [['class_id', 'subject_id']] },
+  teacher_availability: { id: 'increments', teacher_id: 'integer index', day_of_week: 'integer', period: 'integer', status: 'string:20 default:unavailable', note: 'string:120', created_by: 'integer', created_at: 'datetime', __unique: [['teacher_id', 'day_of_week', 'period']] },
   schedule_slots: { id: 'increments', class_id: 'integer index', class_subject_id: 'integer index', day_of_week: 'integer', period: 'integer', start_time: 'time', end_time: 'time', room_id: 'integer', created_at: 'datetime', __unique: [['class_id', 'day_of_week', 'period']] },
 
   students: {
