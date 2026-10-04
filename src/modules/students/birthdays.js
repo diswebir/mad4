@@ -36,10 +36,13 @@ function fullName(s) { return `${s.first_name || ''} ${s.last_name || ''}`.trim(
 
 /** پرس‌وجوی پایه: دانش‌آموزان فعال دارای تاریخ تولد به همراه کلاس */
 function baseQuery() {
-  return db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id')
+  const q = db.table('students as s').leftJoin('classes as c', 'c.id', 's.class_id').leftJoin('grade_levels as g', 'g.id', 's.grade_level_id')
     .select('s.id', 's.user_id', 's.first_name', 's.last_name', 's.student_number', 's.gender', 's.birth_date', 's.class_id', 's.photo', 's.mobile',
       's.father_phone', 's.mother_phone', 's.guardian_phone', 's.guardian_type', 'c.title as class_title', 'c.teacher_id as homeroom_id', 'g.title as grade_title')
-    .where('s.status', 'active').whereNotNull('s.birth_date').where('s.birth_date', '!=', '');
+    .where('s.status', 'active').whereNotNull('s.birth_date');
+  // در SQLite ممکن است رشتهٔ خالی ذخیره شده باشد؛ در MySQL مقایسهٔ DATE با '' خطا می‌دهد (ER_WRONG_VALUE)
+  if (db.dialect !== 'mysql') q.where('s.birth_date', '!=', '');
+  return q;
 }
 
 function decorate(rows, todayIso) {
