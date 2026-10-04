@@ -154,6 +154,7 @@ storage/               config.json، فایل SQLite، آپلودها، پشتی
 scripts/               install / migrate / seed / reset / features / cron
 tests/                 تست‌های یکپارچه (HTTP) برای همهٔ جریان‌های اصلی
 docs/FEATURES.md       فهرست کامل ۲۶۳ قابلیت
+CHANGELOG.md           تاریخچهٔ تغییرات نسخه‌ها
 ```
 
 **پشتهٔ فنی:** Express 5، EJS + express-ejs-layouts (رندر سمت سرور، بدون مرحلهٔ build)، express-session با ذخیرهٔ نشست در پایگاه داده، helmet، compression، multer، bcryptjs، jalaali-js، mysql2، sql.js / node:sqlite / better-sqlite3، nodemailer.
