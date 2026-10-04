@@ -1,6 +1,6 @@
 {
   "name": "madrese",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "سامانه جامع مدیریت مدرسه — Node.js، ماژولار، قابل نصب روی هاست cPanel",
   "main": "app.js",
   "private": true,
