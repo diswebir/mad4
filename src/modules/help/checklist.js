@@ -71,6 +71,10 @@ async function computeFresh() {
     let hasBackup = false; try { hasBackup = backup.list().length > 0; } catch (e) { hasBackup = false; }
     const autoJob = await db.table('scheduled_jobs').where('key', 'backup_auto').first().catch(() => null);
     add({ key: 'backup', title: 'پشتیبان‌گیری فعال باشد', desc: 'حداقل یک نسخهٔ پشتیبان بگیرید و کار «پشتیبان‌گیری خودکار» را فعال نگه دارید', href: '/system/backup', icon: 'bi-cloud-arrow-down', done: hasBackup || !!(autoJob && autoJob.is_enabled && autoJob.last_run_at) });
+    if (on('system.backup_offsite')) {
+      const offsite = require('../../core/offsite');
+      add({ key: 'backup_offsite', title: 'نسخهٔ پشتیبان بیرون از سرور', desc: 'مقصد ایمیل/FTP/WebDAV را تنظیم کنید تا پشتیبان شبانه خارج از هاست هم نگه‌داری شود', href: '/system/settings?tab=offsite', icon: 'bi-cloud-upload', done: offsite.configured(), required: false });
+    }
   }
   if (on('system.scheduler')) {
     const recent = await db.table('scheduled_jobs').whereNotNull('last_run_at').orderBy('last_run_at', 'desc').first().catch(() => null);

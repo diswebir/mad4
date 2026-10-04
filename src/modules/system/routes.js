@@ -13,6 +13,7 @@ const utils = require('../../core/utils');
 const J = require('../../core/jalali');
 const schema = require('../../../database/schema');
 const backup = require('../../core/backup');
+const offsite = require('../../core/offsite');
 const scheduler = require('../../core/scheduler');
 const auth = require('../../core/auth');
 const upload = require('../../core/upload');
@@ -41,6 +42,7 @@ const TABS = [
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
   { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
+  { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
   { key: 'admissions', title: 'پیش‌ثبت‌نام', icon: 'bi-person-plus', feature: 'admissions.public_form' },
   { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
@@ -53,7 +55,8 @@ const FIELDS = {
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url'],
-  email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure']
+  email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
+  offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };
 
 router.get('/settings', async (req, res) => {
@@ -75,7 +78,7 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
     if (Array.isArray(val)) val = val[val.length - 1];
     if (val === undefined) continue;
     val = utils.normalizePersian(String(val));
-    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
+    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year|mb)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
     data[k] = val;
   }
   if (tab === 'school' && file('school_logo')) { removeFile(settings.get('school_logo')); data.school_logo = relPath(file('school_logo')); }
@@ -94,6 +97,11 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
   res.redirect('/system/settings?tab=' + tab);
 });
 
+router.post('/settings/test/offsite', modules.requireEnabled('system.backup_offsite'), async (req, res) => {
+  const r = await offsite.test();
+  req.flash(r.ok ? 'success' : 'danger', r.ok ? 'اتصال برقرار است: ' + (r.detail || '') : 'آزمایش ناموفق: ' + (r.error || ''));
+  res.redirect('/system/settings?tab=offsite');
+});
 router.post('/settings/test/sms', async (req, res) => {
   const r = await notify.sms(req.body.to, 'پیام آزمایشی از سامانه مدیریت مدرسه ' + settings.get('school_name'));
   req.flash(r.ok ? 'success' : 'danger', r.ok ? 'پیامک آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || r.skipped ? 'پیامک غیرفعال است' : 'خطای درگاه'));
@@ -154,7 +162,17 @@ router.get('/backup', modules.requireEnabled('system.backup'), async (req, res) 
   const files = backup.list();
   const counts = {};
   for (const t of ['users', 'students', 'teachers', 'classes', 'attendance', 'grades', 'tickets']) counts[t] = await db.count(t);
-  res.render(v('backup'), { title: 'پشتیبان‌گیری', files, counts, dbInfo: db.info });
+  res.render(v('backup'), { title: 'پشتیبان‌گیری', files, counts, dbInfo: db.info, offsite: { enabled: modules.isEnabled('system.backup_offsite'), mode: offsite.mode(), modeTitle: offsite.MODES[offsite.mode()], configured: offsite.configured(), last: offsite.last() } });
+});
+// ارسال دستی یک فایل پشتیبان به مقصد بیرونی
+router.post('/backup/offsite/:name', modules.requireEnabled('system.backup'), modules.requireEnabled('system.backup_offsite'), async (req, res) => {
+  const name = path.basename(req.params.name);
+  const file = path.join(config.get().storage, 'backups', name);
+  if (!fs.existsSync(file)) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const r = await offsite.send(file);
+  await activity.log(req, 'backup_offsite', 'system', null, (r.ok ? 'ارسال پشتیبان به بیرون: ' : 'ارسال ناموفق پشتیبان: ') + name + (r.ok ? ' → ' + r.detail : ' — ' + r.error));
+  req.flash(r.ok ? 'success' : 'danger', r.ok ? 'ارسال شد: ' + r.detail : 'ارسال ناموفق: ' + (r.error || ''));
+  res.redirect('/system/backup');
 });
 router.post('/backup/create', modules.requireEnabled('system.backup'), async (req, res) => {
   const name = await backup.create(req.body.type === 'file' ? 'file' : 'json');

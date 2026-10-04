@@ -23,11 +23,24 @@
     </div>
   </div>
   <div class="col-lg-7">
+    <% if (offsite.enabled) { %>
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-cloud-upload me-1"></i>ارسال پشتیبان به بیرون از سرور</h6><a href="/system/settings?tab=offsite" class="btn btn-sm btn-light"><i class="bi bi-gear me-1"></i>تنظیمات</a></div>
+      <div class="card-body fs-7">
+        <% if (offsite.mode === 'none') { %><span class="text-secondary"><i class="bi bi-dash-circle me-1"></i>غیرفعال — برای داشتن نسخه‌ای بیرون از هاست، مقصد ایمیل/FTP/WebDAV را در تنظیمات مشخص کنید.</span>
+        <% } else { %>
+          <div>مقصد: <strong><%= offsite.modeTitle %></strong> <% if (!offsite.configured) { %><span class="badge badge-soft-danger ms-1">تنظیمات ناقص</span><% } %></div>
+          <% if (offsite.last) { %><div class="mt-1 <%= offsite.last.ok ? 'text-success' : 'text-danger' %>"><i class="bi <%= offsite.last.ok ? 'bi-check-circle' : 'bi-x-circle' %> me-1"></i>آخرین ارسال: <%= J.formatDateTime(offsite.last.at) %> — <%= offsite.last.ok ? ('موفق: ' + (offsite.last.detail || '')) : ('ناموفق: ' + (offsite.last.error || '')) %><% if (offsite.last.name) { %> <span class="ltr d-inline-block text-secondary">(<%= offsite.last.name %>)</span><% } %></div>
+          <% } else { %><div class="mt-1 text-secondary">هنوز ارسالی انجام نشده است؛ پس از پشتیبان‌گیری شبانه یا با دکمهٔ «ارسال» کنار هر فایل.</div><% } %>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
     <div class="card table-card">
       <div class="card-header"><h6>فایل‌های پشتیبان</h6><span class="fs-7 text-secondary">storage/backups/</span></div>
       <table class="table table-hover"><thead><tr><th>نام فایل</th><th>حجم</th><th>زمان</th><th class="actions"></th></tr></thead><tbody>
         <% if (!files.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">هنوز نسخهٔ پشتیبانی ساخته نشده است</td></tr><% } %>
-        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>" aria-label="دانلود" title="دانلود"><i class="bi bi-download"></i></a> <a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td></tr><% }); %>
+        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>" aria-label="دانلود" title="دانلود"><i class="bi bi-download"></i></a> <% if (offsite.enabled && offsite.mode !== 'none') { %><a class="btn btn-sm btn-light" href="#" data-post="/system/backup/offsite/<%= f.name %>" data-confirm="این فایل به مقصد بیرونی (<%= offsite.modeTitle %>) ارسال شود؟" aria-label="ارسال به بیرون" title="ارسال به بیرون (<%= offsite.modeTitle %>)"><i class="bi bi-cloud-upload"></i></a> <% } %><a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td></tr><% }); %>
       </tbody></table>
     </div>
   </div>

@@ -1,6 +1,7 @@
 'use strict';
 const backup = require('../../core/backup');
 const notify = require('../../core/notify');
+const offsite = require('../../core/offsite');
 module.exports = [
   {
     key: 'backup_auto', name: 'پشتیبان‌گیری خودکار', description: 'ساخت نسخهٔ پشتیبان روزانه در storage/backups و نگه‌داشتن آخرین N نسخه (تنظیم backup_keep)', schedule: 'daily', defaultTime: '02:00',
@@ -8,7 +9,13 @@ module.exports = [
       if (!require('../../core/modules').isEnabled('system.auto_backup')) return 'قابلیت پشتیبان‌گیری خودکار غیرفعال است';
       const name = await backup.create(db.info.client === 'sqlite' ? 'file' : 'json', 'auto');
       const removed = backup.prune(Number(settings.get('backup_keep', 7)) || 7, 'auto');
-      return `ساخته شد: ${name}${removed.length ? `؛ حذف ${removed.length} نسخهٔ قدیمی` : ''}`;
+      let off = '';
+      if (require('../../core/modules').isEnabled('system.backup_offsite') && offsite.mode() !== 'none') {
+        const r = await offsite.send(require('path').join(backup.dir(), name));
+        off = r.ok ? `؛ ارسال به بیرون: ${r.detail}` : `؛ ارسال به بیرون ناموفق: ${r.error}`;
+        if (!r.ok) await notify.pushRole('admin', { title: 'ارسال پشتیبان به بیرون ناموفق بود', body: `پشتیبان ${name} ساخته شد اما ارسال آن به مقصد بیرونی (${offsite.MODES[offsite.mode()]}) با خطا مواجه شد: ${r.error}`, link: '/system/backup', type: 'warning' });
+      }
+      return `ساخته شد: ${name}${removed.length ? `؛ حذف ${removed.length} نسخهٔ قدیمی` : ''}${off}`;
     }
   },
   {

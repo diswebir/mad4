@@ -93,6 +93,19 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('smtp_host', 'سرور SMTP', { ltr: true, ph: 'mail.example.com' }) %><%- inp('smtp_port', 'پورت', { col: 3, ltr: true }) %>
         <%- sel('smtp_secure', 'SSL/TLS', { '0': 'خیر (STARTTLS)', '1': 'بله (SSL)' }, { col: 3 }) %>
         <%- inp('smtp_user', 'نام کاربری', { ltr: true }) %><%- inp('smtp_pass', 'رمز عبور', { ltr: true, type: 'password' }) %><%- inp('smtp_from', 'آدرس فرستنده', { ltr: true }) %>
+      <% } else if (tab === 'offsite') { %>
+        <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>پس از هر پشتیبان‌گیری شبانه (کار «پشتیبان‌گیری خودکار»)، فایل به‌صورت فشرده (gzip) به مقصد انتخابی ارسال می‌شود. از صفحهٔ <a href="/system/backup">پشتیبان‌گیری</a> هم می‌توانید هر فایل را دستی ارسال کنید.</div></div>
+        <%- sel('backup_offsite_mode', 'مقصد', { none: 'غیرفعال', email: 'ایمیل (پیوست)', ftp: 'FTP / FTPS', webdav: 'WebDAV (Nextcloud، ownCloud، …)' }, { col: 6 }) %>
+        <%- inp('backup_offsite_max_mb', 'سقف حجم فایل فشرده (مگابایت)', { col: 6, ltr: true, help: 'برای ایمیل معمولاً ۲۰–۲۵ مگابایت؛ فایل‌های بزرگ‌تر ارسال نمی‌شوند' }) %>
+        <div class="col-12 offsite-sec" data-mode="email"><h6 class="text-brand border-bottom pb-2 mb-0 mt-2"><i class="bi bi-envelope me-1"></i>ایمیل</h6></div>
+        <div class="col-md-6 offsite-sec" data-mode="email"><label class="form-label" for="st_backup_email_to">گیرنده</label><input class="form-control ltr" type="email" id="st_backup_email_to" name="backup_email_to" value="<%= s.backup_email_to || '' %>" placeholder="you@example.com"><div class="form-text">تنظیمات SMTP از تب «ایمیل» استفاده می‌شود<%= s.email_enabled === '1' && s.smtp_host ? '' : ' — هنوز پیکربندی نشده است' %></div></div>
+        <div class="col-12 offsite-sec" data-mode="ftp"><h6 class="text-brand border-bottom pb-2 mb-0 mt-2"><i class="bi bi-hdd-network me-1"></i>FTP</h6></div>
+        <%- inp('backup_ftp_host', 'سرور FTP', { col: 5, ltr: true, ph: 'ftp.example.com' }) %><%- inp('backup_ftp_port', 'پورت', { col: 2, ltr: true }) %><%- sel('backup_ftp_secure', 'FTPS (TLS)', { '0': 'خیر', '1': 'بله (Explicit)' }, { col: 2 }) %><%- inp('backup_ftp_dir', 'پوشهٔ مقصد', { col: 3, ltr: true, ph: 'backups' }) %>
+        <%- inp('backup_ftp_user', 'نام کاربری FTP', { col: 6, ltr: true }) %><%- inp('backup_ftp_pass', 'رمز عبور FTP', { col: 6, ltr: true, type: 'password' }) %>
+        <div class="col-12 offsite-sec" data-mode="webdav"><h6 class="text-brand border-bottom pb-2 mb-0 mt-2"><i class="bi bi-cloud me-1"></i>WebDAV</h6></div>
+        <%- inp('backup_webdav_url', 'نشانی پوشهٔ WebDAV', { col: 12, ltr: true, ph: 'https://cloud.example.com/remote.php/dav/files/USER/backups', help: 'پوشه باید از قبل وجود داشته باشد' }) %>
+        <%- inp('backup_webdav_user', 'نام کاربری', { col: 6, ltr: true }) %><%- inp('backup_webdav_pass', 'رمز عبور / App password', { col: 6, ltr: true, type: 'password' }) %>
+        <script>(function(){var sel=document.getElementById('st_backup_offsite_mode');if(!sel)return;function upd(){var m=sel.value;document.querySelectorAll('[name^="backup_ftp_"],[name^="backup_webdav_"],[name="backup_email_to"],.offsite-sec').forEach(function(el){var box=el.classList.contains('offsite-sec')?el:el.closest('.col-md-2,.col-md-3,.col-md-5,.col-md-6,.col-md-12,.col-12');if(!box)return;var mode=el.getAttribute('data-mode')||(el.name.indexOf('backup_ftp_')===0?'ftp':el.name.indexOf('backup_webdav_')===0?'webdav':'email');box.style.display=(m===mode)?'':'none';});}sel.addEventListener('change',upd);upd();})()</script>
       <% } else if (tab === 'demo') { %>
         <div class="col-12">
           <p>دادهٔ نمونه شامل معلمان، کلاس‌ها، دانش‌آموزان، حضور و غیاب، نمرات، تیکت‌ها، اطلاعیه‌ها، تکالیف، رویدادها، شهریه‌ها، کتاب‌ها و… است و برای آشنایی با سامانه کاربرد دارد.</p>
@@ -108,11 +121,13 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
       <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
         <% if (tab === 'sms' || tab === 'email') { %>
           <div class="input-group input-group-sm" style="max-width:360px"><input class="form-control ltr" placeholder="<%= tab === 'sms' ? '09123456789' : 'you@example.com' %>" form="testForm" name="to"><button class="btn btn-outline-secondary" form="testForm">ارسال آزمایشی</button></div>
+        <% } else if (tab === 'offsite') { %>
+          <button class="btn btn-outline-secondary btn-sm" form="testForm"><i class="bi bi-plug me-1"></i>آزمایش اتصال (با تنظیمات ذخیره‌شده)</button>
         <% } else { %><span></span><% } %>
         <button class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>ذخیره</button>
       </div>
       <% } %>
     </form>
-    <% if (tab === 'sms' || tab === 'email') { %><form id="testForm" method="post" action="/system/settings/test/<%= tab %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
+    <% if (tab === 'sms' || tab === 'email' || tab === 'offsite') { %><form id="testForm" method="post" action="/system/settings/test/<%= tab %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
   </div>
 </div>

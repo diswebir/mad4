@@ -21,7 +21,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   }
   r = await a.get('/system/jobs'); assert(/>موفق</.test(r.text) && !/>ناموفق</.test(r.text), 'all jobs succeeded (no failed badge)');
   assert(/manual|دستی/.test(r.text), 'run log shows manual trigger');
-  r = await a.get('/system/sms-log'); assert(r.status === 200 && /attendance/.test(r.text) && /غایب بود/.test(r.text), 'sms log has attendance SMS (log provider)');
+  r = await a.get('/system/sms-log?context=attendance'); assert(r.status === 200 && /attendance/.test(r.text) && /غایب بود/.test(r.text), 'sms log has attendance SMS (log provider)'); // فیلتر context: کارهای بعدی (شهریه/کتابخانه) ممکن است ده‌ها پیامک دیگر بفرستند
   r = await a.get('/system/backup'); assert(/auto-/.test(r.text), 'auto backup file listed');
   // تغییر ساعت و توگل
   r = await a.post('/system/jobs/cleanup', { action: 'time', run_at: '04:15' }); r = await a.get('/system/jobs'); assert(/value="04:15"/.test(r.text), 'run_at updated');
