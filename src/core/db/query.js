@@ -185,6 +185,34 @@ class QueryBuilder {
     }
     return lastId;
   }
+  /**
+   * درج چندسطری واقعی (یک INSERT با چند VALUES) — برای داده‌های حجیم (دادهٔ نمونه، بازیابی پشتیبان).
+   * سطرها بر اساس مجموعهٔ کلیدها دسته‌بندی و هر دسته حداکثر با ~۹۰۰ پارامتر ارسال می‌شود (سازگار با محدودیت SQLite/MySQL).
+   * برمی‌گرداند: تعداد سطرهای درج‌شده (شناسه‌ها برگردانده نمی‌شوند).
+   */
+  async insertMany(rows, maxParams) {
+    rows = (rows || []).filter(Boolean);
+    if (!rows.length) return 0;
+    const limit = Math.max(50, maxParams || 900);
+    let n = 0, i = 0;
+    while (i < rows.length) {
+      const keys = Object.keys(rows[i]).filter((k) => rows[i][k] !== undefined);
+      const sig = keys.join(',');
+      const maxRows = Math.max(1, Math.floor(limit / Math.max(1, keys.length)));
+      const batch = [];
+      while (i < rows.length && batch.length < maxRows) {
+        const r = rows[i];
+        if (Object.keys(r).filter((k) => r[k] !== undefined).join(',') !== sig) break;
+        batch.push(r); i++;
+      }
+      const tuple = '(' + keys.map(() => '?').join(', ') + ')';
+      const params = [];
+      for (const r of batch) for (const k of keys) params.push(r[k]);
+      await this.driver.run(`INSERT INTO ${ident(this._table)} (${keys.map(quoteIdent).join(', ')}) VALUES ${batch.map(() => tuple).join(', ')}`, params);
+      n += batch.length;
+    }
+    return n;
+  }
   async update(data) {
     const keys = Object.keys(data).filter((k) => data[k] !== undefined);
     if (!keys.length) return 0;

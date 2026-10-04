@@ -192,25 +192,28 @@ router.post('/backup/delete/:name', modules.requireEnabled('system.backup'), (re
   req.flash('success', 'فایل پشتیبان حذف شد.');
   res.redirect('/system/backup');
 });
-router.post('/backup/restore', modules.requireEnabled('system.backup'), ...upload.form('restore', 'single', 'file', { maxMb: 200, maxFiles: 1 }), async (req, res) => {
+router.post('/backup/restore', modules.requireEnabled('system.backup'), ...upload.form('restore', 'single', 'file', { maxMb: 200, maxFiles: 1, types: ['application/json', 'text/json', 'text/plain', 'application/gzip', 'application/x-gzip', 'application/octet-stream'] }), async (req, res) => {
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/system/backup'); }
   if (!req.file) { req.flash('danger', 'فایلی انتخاب نشده است.'); return res.redirect('/system/backup'); }
+  if (!/\.(json|gz)$/i.test(req.file.originalname || '')) { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } req.flash('danger', 'فقط فایل‌های .json یا .json.gz پذیرفته می‌شوند.'); return res.redirect('/system/backup'); }
   try {
-    const raw = fs.readFileSync(req.file.path, 'utf8');
-    const data = JSON.parse(raw);
-    if (!data.tables) throw new Error('ساختار فایل پشتیبان نامعتبر است');
+    let buf = fs.readFileSync(req.file.path);
+    if (buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b) buf = require('zlib').gunzipSync(buf); // فایل‌های .json.gz (پشتیبان بیرونی)
+    const data = JSON.parse(buf.toString('utf8'));
+    if (!data || !data.tables || typeof data.tables !== 'object') throw new Error('ساختار فایل پشتیبان نامعتبر است');
+    let restored = 0;
     await db.transaction(async (tx) => {
       for (const [t, rows] of Object.entries(data.tables)) {
-        if (!schema[t] || t === 'sessions') continue;
+        if (!schema[t] || t === 'sessions' || !Array.isArray(rows)) continue;
         await tx.remove(t);
         const cols = Object.keys(schema[t]).filter((c) => !c.startsWith('__'));
-        for (const row of rows) await tx.insert(t, utils.pick(row, cols));
+        restored += await tx.insertMany(t, rows.map((row) => utils.pick(row, cols)));
       }
     });
     await settings.load();
     await modules.loadStates();
-    await activity.log(req, 'backup', 'system', null, 'بازیابی پشتیبان');
-    req.flash('success', 'بازیابی با موفقیت انجام شد.');
+    await activity.log(req, 'backup', 'system', null, `بازیابی پشتیبان (${restored} سطر)`);
+    req.flash('success', `بازیابی با موفقیت انجام شد (${J.toPersianDigits(restored)} سطر).`);
   } catch (e) { req.flash('danger', 'بازیابی ناموفق: ' + e.message); }
   finally { try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } }
   res.redirect('/system/backup');

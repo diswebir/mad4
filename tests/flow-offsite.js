@@ -2,7 +2,7 @@
 /** جریان: ارسال پشتیبان به بیرون (system.backup_offsite) — تنظیمات، آزمایش اتصال، ارسال دستی به WebDAV محلی، مسیر خطا، اجرای کار شبانه، خاموش‌کردن */
 const http = require('http');
 const zlib = require('zlib');
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 
 // یک سرور WebDAV ساده (PROPFIND/HEAD/PUT) روی 127.0.0.1 برای دریافت فایل‌ها
@@ -54,6 +54,23 @@ const dav = http.createServer((req, res) => {
   assert(json && json.tables && json.tables.students && json.tables.students.length >= 100 && !json.tables.sessions, 'payload gunzips to a full JSON backup without sessions');
   r = await a.get('/system/backup'); assert(/آخرین ارسال/.test(r.text) && /موفق: WebDAV/.test(r.text) && /WebDAV \(Nextcloud/.test(r.text), 'backup page shows last successful send');
   r = await a.get('/system/activity?action=backup_offsite'); assert(r.status === 200 && /ارسال پشتیبان به بیرون/.test(r.text), 'activity logged');
+
+  // بازیابی از همان فایل فشرده (.json.gz) که به مقصد بیرونی رفته است
+  {
+    r = await a.get('/system/backup');
+    const studentsBefore = Number(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text) ? String(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text)[1]).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)) : '0');
+    const fd = new FormData(); fd.append('_csrf', a.csrf); fd.append('file', new Blob([received[0].body], { type: 'application/gzip' }), name + '.gz');
+    const res = await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' });
+    assert(res.status === 302, 'restore from .json.gz accepted: ' + res.status);
+    r = await a.get('/system/backup'); assert(/بازیابی با موفقیت انجام شد/.test(r.text) && /سطر/.test(r.text), 'restore success flash with row count');
+    const studentsAfter = Number(String(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text)[1]).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+    assert(studentsAfter === studentsBefore && studentsAfter >= 100, `students count preserved after restore (${studentsBefore} → ${studentsAfter})`);
+    r = await a.get('/dashboard'); assert(r.status === 200, 'session still valid after restore');
+    const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login works after restore');
+    const bad = new FormData(); bad.append('_csrf', a.csrf); bad.append('file', new Blob(['{"nope":1}'], { type: 'application/json' }), 'x.json');
+    await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: bad, redirect: 'manual' });
+    r = await a.get('/system/backup'); assert(/بازیابی ناموفق/.test(r.text) && /نامعتبر/.test(r.text), 'invalid backup rejected');
+  }
 
   // سقف حجم
   await a.post('/system/settings/offsite', { backup_offsite_max_mb: '0' });

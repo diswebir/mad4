@@ -83,6 +83,7 @@ const api = {
     return state.driver.transaction((tx) => fn(wrapTx(tx)));
   },
   async insert(table, data) { return new QueryBuilder(state.driver, table).insert(data); },
+  async insertMany(table, rows) { return new QueryBuilder(state.driver, table).insertMany(rows); },
   async update(table, data, where) { const q = new QueryBuilder(state.driver, table); if (where) q.where(where); return q.update(data); },
   async remove(table, where) { const q = new QueryBuilder(state.driver, table); if (where) q.where(where); return q.delete(); },
   async findOne(table, where) { return new QueryBuilder(state.driver, table).where(where).first(); },
@@ -113,6 +114,7 @@ function wrapTx(tx) {
     table: (name) => new QueryBuilder(tx, name),
     all: (sql, p) => tx.all(sql, p), get: (sql, p) => tx.get(sql, p), run: (sql, p) => tx.run(sql, p), exec: (sql) => tx.exec(sql),
     insert: (table, data) => new QueryBuilder(tx, table).insert(data),
+    insertMany: (table, rows) => new QueryBuilder(tx, table).insertMany(rows),
     update: (table, data, where) => { const q = new QueryBuilder(tx, table); if (where) q.where(where); return q.update(data); },
     remove: (table, where) => { const q = new QueryBuilder(tx, table); if (where) q.where(where); return q.delete(); },
     findOne: (table, where) => new QueryBuilder(tx, table).where(where).first(),

@@ -170,7 +170,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
   const stats = {};
   await db.transaction(async (tx) => {
     const insert = async (table, row) => tx.insert(table, row);
-    const insertMany = async (table, rows) => { for (const r of rows) await tx.insert(table, r); };
+    const insertMany = async (table, rows) => tx.insertMany(table, rows);
     /** ساخت کاربر؛ اگر نام کاربری قبلاً وجود داشت همان را برمی‌گرداند (اجرای مجدد seed) */
     const ensureUser = async (username, data) => { const ex = await tx.findOne('users', { username }); if (ex) return ex.id; return insert('users', Object.assign({ username }, data)); };
 
@@ -406,6 +406,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
     const absentRows = []; // برای عذرها
     for (const date of demoDays) {
       const isToday = date === today;
+      const dayRows = []; // درج دسته‌ای هر روز (سرعت نصب روی MySQL)
       for (let ci = 0; ci < CLASSES.length; ci++) {
         if (isToday && ci >= 7) continue; // امروز برخی کلاس‌ها هنوز ثبت نشده‌اند
         const recorder = teacherUserIds[homeroom[ci]];
@@ -417,22 +418,28 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
           if (r < pAbs) { status = chance(0.3) ? 'excused' : 'absent'; if (status === 'excused') note = pick(['گواهی پزشک', 'با هماهنگی ولی', 'مسافرت خانوادگی']); }
           else if (r < pAbs + pLate) { status = 'late'; minutes = pick([5, 10, 10, 15, 20, 30]); }
           else if (r < pAbs + pLate + 0.01) { status = 'leave'; note = 'خروج زودهنگام با اجازهٔ دفتر'; }
-          const id = await insert('attendance', { date, class_id: classIds[ci], student_id: s.id, class_subject_id: null, period: null, session_key: 'daily', status, minutes_late: minutes, note, recorded_by: recorder, created_at: date + ' 08:05:00' });
+          dayRows.push({ date, class_id: classIds[ci], student_id: s.id, class_subject_id: null, period: null, session_key: 'daily', status, minutes_late: minutes, note, recorded_by: recorder, created_at: date + ' 08:05:00' });
           attCount++;
-          if (status === 'absent') { absentTotal++; absentByStudent[s.id] = (absentByStudent[s.id] || 0) + 1; absentRows.push({ id, sid: s.id, date, classIdx: ci }); }
+          if (status === 'absent') { absentTotal++; absentByStudent[s.id] = (absentByStudent[s.id] || 0) + 1; }
         }
+      }
+      await tx.insertMany('attendance', dayRows);
+      if (dayRows.some((r) => r.status === 'absent')) {
+        for (const a of await tx.table('attendance').select('id', 'student_id', 'class_id').where('date', date).where('session_key', 'daily').where('status', 'absent').all()) absentRows.push({ id: a.id, sid: a.student_id, date, classIdx: classIds.indexOf(a.class_id) });
       }
       // حضور و غیاب زنگ‌به‌زنگ برای دو کلاس در روزهای اخیر
       if (J.diffDays(date, today) <= 10) {
         for (const ci of [0, 7]) {
           const sessions = csByClass[ci].slice(0, 2);
+          const sessRows = [];
           for (const cs of sessions) {
             for (const s of active.filter((x) => x.classIdx === ci)) {
               const st = chance(0.05) ? 'absent' : chance(0.04) ? 'late' : 'present';
-              await insert('attendance', { date, class_id: classIds[ci], student_id: s.id, class_subject_id: cs.id, period: 1, session_key: 'cs:' + cs.id, status: st, minutes_late: st === 'late' ? 10 : null, note: null, recorded_by: teacherUserIds[cs.teacherIdx], created_at: date + ' 09:00:00' });
+              sessRows.push({ date, class_id: classIds[ci], student_id: s.id, class_subject_id: cs.id, period: 1, session_key: 'cs:' + cs.id, status: st, minutes_late: st === 'late' ? 10 : null, note: null, recorded_by: teacherUserIds[cs.teacherIdx], created_at: date + ' 09:00:00' });
               attCount++;
             }
           }
+          await tx.insertMany('attendance', sessRows);
         }
       }
     }
@@ -472,15 +479,17 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
           const published = J.diffDays(date, today) > 3 || chance(0.5);
           const examId = await insert('exams', { class_id: classIds[ci], subject_id: cs.subjectId, class_subject_id: cs.id, term_id: term1, title: `${type[1]} ${cs.title}${e > 0 ? ' ' + J.toPersianDigits(e + 1) : ''}`, type: type[0], date, start_time: null, max_score: max, weight: type[0] === 'midterm' ? 2 : 1, description: null, created_by: teacherUserIds[cs.teacherIdx], is_published: published ? 1 : 0, created_at: J.addDays(date, -3) + ' 10:00:00' });
           examCount++;
+          const gradeRows = [];
           for (const s of cls) {
             if (chance(0.03)) continue; // غایب در آزمون
             let ratio = 0.72 + s.ability * 0.1 + gauss() * 0.1;
             ratio = Math.max(0.15, Math.min(1, ratio));
             const score = Math.round(ratio * max * 4) / 4;
-            await insert('grades', { exam_id: examId, student_id: s.id, score, descriptive: null, note: null, graded_by: teacherUserIds[cs.teacherIdx], created_at: J.addDays(date, 1) + ' 12:00:00' });
+            gradeRows.push({ exam_id: examId, student_id: s.id, score, descriptive: null, note: null, graded_by: teacherUserIds[cs.teacherIdx], created_at: J.addDays(date, 1) + ' 12:00:00' });
             gradeCount++;
             (studentScores[s.id] = studentScores[s.id] || []).push(score / max * 20);
           }
+          await tx.insertMany('grades', gradeRows);
         }
       }
       // آزمون آینده
@@ -761,6 +770,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
       for (let di = 0; di < demoDays.length; di++) {
         const date = demoDays[di];
         const w = J.weekdayIndex(date);
+        const logRows = [];
         for (const r of slotsByDay[w] || []) {
           if (date === today && r.p > todayPeriodLimit) continue;
           if (!chance(diligence[r.cs.teacherIdx])) continue;
@@ -769,13 +779,14 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
           const chapters = CHAPTERS[r.cs.code] || [];
           const progress = Math.min(ids.length - 1, Math.floor((di / demoDays.length) * Math.max(1, Math.round(ids.length * 0.35)) + (chance(0.15) ? 1 : 0)));
           const chapterTitle = chapters[progress] || `فصل ${progress + 1}`;
-          await insert('lesson_logs', {
+          logRows.push({
             class_id: classIds[r.ci], class_subject_id: r.cs.id, subject_id: r.cs.subjectId, teacher_id: teacherIds[r.cs.teacherIdx], date, period: r.p,
             topic: `${chapterTitle} — ${pick(['بخش اول', 'بخش دوم', 'ادامهٔ مبحث', 'حل تمرین', 'جمع‌بندی', 'مثال‌های کاربردی'])}`, description: chance(0.7) ? pick(ACTS) : null, homework: chance(0.55) ? HW(r.cs.code) : null,
             syllabus_item_id: ids[progress], created_by: teacherUserIds[r.cs.teacherIdx], created_at: `${date} ${pick(['12:35', '13:05', '13:40', '18:20'])}:00`
           });
           logCount++;
         }
+        await tx.insertMany('lesson_logs', logRows);
       }
       stats.lessonLogs = logCount;
     }

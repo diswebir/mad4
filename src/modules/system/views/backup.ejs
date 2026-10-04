@@ -14,10 +14,10 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h6>بازیابی از فایل JSON</h6></div>
+      <div class="card-header"><h6>بازیابی از فایل JSON / JSON.GZ</h6></div>
       <form method="post" action="/system/backup/restore" enctype="multipart/form-data" class="card-body" data-confirm="هشدار: داده‌های فعلی با محتوای فایل جایگزین می‌شوند. ادامه می‌دهید؟">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="file" class="form-control mb-2" name="file" accept=".json" required aria-label="فایل">
+        <input type="file" class="form-control mb-2" name="file" accept=".json,.gz" required aria-label="فایل"><div class="form-text mb-2">فایل JSON یا نسخهٔ فشردهٔ آن (.json.gz) که به مقصد بیرونی فرستاده شده است.</div>
         <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>بازیابی</button>
       </form>
     </div>

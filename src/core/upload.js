@@ -26,7 +26,7 @@ function uploader(folder, opts) {
     storage,
     limits: { fileSize: (opts.maxMb || cfg.uploads.maxSizeMb) * 1024 * 1024, files: opts.maxFiles || 5 },
     fileFilter: (req, file, cb) => {
-      const allowed = opts.images ? IMAGE_TYPES : DOC_TYPES;
+      const allowed = opts.types || (opts.images ? IMAGE_TYPES : DOC_TYPES);
       // نام اصلی فایل را به UTF-8 برمی‌گردانیم (مرورگرها latin1 می‌فرستند)
       try { file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8'); } catch (e) { /* ignore */ }
       if (BLOCKED_EXT.test(file.originalname || '')) return cb(new Error('این نوع فایل مجاز نیست'));
