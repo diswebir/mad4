@@ -1,8 +1,8 @@
 'use strict';
 /** جریان اولیا: ساخت حساب از پروندهٔ دانش‌آموز، ورود ولی، صفحات فرزند، سوئیچ فرزند، تیکت و پیام، سوابق تحصیلی */
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
-const mp = async (c, url, fields) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); const res = await fetch('http://localhost:3000' + url, { method: 'POST', body: fd, headers: { cookie: c.cookieHeader() }, redirect: 'manual' }); return { status: res.status, location: res.headers.get('location'), text: await res.text() }; };
+const mp = async (c, url, fields) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); const res = await fetch(BASE + url, { method: 'POST', body: fd, headers: { cookie: c.cookieHeader() }, redirect: 'manual' }); return { status: res.status, location: res.headers.get('location'), text: await res.text() }; };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   const phone = '0912' + String(Date.now()).slice(-7);

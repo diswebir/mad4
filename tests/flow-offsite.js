@@ -60,7 +60,7 @@ const dav = http.createServer((req, res) => {
     r = await a.get('/system/backup');
     const studentsBefore = Number(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text) ? String(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text)[1]).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)) : '0');
     const fd = new FormData(); fd.append('_csrf', a.csrf); fd.append('file', new Blob([received[0].body], { type: 'application/gzip' }), name + '.gz');
-    const res = await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' });
+    const res = await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' }); await res.text(); // بدنه را مصرف می‌کنیم تا ذخیرهٔ نشست (فلش) پیش از درخواست بعدی کامل شود
     assert(res.status === 302, 'restore from .json.gz accepted: ' + res.status);
     r = await a.get('/system/backup'); assert(/بازیابی با موفقیت انجام شد/.test(r.text) && /سطر/.test(r.text), 'restore success flash with row count');
     const studentsAfter = Number(String(/<div class="k">students<\/div><div class="v">([^<]+)<\/div>/.exec(r.text)[1]).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
@@ -68,7 +68,7 @@ const dav = http.createServer((req, res) => {
     r = await a.get('/dashboard'); assert(r.status === 200, 'session still valid after restore');
     const t = new Client(); r = await t.login('teacher1', '123456'); assert(r.status === 302, 'teacher login works after restore');
     const bad = new FormData(); bad.append('_csrf', a.csrf); bad.append('file', new Blob(['{"nope":1}'], { type: 'application/json' }), 'x.json');
-    await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: bad, redirect: 'manual' });
+    await (await fetch(BASE + '/system/backup/restore', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: bad, redirect: 'manual' })).text();
     r = await a.get('/system/backup'); assert(/بازیابی ناموفق/.test(r.text) && /نامعتبر/.test(r.text), 'invalid backup rejected');
   }
 

@@ -1,6 +1,6 @@
 'use strict';
 /** جریان زمان‌بند: صفحهٔ کارها، اجرای دستی هر کار، تغییر ساعت/توگل، cron با توکن، لاگ پیامک، اسکریپت cron */
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const { execSync } = require('child_process');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
@@ -28,8 +28,8 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   r = await a.post('/system/jobs/cleanup', { action: 'toggle' }); r = await a.get('/system/jobs'); assert(r.status === 200, 'toggle job');
   r = await a.post('/system/jobs/cleanup', { action: 'toggle' });
   // cron با توکن
-  const bad = await fetch('http://localhost:3000/cron?token=wrong'); assert(bad.status === 403, 'cron rejects wrong token');
-  const ok = await fetch('http://localhost:3000/cron?token=' + token); const j = await ok.json(); assert(ok.status === 200 && j.ok === true && typeof j.ran === 'number', 'cron endpoint runs due jobs: ran=' + j.ran);
+  const bad = await fetch(BASE + '/cron?token=wrong'); assert(bad.status === 403, 'cron rejects wrong token');
+  const ok = await fetch(BASE + '/cron?token=' + token); const j = await ok.json(); assert(ok.status === 200 && j.ok === true && typeof j.ran === 'number', 'cron endpoint runs due jobs: ran=' + j.ran);
   // تنظیمات
   r = await a.post('/system/jobs/settings', { scheduler_mode: 'internal', backup_keep: '5' }); assert(r.status === 302, 'save scheduler settings');
   // اسکریپت cron

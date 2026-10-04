@@ -1,5 +1,5 @@
 'use strict';
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 const flashOf = (html) => { const m = /alert[^>]*>([\s\S]*?)<\/div>/.exec(html); return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) : ''; };
 (async () => {
@@ -23,7 +23,7 @@ const flashOf = (html) => { const m = /alert[^>]*>([\s\S]*?)<\/div>/.exec(html);
   const uname = 't9' + String(Date.now()).slice(-7);
   const fd0 = new FormData(); fd0.append('_csrf', a.csrf);
   for (const [k, v] of Object.entries({ name: 'معلم آزمایشگاه', username: uname, password: 'secret123', personnel_code: '9' + String(Date.now()).slice(-6), gender: 'female', status: 'active' })) fd0.append(k, v);
-  const res0 = await fetch('http://localhost:3000/teachers', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd0, redirect: 'manual' });
+  const res0 = await fetch(BASE + '/teachers', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd0, redirect: 'manual' }); await res0.text();
   assert(res0.status === 302 && !/new/.test(res0.headers.get('location')), 'create lab teacher -> ' + res0.headers.get('location'));
   r = await a.get('/teachers?q=' + uname); const labT = [...r.text.matchAll(/\/teachers\/(\d+)\/edit/g)].map((m) => m[1]).pop();
   r = await a.post('/academic/classes/1/subjects', { subject_id: subId, teacher_id: labT, weekly_hours: '1' }); assert(r.status === 302, 'assign class subject');
@@ -55,7 +55,7 @@ const flashOf = (html) => { const m = /alert[^>]*>([\s\S]*?)<\/div>/.exec(html);
   r = await a.get('/teachers/new'); assert(r.status === 200, 'teachers/new');
   const fd = new FormData(); fd.append('_csrf', a.csrf);
   for (const [k, v] of Object.entries({ name: 'معلم تست', username: 't9999', password: 'secret123', phone: '09121112233', personnel_code: '9999', gender: 'male', education: 'کارشناسی', field: 'فیزیک', status: 'active', employment_type: 'official' })) fd.append(k, v);
-  const res = await fetch('http://localhost:3000/teachers', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' });
+  const res = await fetch(BASE + '/teachers', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' }); await res.text();
   assert(res.status === 302 && !/new/.test(res.headers.get('location')), 'create teacher -> ' + res.headers.get('location'));
   r = await a.get('/teachers?q=t9999'); assert(/معلم تست/.test(r.text), 'teacher listed');
   const tid = [...r.text.matchAll(/\/teachers\/(\d+)\/edit/g)].map((m) => m[1]).pop();

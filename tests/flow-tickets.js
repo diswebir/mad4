@@ -1,7 +1,7 @@
 'use strict';
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
-const mp = async (c, url, fields) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); const res = await fetch('http://localhost:3000' + url, { method: 'POST', headers: { cookie: c.cookieHeader() }, body: fd, redirect: 'manual' }); return { status: res.status, location: res.headers.get('location') }; };
+const mp = async (c, url, fields) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); const res = await fetch(BASE + url, { method: 'POST', headers: { cookie: c.cookieHeader() }, body: fd, redirect: 'manual' }); await res.text(); return { status: res.status, location: res.headers.get('location') }; };
 (async () => {
   const s = new Client(); let r = await s.login('40001', '123456'); assert(r.status === 302, 'student login');
   r = await s.get('/tickets'); assert(r.status === 200 && /TK-/.test(r.text), 'student ticket list');

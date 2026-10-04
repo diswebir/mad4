@@ -284,12 +284,13 @@ router.get('/import', auth.requireRoleOrPermission(['admin'], 'students.import_e
 });
 router.get('/import/template', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), (req, res) => {
   const cols = fields.importColumns();
-  const sample = [{ first_name: 'علی', last_name: 'محمدی', gender: 'male', national_id: '0012345678', birth_date: '1391/04/15', father_name: 'رضا', father_phone: '09121234567', mother_name: 'مریم', mother_phone: '09123456789', address: 'تهران، خیابان آزادی' }];
+  const sample = [{ first_name: 'علی', last_name: 'محمدی', gender: 'male', national_id: '0013542419', birth_date: '1391/04/15', father_name: 'رضا', father_phone: '09121234567', mother_name: 'مریم', mother_phone: '09123456789', address: 'تهران، خیابان آزادی' }];
   res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', 'attachment; filename="students-template.csv"');
   res.send(utils.toCSV(sample, cols.map((c) => ({ label: c.key, value: (r) => r[c.key] || '' }))));
 });
-router.post('/import', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), ...upload.form('imports', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/import', auth.requireRoleOrPermission(['admin'], 'students.import_export'), modules.requireEnabled('students.import'), ...upload.form('imports', 'single', 'file', { maxMb: 10, types: ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel', 'application/octet-stream', 'text/comma-separated-values'] }), async (req, res) => {
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده'); return res.redirect('/students/import'); }
+  if (!/\.(csv|txt)$/i.test(req.file.originalname || '')) { upload.removeFile(upload.relPath(req.file)); req.flash('danger', 'فقط فایل CSV پذیرفته می‌شود.'); return res.redirect('/students/import'); }
   const fs = require('fs');
   let text = fs.readFileSync(req.file.path, 'utf8'); upload.removeFile(upload.relPath(req.file));
   const rows = utils.parseCSVObjects(text);

@@ -1,5 +1,5 @@
 'use strict';
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
 (async () => {
   const t = new Client();
@@ -31,7 +31,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   if (opt) {
     // multipart post
     const fd = new FormData(); fd.append('_csrf', s.csrf); fd.append('attendance_id', opt[1]); fd.append('reason', 'بیماری — گواهی پزشک');
-    const res = await fetch('http://localhost:3000/attendance/excuses', { method: 'POST', headers: { cookie: s.cookieHeader() }, body: fd, redirect: 'manual' });
+    const res = await fetch(BASE + '/attendance/excuses', { method: 'POST', headers: { cookie: s.cookieHeader() }, body: fd, redirect: 'manual' }); await res.text();
     assert(res.status === 302, 'POST excuse multipart ' + res.status);
     r = await s.get('/attendance/excuses'); assert(/بیماری — گواهی پزشک/.test(r.text), 'excuse listed for student');
   }
@@ -52,7 +52,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   r = await a.get('/students/new');
   const fd = new FormData(); fd.append('_csrf', a.csrf);
   for (const [k, v] of Object.entries({ first_name: 'تست', last_name: 'آزمایشی', national_id: '0012345678', gender: 'male', class_id: '1', birth_date: '1391/05/12', father_name: 'علی آزمایشی', father_phone: '09121234567', mother_name: 'مریم', mother_phone: '09121234568', status: 'active', enrollment_date: '1405/07/01' })) fd.append(k, v);
-  const res2 = await fetch('http://localhost:3000/students', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' });
+  const res2 = await fetch(BASE + '/students', { method: 'POST', headers: { cookie: a.cookieHeader() }, body: fd, redirect: 'manual' }); await res2.text();
   assert(res2.status === 302, 'POST /students ' + res2.status + ' -> ' + res2.headers.get('location'));
   const loc = res2.headers.get('location');
   r = await a.get(loc); assert(r.status === 200 && /آزمایشی/.test(r.text), 'new student page ' + loc);

@@ -1,8 +1,8 @@
 'use strict';
 /** تست جریان تکالیف: تعریف با فایل → مشاهده دانش‌آموز → ارسال پاسخ → تأخیر → نمره‌دهی → محتوای آموزشی */
-const { Client } = require('./client');
+const { Client, BASE } = require('./client');
 const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode = 2; } else console.log('ok:', m); };
-const mp = async (c, url, fields, file) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); if (file) fd.append(file.field, new Blob([file.data], { type: file.type || 'text/plain' }), file.name); const res = await fetch('http://localhost:3000' + url, { method: 'POST', headers: { cookie: c.cookieHeader() }, body: fd, redirect: 'manual' }); c.storeCookies(res); return { status: res.status, location: res.headers.get('location'), text: await res.text() }; };
+const mp = async (c, url, fields, file) => { const fd = new FormData(); fd.append('_csrf', c.csrf); for (const [k, v] of Object.entries(fields)) fd.append(k, v); if (file) fd.append(file.field, new Blob([file.data], { type: file.type || 'text/plain' }), file.name); const res = await fetch(BASE + url, { method: 'POST', headers: { cookie: c.cookieHeader() }, body: fd, redirect: 'manual' }); c.storeCookies(res); return { status: res.status, location: res.headers.get('location'), text: await res.text() }; };
 (async () => {
   const a = new Client(); let r = await a.login('admin', 'admin123'); assert(r.status === 302, 'admin login');
   r = await a.get('/homework'); assert(r.status === 200, 'homework list');
