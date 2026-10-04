@@ -81,7 +81,7 @@ router.get('/materials', modules.requireEnabled('homework.materials'), async (re
   const canAdd = req.user.role !== 'student';
   res.render(v('materials'), { title: 'محتوای آموزشی', result, cs: canAdd ? await csFor(req) : [], classes: st ? [] : await db.table('classes').where('is_active', 1).where((b) => (tc ? b.whereIn('id', tc.classIds) : b)).orderBy('title').all(), canAdd, query: req.query, f: { class_id: req.query.class_id || '', q: req.query.q || '' } });
 });
-router.post('/materials', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.materials'), ...upload.form('materials', 'single', 'file', { maxMb: 20 }), async (req, res) => {
+router.post('/materials', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.materials'), ...upload.form('materials', 'single', 'file', { userContent: true, maxMb: 20 }), async (req, res) => {
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/homework/materials'); }
   const b = utils.cleanBody(req.body, { fields: ['class_subject_id', 'title', 'description', 'link'] });
   const cs = await db.table('class_subjects').where('id', b.class_subject_id).first();
@@ -121,9 +121,9 @@ async function save(req, res, hw) {
   await activity.log(req, 'create', 'homework', id, 'تعریف تکلیف ' + data.title);
   req.flash('success', 'تکلیف تعریف شد.'); res.redirect('/homework/' + id);
 }
-router.post('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), ...upload.form('homework', 'single', 'file', { maxMb: 20 }), (req, res) => save(req, res, null));
+router.post('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), ...upload.form('homework', 'single', 'file', { userContent: true, maxMb: 20 }), (req, res) => save(req, res, null));
 router.get('/:id/edit', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), async (req, res) => { const hw = await db.findById('homework', req.params.id); if (!hw) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canManage(req, hw))) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); form(req, res, hw); });
-router.post('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), ...upload.form('homework', 'single', 'file', { maxMb: 20 }), async (req, res) => { const hw = await db.findById('homework', req.params.id); if (!hw) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canManage(req, hw))) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); save(req, res, hw); });
+router.post('/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), ...upload.form('homework', 'single', 'file', { userContent: true, maxMb: 20 }), async (req, res) => { const hw = await db.findById('homework', req.params.id); if (!hw) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canManage(req, hw))) return res.status(403).render('errors/403', { title: 'غیرمجاز' }); save(req, res, hw); });
 router.post('/:id/delete', auth.requireRoleOrPermission(['admin', 'teacher'], 'homework.view_all'), modules.requireEnabled('homework.manage'), async (req, res) => {
   const hw = await db.findById('homework', req.params.id); if (!hw) return res.status(404).render('errors/404', { title: 'یافت نشد' }); if (!(await canManage(req, hw))) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   const files = await db.table('homework_submissions').where('homework_id', hw.id).whereNotNull('file_path').pluck('file_path'); files.forEach((f) => upload.removeFile(f)); upload.removeFile(hw.file_path);
@@ -150,7 +150,7 @@ router.get('/:id', async (req, res) => {
   const subs = utils.indexBy(await db.table('homework_submissions').where('homework_id', hw.id).all(), 'student_id');
   res.render(v('show'), { title: hw.title, hw, s: null, sub: null, canSubmit: false, isLate: false, manage, students, subs, today, query: req.query });
 });
-router.post('/:id/submit', auth.requireRole('student'), modules.requireEnabled('homework.submit'), ...upload.form('homework/submissions', 'single', 'file', { maxMb: 20 }), async (req, res) => {
+router.post('/:id/submit', auth.requireRole('student'), modules.requireEnabled('homework.submit'), ...upload.form('homework/submissions', 'single', 'file', { userContent: true, maxMb: 20 }), async (req, res) => {
   const hw = await db.findById('homework', req.params.id); const s = await studentCtx(req);
   if (!hw || !s || s.class_id !== hw.class_id) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const back = '/homework/' + hw.id;

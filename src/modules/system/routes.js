@@ -38,36 +38,46 @@ const logger = require('../../core/logger');
 const maintenance = require('../../core/maintenance');
 const health = require('../../core/health');
 const updater = require('../../core/updater');
+const settingsMeta = require('../../core/settings-meta');
 router.use('/maintenance', P('system.settings'), modules.requireEnabled('system.maintenance'));
 router.use('/update', P('system.settings'), modules.requireEnabled('system.updates'));
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },
   { key: 'academic', title: 'آموزشی', icon: 'bi-mortarboard' },
+  { key: 'communication', title: 'ارتباطات و تیکت', icon: 'bi-chat-dots' },
+  { key: 'services', title: 'خدمات', icon: 'bi-briefcase' },
+  { key: 'finance', title: 'مالی', icon: 'bi-cash-coin' },
+  { key: 'users', title: 'کاربران و رمزها', icon: 'bi-people' },
   { key: 'appearance', title: 'ظاهر', icon: 'bi-palette', feature: 'system.appearance' },
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
+  { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'birthdays', title: 'تولدها', icon: 'bi-cake2', feature: 'students.birthdays' },
   { key: 'payment', title: 'درگاه پرداخت', icon: 'bi-credit-card', feature: 'finance.online_payment' },
-  { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
   { key: 'admissions', title: 'پیش‌ثبت‌نام', icon: 'bi-person-plus', feature: 'admissions.public_form' },
-  { key: 'maintenance', title: 'نگهداری و دیسک', icon: 'bi-tools', feature: ['system.maintenance', 'system.disk_alert'] },
+  { key: 'maintenance', title: 'نگهداری و دیسک', icon: 'bi-tools' },
+  { key: 'advanced', title: 'همهٔ تنظیمات', icon: 'bi-list-ul', feature: 'system.advanced_settings' },
   { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
 ];
 const tabEnabled = (t) => !t.feature || [].concat(t.feature).some((f) => modules.isEnabled(f));
 const FIELDS = {
-  school: ['school_name', 'school_slogan', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
-  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
-  appearance: ['primary_color', 'default_theme', 'sidebar_style', 'sidebar_mode', 'sidebar_single'],
+  school: ['school_name', 'school_slogan', 'school_short_name', 'site_url', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
+  academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'attendance_edit_days', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'max_weekly_hours', 'homework_late_allowed', 'homework_reminder_days'],
+  communication: ['ticket_categories', 'ticket_auto_close_days', 'allow_student_tickets_to_admin', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'announcement_days_on_dashboard', 'dashboard_announcements_count', 'dashboard_events_days', 'reminder_interval_days', 'notify_retry_max'],
+  services: ['library_loan_days', 'library_max_loans', 'leave_days_per_year', 'discipline_report_days'],
+  finance: ['currency_unit', 'invoice_prefix', 'invoice_due_days'],
+  users: ['student_number_prefix', 'student_number_next', 'student_default_password', 'parent_default_password', 'parent_force_change_password', 'force_password_change', 'password_min_length', 'items_per_page'],
+  appearance: ['primary_color', 'default_theme', 'sidebar_style', 'sidebar_mode', 'sidebar_single', 'items_per_page'],
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price', 'notify_retry_max'],
   payment: ['payment_gateway', 'zarinpal_merchant_id', 'zarinpal_sandbox', 'zarinpal_base_url', 'payment_min_amount', 'payment_allow_partial', 'payment_description', 'site_url'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
-  maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent'],
+  maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent', 'upload_max_mb', 'log_keep_days', 'cleanup_notifications_days', 'cleanup_login_logs_days', 'cleanup_job_runs_days'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };
@@ -75,10 +85,66 @@ const FIELDS = {
 router.get('/settings', async (req, res) => {
   const tab = TABS.find((t) => t.key === req.query.tab && tabEnabled(t)) || TABS[0];
   const extra = {};
-  if (tab.key === 'maintenance') { extra.healthInfo = await health.check(); extra.maintenanceActive = maintenance.isOn(); extra.maintenanceReason = maintenance.reason(); }
+  if (tab.key === 'maintenance') { extra.healthInfo = modules.isEnabled('system.disk_alert') ? await health.check() : null; extra.maintenanceActive = maintenance.isOn(); extra.maintenanceReason = maintenance.reason(); }
+  if (tab.key === 'advanced') { extra.allKeys = advancedList(); extra.groupTitle = settingsMeta.groupTitle; extra.q = utils.normalizePersian(String(req.query.q || '')).trim(); }
   if (tab.key === 'birthdays') { const bd = require('../students/birthdays'); extra.birthdayPreview = bd.preview(); extra.birthdayDefaults = bd.DEFAULT_TPL; }
   if (tab.key === 'admissions') { extra.gradeLevels = await db.table('grade_levels').orderBy('sort_order').all(); extra.years = await db.table('academic_years').orderBy('id', 'desc').all(); extra.appCount = await db.table('applications').count(); }
   res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter(tabEnabled), tab: tab.key, s: settings.all() }, extra));
+});
+
+const advancedGuard = [P('system.settings'), modules.requireEnabled('system.advanced_settings')];
+const KEY_RE = /^[a-z][a-z0-9_]{1,60}$/;
+router.post('/settings/advanced/set', ...advancedGuard, async (req, res) => {
+  const key = String(req.body.key || '').trim();
+  const back = '/system/settings?tab=advanced' + (req.body.q ? '&q=' + encodeURIComponent(req.body.q) : '');
+  if (!KEY_RE.test(key) || settingsMeta.isInternal(key)) { req.flash('danger', 'این کلید قابل ویرایش نیست.'); return res.redirect(back); }
+  const m = settingsMeta.meta(key);
+  if (req.body.reset === '1') { await settings.unset(key); await activity.log(req, 'settings', 'settings', null, `بازگشت «${key}» به مقدار پیش‌فرض`); req.flash('success', `«${m.label}» به مقدار پیش‌فرض برگشت.`); return res.redirect(back); }
+  let val = req.body.value === undefined ? '' : String(Array.isArray(req.body.value) ? req.body.value[req.body.value.length - 1] : req.body.value);
+  if (m.type === 'secret' && val === '••••••') return res.redirect(back);
+  val = utils.normalizePersian(val);
+  if (m.type === 'number') { val = J.toEnglishDigits(val).trim(); if (val && !/^-?\d+(\.\d+)?$/.test(val)) { req.flash('danger', 'مقدار باید عددی باشد.'); return res.redirect(back); } }
+  if (m.type === 'bool') val = val === '1' || val === 'true' ? '1' : '0';
+  if (key === 'disk_alert_percent') val = String(Math.min(99, Math.max(50, parseInt(val, 10) || 90)));
+  if (key === 'password_min_length') val = String(Math.min(32, Math.max(4, parseInt(val, 10) || 6)));
+  await settings.setMany({ [key]: val.slice(0, 5000) });
+  if (key === 'timezone_offset') J.setTimezoneOffset(val);
+  if (key.startsWith('disk_alert')) health.invalidate();
+  await activity.log(req, 'settings', 'settings', null, `ویرایش تنظیم «${key}»` + (m.type === 'secret' ? '' : `: ${val.slice(0, 60)}`));
+  req.flash('success', `«${m.label}» ذخیره شد.`);
+  res.redirect(back);
+});
+router.get('/settings/export.json', ...advancedGuard, (req, res) => {
+  const out = {};
+  for (const it of advancedList()) { if (it.type === 'secret' || it.type === 'internal') continue; out[it.key] = it.value; }
+  const name = `settings-${J.todayISO()}.json`;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${name}"; filename*=UTF-8''${encodeURIComponent(name)}`);
+  res.send(JSON.stringify({ app: pkg.name, version: pkg.version, exported_at: new Date().toISOString(), settings: out }, null, 2));
+});
+router.post('/settings/import', ...advancedGuard, ...upload.form('settings', 'single', 'file', { maxMb: 2, maxFiles: 1, types: ['application/json', 'text/json', 'text/plain', 'application/octet-stream'] }), async (req, res) => {
+  const back = '/system/settings?tab=advanced';
+  const cleanup = () => { try { if (req.file) fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } };
+  if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect(back); }
+  if (!req.file) { req.flash('danger', 'فایل JSON انتخاب نشده است.'); return res.redirect(back); }
+  let data;
+  try { data = JSON.parse(fs.readFileSync(req.file.path, 'utf8').replace(/^\uFEFF/, '')); } catch (e) { cleanup(); req.flash('danger', 'فایل JSON معتبر نیست.'); return res.redirect(back); }
+  cleanup();
+  const src = data && typeof data.settings === 'object' ? data.settings : data;
+  if (!src || typeof src !== 'object' || Array.isArray(src)) { req.flash('danger', 'ساختار فایل شناخته نشد.'); return res.redirect(back); }
+  const known = new Set(Object.keys(settings.DEFAULTS));
+  const apply = {}; let skipped = 0;
+  for (const [k, v] of Object.entries(src)) {
+    if (!KEY_RE.test(k) || settingsMeta.isInternal(k) || settingsMeta.isSecret(k) || (!known.has(k) && req.body.allow_unknown !== '1') || v == null || typeof v === 'object') { skipped++; continue; }
+    apply[k] = String(v).slice(0, 5000);
+  }
+  if (!Object.keys(apply).length) { req.flash('warning', 'هیچ کلید قابل‌اعمالی در فایل نبود.'); return res.redirect(back); }
+  await settings.setMany(apply);
+  if (apply.timezone_offset) J.setTimezoneOffset(apply.timezone_offset);
+  health.invalidate();
+  await activity.log(req, 'import', 'settings', null, `ورود ${Object.keys(apply).length} تنظیم از فایل JSON`);
+  req.flash('success', `${J.toPersianDigits(Object.keys(apply).length)} تنظیم اعمال شد${skipped ? `؛ ${J.toPersianDigits(skipped)} مورد (کلید ناشناخته/محرمانه/داخلی) نادیده گرفته شد` : ''}.`);
+  res.redirect(back);
 });
 
 router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'school_logo', maxCount: 1 }, { name: 'signature_image', maxCount: 1 }, { name: 'stamp_image', maxCount: 1 }], { images: true, maxMb: 2, maxFiles: 3 }), async (req, res) => {
@@ -93,7 +159,7 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
     if (Array.isArray(val)) val = val[val.length - 1];
     if (val === undefined) continue;
     val = utils.normalizePersian(String(val));
-    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year|mb|price)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
+    if (/_(score|attempts|minutes|hours|days|percent|periods|threshold|next|page|port|loans|length|keep|year|mb|price|count|amount)$/.test(k) || k === 'items_per_page') val = J.toEnglishDigits(val);
     data[k] = val;
   }
   if (tab === 'school' && file('school_logo')) { removeFile(settings.get('school_logo')); data.school_logo = relPath(file('school_logo')); }
@@ -122,6 +188,13 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
   res.redirect('/system/settings?tab=' + tab);
 });
 
+// ---------- همهٔ تنظیمات (پیشرفته): فهرست همهٔ کلیدها با جستجو، ویرایش تکی، بازگشت به پیش‌فرض، خروجی/ورودی JSON ----------
+function advancedList() {
+  const all = settings.all(); const storedSet = new Set(settings.storedKeys());
+  const keys = [...new Set([...Object.keys(settings.DEFAULTS), ...Object.keys(all)])];
+  return keys.map((key) => { const m = settingsMeta.meta(key); const value = all[key] == null ? '' : String(all[key]); const def = settings.DEFAULTS[key] == null ? '' : String(settings.DEFAULTS[key]); return { key, value, display: m.type === 'secret' && value ? '••••••' : value, label: m.label, group: m.group, groupTitle: settingsMeta.groupTitle(m.group), type: m.type, help: m.help, stored: storedSet.has(key), isDefault: value === def, defaultValue: def }; })
+    .sort((a, b) => a.group.localeCompare(b.group) || a.key.localeCompare(b.key));
+}
 router.post('/settings/test/offsite', modules.requireEnabled('system.backup_offsite'), async (req, res) => {
   const r = await offsite.test();
   req.flash(r.ok ? 'success' : 'danger', r.ok ? 'اتصال برقرار است: ' + (r.detail || '') : 'آزمایش ناموفق: ' + (r.error || ''));

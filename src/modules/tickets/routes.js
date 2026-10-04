@@ -149,7 +149,7 @@ router.get('/new', async (req, res) => {
   const data = await formData(req);
   res.render(v('form'), Object.assign({ title: 'تیکت جدید', prefill: { subject: req.query.subject || '', student_id: req.query.student_id || '', category: req.query.category || '' } }, data));
 });
-router.post('/', ...upload.form('tickets', 'single', 'file', { maxMb: 5 }), async (req, res) => {
+router.post('/', ...upload.form('tickets', 'single', 'file', { userContent: true, maxMb: 5 }), async (req, res) => {
   if (req.user.role === 'teacher' && !E('tickets.teacher_create')) return res.status(403).render('errors/403', { title: 'غیرمجاز' });
   if (req.uploadError) { req.flash('danger', req.uploadError); req.keepInput(); return res.redirect('/tickets/new'); }
   const b = utils.cleanBody(req.body, { fields: ['subject', 'message', 'department', 'category', 'priority', 'student_id', 'assigned_to'] });
@@ -160,6 +160,8 @@ router.post('/', ...upload.form('tickets', 'single', 'file', { maxMb: 5 }), asyn
     if (s) { studentId = s.id; classId = s.class_id; }
     if (department === 'teacher' && classId) assignedTo = await homeroomUserId(classId);
     if (!assignedTo) department = department === 'staff' ? 'staff' : 'admin';
+    // تنظیم allow_student_tickets_to_admin=0: دانش‌آموز/ولی نمی‌تواند مستقیم به مدیر تیکت بزند (به دفتر هدایت می‌شود)
+    if (department === 'admin' && settings.get('allow_student_tickets_to_admin', '1') === '0') department = 'staff';
   } else if (isStaff(req)) {
     if (b.student_id) { const s = await db.table('students').where('id', b.student_id).first(); if (s) { studentId = s.id; classId = s.class_id; } }
     if (b.assigned_to && E('tickets.assign')) assignedTo = Number(b.assigned_to) || null;
@@ -202,7 +204,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ---------- پاسخ ----------
-router.post('/:id/reply', ...upload.form('tickets', 'single', 'file', { maxMb: 5 }), async (req, res) => {
+router.post('/:id/reply', ...upload.form('tickets', 'single', 'file', { userContent: true, maxMb: 5 }), async (req, res) => {
   const t = await db.findById('tickets', req.params.id);
   if (!t) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   if (!(await canView(req, t))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });

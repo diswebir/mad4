@@ -49,7 +49,7 @@ router.get('/apply', modules.requireEnabled('admissions.public_form'), async (re
   if (!isOpen()) return closedPage(req, res);
   res.render(v('apply'), Object.assign({ layout: 'layouts/public', title: 'پیش‌ثبت‌نام', wide: true, captcha: makeCaptcha(req), errors: [], data: {} }, await publicCtx(req)));
 });
-router.post('/apply', modules.requireEnabled('admissions.public_form'), ...upload.form('applications', 'single', 'file', { maxMb: 5, maxFiles: 1 }), async (req, res) => {
+router.post('/apply', modules.requireEnabled('admissions.public_form'), ...upload.form('applications', 'single', 'file', { userContent: true, maxMb: 5, maxFiles: 1 }), async (req, res) => {
   if (!isOpen()) return closedPage(req, res);
   const ip = auth.clientIp(req);
   const data = utils.cleanBody(req.body, { fields: PUBLIC_FIELDS, dates: ['birth_date'], numbers: ['grade_level_id', 'previous_average'] });

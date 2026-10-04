@@ -11,9 +11,9 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   for (const key of ['tickets.sla', 'tickets.priority', 'tickets.stats', 'tickets.export', 'tickets.notify', 'notifications.inapp', 'system.scheduler']) { r = await a.post('/system/modules/toggle', { key, enabled: '1' }); }
 
   // --- تنظیمات SLA ---
-  r = await a.get('/system/settings?tab=academic'); assert(r.status === 200 && /name="ticket_sla_urgent_hours"/.test(r.text) && /name="ticket_sla_notify"/.test(r.text), 'SLA settings fields present');
+  r = await a.get('/system/settings?tab=communication'); assert(r.status === 200 && /name="ticket_sla_urgent_hours"/.test(r.text) && /name="ticket_sla_notify"/.test(r.text), 'SLA settings fields present');
   const keep = {}; ['ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify'].forEach((k) => { keep[k] = (new RegExp('name="' + k + '"[^>]*value="([^"]*)"').exec(r.text) || [])[1]; });
-  r = await a.post('/system/settings/academic', Object.assign({}, keep, { ticket_sla_hours: '48', ticket_sla_urgent_hours: '4', ticket_sla_high_hours: '24', ticket_sla_low_hours: '96', ticket_sla_resolve_days: '7', ticket_sla_warn_percent: '75', ticket_sla_notify: '1' }));
+  r = await a.post('/system/settings/communication', Object.assign({}, keep, { ticket_sla_hours: '48', ticket_sla_urgent_hours: '4', ticket_sla_high_hours: '24', ticket_sla_low_hours: '96', ticket_sla_resolve_days: '7', ticket_sla_warn_percent: '75', ticket_sla_notify: '1' }));
   assert(r.status === 302, 'SLA settings saved');
 
   // --- فهرست مدیر: نشان‌ها و فیلتر ---
@@ -43,7 +43,7 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   r = await a.post('/tickets/' + tid + '/priority', { priority: 'urgent' }); assert(r.status === 302, 'priority → urgent');
   r = await a.get('/tickets/' + tid); txt = strip(r.text); assert(/مهلت پاسخ اول \(فوری\)\s*۴ ساعت/.test(txt), 'urgent target = 4h');
   r = await a.post('/tickets/' + tid + '/priority', { priority: 'high' }); r = await a.get('/tickets/' + tid); txt = strip(r.text); assert(/مهلت پاسخ اول \(زیاد\)\s*۲۴ ساعت/.test(txt), 'high target = 24h');
-  r = await a.post('/system/settings/academic', Object.assign({}, keep, { ticket_sla_high_hours: '12', ticket_sla_notify: '1' }));
+  r = await a.post('/system/settings/communication', Object.assign({}, keep, { ticket_sla_high_hours: '12', ticket_sla_notify: '1' }));
   r = await a.get('/tickets/' + tid); txt = strip(r.text); assert(/مهلت پاسخ اول \(زیاد\)\s*۱۲ ساعت/.test(txt), 'settings change applied (high = 12h)');
   // دانش‌آموز کارت SLA را نمی‌بیند
   r = await s.get('/tickets/' + tid); assert(r.status === 200 && !/مهلت پاسخ \(SLA\)/.test(r.text), 'student does not see SLA card');
@@ -75,7 +75,7 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
     assert(/اطلاع‌رسانی شده‌اند|تیکت خارج از مهلت وجود ندارد/.test(txt), 'second run: no duplicate alerts within 24h');
   }
   // خاموش‌کردن اعلان در تنظیمات
-  r = await a.post('/system/settings/academic', Object.assign({}, keep, { ticket_sla_notify: '0' }));
+  r = await a.post('/system/settings/communication', Object.assign({}, keep, { ticket_sla_notify: '0' }));
   r = await a.post('/system/jobs/tickets_sla_alert', { action: 'run' }); r = await a.get('/system/jobs'); assert(/هشدار SLA در تنظیمات خاموش است/.test(strip(r.text)), 'job respects ticket_sla_notify=0');
 
   // --- ولی: پاسخ ولی تیکت را «پاسخ داده شده» نمی‌کند ---
@@ -99,7 +99,7 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   r = await a.get('/tickets/stats'); assert(r.status === 200 && !/رعایت مهلت پاسخ/.test(r.text), 'feature off: no SLA report');
   r = await a.post('/system/modules/toggle', { key: 'tickets.sla', enabled: '1' });
   // بازگرداندن تنظیمات
-  r = await a.post('/system/settings/academic', keep);
+  r = await a.post('/system/settings/communication', keep);
   r = await a.post('/tickets/' + tid + '/status', { status: 'closed' });
   console.log('done');
 })().catch((e) => { console.error(e); process.exitCode = 2; });

@@ -24,9 +24,14 @@ function uploader(folder, opts) {
       cb(null, Date.now().toString(36) + '-' + crypto.randomBytes(6).toString('hex') + ext);
     }
   });
+  // سقف حجم (در هر درخواست محاسبه می‌شود):
+  //  - فرم‌های محتوای کاربران (opts.userContent): تنظیم upload_max_mb اگر > ۰ باشد، وگرنه سقف پیش‌فرض همان فرم
+  //  - سایر فرم‌ها: گزینهٔ صریح مسیر > تنظیم upload_max_mb > پیکربندی/متغیر محیطی
+  const settingMb = () => { try { return Math.min(2048, require('./settings').getInt('upload_max_mb', 0)); } catch (e) { return 0; } };
+  const maxMb = () => { const s = settingMb(); if (opts.userContent) return s > 0 ? s : (opts.maxMb || cfg.uploads.maxSizeMb); if (opts.maxMb) return opts.maxMb; return s > 0 ? s : cfg.uploads.maxSizeMb; };
   return multer({
     storage,
-    limits: { fileSize: (opts.maxMb || cfg.uploads.maxSizeMb) * 1024 * 1024, files: opts.maxFiles || 5 },
+    limits: () => ({ fileSize: maxMb() * 1024 * 1024, files: opts.maxFiles || 5 }),   // در هر درخواست از تنظیمات خوانده می‌شود
     fileFilter: (req, file, cb) => {
       const allowed = opts.types || (opts.images ? IMAGE_TYPES : DOC_TYPES);
       // نام اصلی فایل را به UTF-8 برمی‌گردانیم (مرورگرها latin1 می‌فرستند)

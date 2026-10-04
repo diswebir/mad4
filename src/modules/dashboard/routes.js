@@ -19,7 +19,7 @@ async function announcementsFor(user, student) {
   const q = db.table('announcements as a').select('a.*', 'u.name as author_name').leftJoin('users as u', 'a.author_id', 'u.id').where('a.is_active', 1)
     .where((b) => b.whereNull('a.publish_at').orWhere('a.publish_at', '<=', today))
     .where((b) => b.whereNull('a.expires_at').orWhere('a.expires_at', '>=', today))
-    .orderBy('a.is_pinned', 'desc').orderBy('a.id', 'desc').limit(5);
+    .orderBy('a.is_pinned', 'desc').orderBy('a.id', 'desc').limit(Math.min(20, Math.max(1, settings.getInt('dashboard_announcements_count', 5))));
   if (user.role === 'teacher') q.whereIn('a.audience', ['all', 'teachers']);
   else if (user.role === 'student') q.where((b) => { b.whereIn('a.audience', ['all', 'students']); if (student && student.class_id) b.orWhere((c) => c.where('a.audience', 'class').where('a.class_id', student.class_id)); });
   return q.all();
@@ -28,7 +28,7 @@ async function announcementsFor(user, student) {
 async function upcomingEvents(classId) {
   if (!on('calendar')) return [];
   const today = J.todayISO();
-  const q = db.table('events').where('start_date', '>=', today).where('start_date', '<=', J.addDays(today, 30)).orderBy('start_date').limit(6);
+  const q = db.table('events').where('start_date', '>=', today).where('start_date', '<=', J.addDays(today, Math.max(1, settings.getInt('dashboard_events_days', 30)))).orderBy('start_date').limit(6);
   if (classId) q.where((b) => b.whereNull('class_id').orWhere('class_id', classId));
   return q.all();
 }

@@ -7,6 +7,7 @@ const modules = require('../../core/modules');
 const activity = require('../../core/activity');
 const utils = require('../../core/utils');
 const J = require('../../core/jalali');
+const settings = require('../../core/settings');
 const crud = require('../../core/crud');
 const DbSessionStore = require('../../core/session-store');
 const permissions = require('../../core/permissions');
@@ -77,8 +78,12 @@ crud(router, {
   },
   beforeSave: async (data, req, isNew, row) => {
     const pw = req.body.password;
-    if (isNew && (!pw || pw.length < 6)) throw new Error('رمز عبور باید حداقل ۶ کاراکتر باشد');
+    const minLen = Math.min(32, Math.max(4, settings.getInt('password_min_length', 6)));
+    if (isNew && (!pw || pw.length < minLen)) throw new Error(`رمز عبور باید حداقل ${J.toPersianDigits(minLen)} کاراکتر باشد`);
+    if (pw && pw.length < minLen) throw new Error(`رمز عبور باید حداقل ${J.toPersianDigits(minLen)} کاراکتر باشد`);
     if (pw) data.password = await auth.hashPassword(pw);
+    // سیاست «اجبار تغییر رمز در اولین ورود» برای حساب‌های تازه (تنظیم force_password_change)؛ تیک فرم اولویت دارد
+    if (isNew && req.body.must_change_password === undefined && settings.get('force_password_change', '0') === '1') data.must_change_password = 1;
     if (isNew && !['admin', 'staff', 'teacher', 'student'].includes(data.role)) data.role = 'staff';
     if (!isNew && row && row.id === req.user.id) { data.role = 'admin'; data.status = 'active'; }
     if (data.phone) data.phone = utils.normalizePhone(data.phone);
@@ -87,6 +92,7 @@ crud(router, {
     if (modules.isEnabled('users.permissions') && req.user.role === 'admin') { const perms = [].concat(req.body.perms || []).filter((k) => permissions.ALL.includes(k)); data.permissions = perms.length ? JSON.stringify(perms) : null; }
     return data;
   },
+  defaults: () => ({ status: 'active', must_change_password: settings.get('force_password_change', '0') === '1' ? 1 : 0 }),
   formPartial: '../modules/users/views/permissions-form',
   formData: async (req, row) => ({ GROUPS: permissions.GROUPS, perms: permissions.parseList(row && row.permissions), positions: await permissions.positions(), canEditPerms: req.user.role === 'admin' && modules.isEnabled('users.permissions') }),
   query: (q) => q.leftJoin('positions as p', 'p.id', 'u.position_id').select('u.*', 'p.title as position_title'),

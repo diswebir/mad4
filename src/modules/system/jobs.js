@@ -44,14 +44,15 @@ module.exports = [
   },
   {
     key: 'cleanup', name: 'پاک‌سازی داده‌های موقت', description: 'حذف نشست‌های منقضی، کدهای بازیابی منقضی، لاگ اجرای کارهای قدیمی‌تر از ۳۰ روز، اعلان‌های خوانده‌شدهٔ قدیمی‌تر از ۹۰ روز و لاگ ورود قدیمی‌تر از ۱۸۰ روز', schedule: 'daily', defaultTime: '03:00',
-    async run({ db, J }) {
+    async run({ db, J, settings }) {
       const now = db.now();
       const r = {};
+      const keep = (k, d) => Math.max(1, settings.getInt(k, d));
       r.sessions = await db.table('sessions').where('expires_at', '<', Date.now()).delete().catch(() => 0);
       r.resets = await db.table('password_resets').where('expires_at', '<', now).delete();
-      r.runs = await db.table('job_runs').where('started_at', '<', J.addDays(J.todayISO(), -30)).delete();
-      r.notifs = await db.table('notifications').where('is_read', 1).where('created_at', '<', J.addDays(J.todayISO(), -90)).delete();
-      r.logins = await db.table('login_logs').where('created_at', '<', J.addDays(J.todayISO(), -180)).delete();
+      r.runs = await db.table('job_runs').where('started_at', '<', J.addDays(J.todayISO(), -keep('cleanup_job_runs_days', 30))).delete();
+      r.notifs = await db.table('notifications').where('is_read', 1).where('created_at', '<', J.addDays(J.todayISO(), -keep('cleanup_notifications_days', 90))).delete();
+      r.logins = await db.table('login_logs').where('created_at', '<', J.addDays(J.todayISO(), -keep('cleanup_login_logs_days', 180))).delete();
       r.logfiles = require('../../core/logger').prune(require('../../core/settings').getInt('log_keep_days', 14));
       return Object.entries(r).map(([k, v]) => `${k}: ${Number(v) || 0}`).join('، ');
     }

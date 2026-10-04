@@ -15,38 +15,90 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="card-body"><div class="row g-3">
       <% if (tab === 'school') { %>
-        <%- inp('school_name', 'نام مدرسه') %><%- inp('school_slogan', 'شعار / زیرعنوان') %>
+        <%- inp('school_name', 'نام مدرسه', { col: 4 }) %><%- inp('school_short_name', 'نام کوتاه', { col: 4, help: 'برای آیکن برنامهٔ وب (PWA) و فضاهای کوچک؛ خالی = نام مدرسه' }) %><%- inp('school_slogan', 'شعار / زیرعنوان', { col: 4 }) %>
         <%- sel('school_type', 'مقطع', { 'ابتدایی': 'ابتدایی', 'متوسطه اول': 'متوسطه اول', 'متوسطه دوم': 'متوسطه دوم', 'هنرستان': 'هنرستان', 'چند مقطعی': 'چند مقطعی' }, { col: 4 }) %>
         <%- sel('school_gender', 'جنسیت', { boys: 'پسرانه', girls: 'دخترانه', mixed: 'مختلط' }, { col: 4 }) %><%- inp('school_code', 'کد مدرسه', { col: 4, ltr: true }) %>
         <%- inp('school_phone', 'تلفن', { col: 4, ltr: true }) %><%- inp('school_email', 'ایمیل', { col: 4, ltr: true, type: 'email' }) %><%- inp('school_website', 'وب‌سایت', { col: 4, ltr: true }) %>
         <%- inp('school_address', 'آدرس', { col: 12 }) %>
         <%- inp('principal_name', 'نام مدیر') %><%- inp('deputy_name', 'نام معاون') %>
         <%- sel('timezone_offset', 'منطقهٔ زمانی', { '+03:30': 'تهران (+03:30)', '+04:30': 'کابل (+04:30)', '+00:00': 'UTC', '+03:00': '+03:00', '+04:00': '+04:00' }) %>
+        <%- inp('site_url', 'نشانی عمومی سامانه', { ltr: true, ph: 'https://school.example.com', help: 'برای ساخت لینک‌های کامل در پیامک/ایمیل، درگاه پرداخت و بازگشت از پرداخت' }) %>
         <div class="col-md-6"><label class="form-label" for="f_school_logo">لوگو</label><input class="form-control" type="file" name="school_logo" accept="image/*" id="f_school_logo">
           <% if (s.school_logo) { %><div class="d-flex align-items-center gap-2 mt-2"><img src="/files/<%= s.school_logo %>" style="height:40px" class="rounded"><div class="form-check"><input type="checkbox" class="form-check-input" name="remove_logo" value="1" id="rml"><label for="rml" class="form-check-label fs-7">حذف لوگو</label></div></div><% } %></div>
       <% } else if (tab === 'academic') { %>
         <div class="col-12"><h6 class="text-brand">زمان‌بندی</h6></div>
         <%- inp('school_days', 'روزهای کاری هفته', { help: 'شماره روزها با کاما: ۰=شنبه … ۶=جمعه (مثال: 0,1,2,3,4)', ltr: true }) %><%- inp('working_hours', 'ساعت کاری', { ltr: true, ph: '07:30-13:30' }) %>
         <%- inp('weekly_periods', 'تعداد زنگ در روز', { col: 4, ltr: true }) %><%- inp('period_times', 'زمان زنگ‌ها', { col: 8, ltr: true, help: 'با کاما جدا کنید: 07:45-08:30,08:40-09:25,…' }) %>
+        <%- inp('max_weekly_hours', 'سقف ساعت تدریس هفتگی هر معلم', { col: 4, ltr: true, help: 'هنگام تخصیص درس به معلم بررسی می‌شود' }) %>
         <div class="col-12"><h6 class="text-brand mt-2">حضور و غیاب</h6></div>
         <%- inp('late_threshold_minutes', 'آستانهٔ تأخیر (دقیقه)', { col: 4, ltr: true }) %><%- inp('attendance_alert_threshold', 'هشدار پس از چند غیبت در ماه', { col: 4, ltr: true }) %>
+        <% if (enabled('attendance.edit_window')) { %><%- inp('attendance_edit_days', 'مهلت ویرایش حضور و غیاب توسط معلم (روز)', { col: 4, ltr: true, help: 'پس از این مدت فقط مدیر می‌تواند تغییر دهد' }) %><% } %>
         <%- sw('attendance_absent_notify', 'ارسال اعلان غیبت به دانش‌آموز/ولی') %>
         <%- sel('attendance_sms_mode', 'زمان ارسال پیامک غیبت به ولی', { scheduled: 'تجمیعی روزانه با زمان‌بند (پیش‌فرض ۰۹:۳۰)', immediate: 'بلافاصله پس از ثبت' }) %>
-        <div class="col-12"><h6 class="text-brand mt-2">نمرات</h6></div>
+        <div class="col-12"><h6 class="text-brand mt-2">نمرات، گزارش تدریس و تکالیف</h6></div>
         <%- inp('grading_max_score', 'نمرهٔ کامل', { col: 4, ltr: true }) %><%- inp('grading_pass_score', 'نمرهٔ قبولی', { col: 4, ltr: true }) %>
         <% if (enabled('lessons.edit_window')) { %><%- inp('lesson_log_edit_days', 'مهلت ویرایش گزارش تدریس توسط معلم (روز)', { col: 4, ltr: true, help: 'پس از این مدت فقط مدیر می‌تواند گزارش را ویرایش کند' }) %><% } %>
-        <div class="col-12"><h6 class="text-brand mt-2">دانش‌آموزان و تیکت‌ها</h6></div>
-        <%- inp('student_number_prefix', 'پیشوند شماره دانش‌آموزی', { col: 4, ltr: true }) %><%- inp('student_number_next', 'شمارهٔ بعدی', { col: 4, ltr: true }) %><%- inp('items_per_page', 'تعداد در هر صفحه', { col: 4, ltr: true }) %>
+        <%- sw('homework_late_allowed', 'اجازهٔ ارسال تکلیف پس از مهلت') %><%- inp('homework_reminder_days', 'یادآوری تکلیف چند روز پیش از مهلت', { col: 4, ltr: true, help: 'کار زمان‌بندی‌شدهٔ «یادآوری مهلت تکالیف»' }) %>
+      <% } else if (tab === 'communication') { %>
+        <div class="col-12"><h6 class="text-brand">تیکت‌ها</h6></div>
         <%- inp('ticket_categories', 'دسته‌بندی تیکت‌ها', { col: 8, help: 'با کاما جدا کنید' }) %><%- inp('ticket_auto_close_days', 'بستن خودکار تیکت پاسخ‌داده‌شده پس از (روز)', { col: 4, ltr: true }) %>
+        <%- sw('allow_student_tickets_to_admin', 'دانش‌آموز/ولی بتواند مستقیم به «مدیریت مدرسه» تیکت بزند', 'در صورت خاموش‌بودن، گیرندهٔ تیکت دانش‌آموز فقط معلم کلاس یا دفتر خواهد بود') %>
         <% if (enabled('tickets.sla')) { %>
         <div class="col-12"><div class="fw-bold fs-7 text-secondary border-bottom pb-1"><i class="bi bi-stopwatch me-1"></i>مهلت پاسخ تیکت (SLA) — ساعت، بر اساس اولویت</div></div>
         <%- inp('ticket_sla_urgent_hours', 'فوری', { col: 3, ltr: true }) %><%- inp('ticket_sla_high_hours', 'زیاد', { col: 3, ltr: true }) %><%- inp('ticket_sla_hours', 'عادی', { col: 3, ltr: true }) %><%- inp('ticket_sla_low_hours', 'کم', { col: 3, ltr: true }) %>
-        <%- inp('ticket_sla_resolve_days', 'مهلت حل نهایی (روز)', { col: 4, ltr: true }) %><%- inp('ticket_sla_warn_percent', 'هشدار «نزدیک مهلت» از (٪ مهلت)', { col: 4, ltr: true }) %><%- sel('ticket_sla_notify', 'اعلان خودکار خارج از مهلت به مسئول', [['1', 'فعال'], ['0', 'غیرفعال']], { col: 4 }) %>
+        <%- inp('ticket_sla_resolve_days', 'مهلت حل نهایی (روز)', { col: 4, ltr: true }) %><%- inp('ticket_sla_warn_percent', 'هشدار «نزدیک مهلت» از (٪ مهلت)', { col: 4, ltr: true }) %><%- sel('ticket_sla_notify', 'اعلان خودکار خارج از مهلت به مسئول', { '1': 'فعال', '0': 'غیرفعال' }, { col: 4 }) %>
         <% } %>
-        <%- sw('homework_late_allowed', 'اجازهٔ ارسال تکلیف پس از مهلت') %><%- inp('announcement_days_on_dashboard', 'نمایش اطلاعیه‌های چند روز اخیر در داشبورد', { ltr: true }) %>
-        <div class="col-12"><h6 class="text-brand mt-2">کتابخانه و مالی</h6></div>
-        <%- inp('library_loan_days', 'مدت امانت کتاب (روز)', { col: 4, ltr: true }) %><%- inp('library_max_loans', 'حداکثر امانت هم‌زمان', { col: 4, ltr: true }) %>
-        <%- inp('currency_unit', 'واحد پول', { col: 4 }) %><%- inp('invoice_prefix', 'پیشوند شمارهٔ صورتحساب', { col: 4, ltr: true }) %>
+        <div class="col-12"><h6 class="text-brand mt-2">داشبورد و یادآوری‌ها</h6></div>
+        <%- inp('announcement_days_on_dashboard', 'نمایش اطلاعیه‌های چند روز اخیر در داشبورد', { col: 4, ltr: true }) %><%- inp('dashboard_announcements_count', 'تعداد اطلاعیه در داشبورد', { col: 4, ltr: true, help: 'بین ۱ تا ۲۰' }) %><%- inp('dashboard_events_days', 'رویدادهای چند روز آینده در داشبورد', { col: 4, ltr: true }) %>
+        <%- inp('reminder_interval_days', 'فاصلهٔ تکرار یادآوری معوقات (روز)', { col: 4, ltr: true, help: 'شهریهٔ معوق و دیرکرد کتاب: روز اول و سپس هر N روز' }) %><% if (enabled('notifications.retry_queue')) { %><%- inp('notify_retry_max', 'حداکثر تلاش مجدد پیامک/ایمیل ناموفق', { col: 4, ltr: true }) %><% } %>
+      <% } else if (tab === 'services') { %>
+        <% if (enabled('library')) { %><div class="col-12"><h6 class="text-brand">کتابخانه</h6></div>
+        <%- inp('library_loan_days', 'مدت امانت کتاب (روز)', { col: 4, ltr: true }) %><%- inp('library_max_loans', 'حداکثر امانت هم‌زمان', { col: 4, ltr: true }) %><% } %>
+        <% if (enabled('hr')) { %><div class="col-12"><h6 class="text-brand mt-2">کارکنان</h6></div>
+        <%- inp('leave_days_per_year', 'سقف مرخصی سالانهٔ هر کارمند (روز)', { col: 4, ltr: true }) %><% } %>
+        <% if (enabled('discipline')) { %><div class="col-12"><h6 class="text-brand mt-2">انضباط</h6></div>
+        <%- inp('discipline_report_days', 'بازهٔ پیش‌فرض گزارش انضباطی (روز)', { col: 4, ltr: true }) %><% } %>
+        <% if (!enabled('library') && !enabled('hr') && !enabled('discipline')) { %><div class="col-12 text-secondary">ماژول‌های خدماتی (کتابخانه، کارکنان، انضباط) غیرفعال‌اند.</div><% } %>
+      <% } else if (tab === 'finance') { %>
+        <%- inp('currency_unit', 'واحد پول', { col: 4 }) %><%- inp('invoice_prefix', 'پیشوند شمارهٔ صورت‌حساب', { col: 4, ltr: true }) %><%- inp('invoice_due_days', 'سررسید پیش‌فرض صورت‌حساب جدید (روز)', { col: 4, ltr: true }) %>
+        <% if (enabled('finance.online_payment')) { %><div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-credit-card me-1"></i>تنظیمات درگاه پرداخت آنلاین در زبانهٔ <a href="?tab=payment">درگاه پرداخت</a> است.</div></div><% } %>
+      <% } else if (tab === 'users') { %>
+        <div class="col-12"><h6 class="text-brand">شماره‌گذاری دانش‌آموزان</h6></div>
+        <%- inp('student_number_prefix', 'پیشوند شمارهٔ دانش‌آموزی', { col: 4, ltr: true }) %><%- inp('student_number_next', 'شمارهٔ بعدی', { col: 4, ltr: true }) %>
+        <div class="col-12"><h6 class="text-brand mt-2">رمزهای پیش‌فرض و سیاست رمز</h6></div>
+        <%- inp('student_default_password', 'رمز پیش‌فرض دانش‌آموز جدید', { col: 4, ltr: true, help: 'خالی = کد ملی دانش‌آموز' }) %><%- inp('parent_default_password', 'رمز پیش‌فرض ولی جدید', { col: 4, ltr: true, help: 'خالی = ۱۲۳۴۵۶' }) %><%- inp('password_min_length', 'حداقل طول رمز عبور', { col: 4, ltr: true, help: 'بین ۴ تا ۳۲' }) %>
+        <%- sw('parent_force_change_password', 'اجبار تغییر رمز ولی در اولین ورود') %><%- sw('force_password_change', 'اجبار تغییر رمز کارکنان/معلمان جدید در اولین ورود', 'نیازمند فعال‌بودن قابلیت auth.force_password_change') %>
+        <%- inp('items_per_page', 'تعداد ردیف در هر صفحهٔ فهرست', { col: 4, ltr: true }) %>
+      <% } else if (tab === 'advanced') { %>
+        <div class="col-12 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+          <div class="input-group" style="max-width:420px"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" id="advSearch" placeholder="جستجو در کلید، برچسب یا مقدار…" value="<%= q %>" autocomplete="off"></div>
+          <div class="d-flex gap-2 flex-wrap"><span class="badge bg-secondary-subtle text-secondary-emphasis align-self-center" id="advCount"><%= J.toPersianDigits(allKeys.length) %> کلید</span><a href="/system/settings/export.json" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download me-1"></i>خروجی JSON</a><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importSettingsModal"><i class="bi bi-upload me-1"></i>ورودی JSON</button></div>
+        </div>
+        <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>اینجا همهٔ کلیدهای تنظیمات را می‌بینید؛ حتی آن‌هایی که در زبانه‌های دیگر فرم ندارند. مقادیر محرمانه پوشانده شده‌اند و در خروجی JSON قرار نمی‌گیرند. ردیف‌های <span class="badge bg-primary-subtle text-primary-emphasis">تغییریافته</span> با مقدار پیش‌فرض فرق دارند و با دکمهٔ بازگشت به پیش‌فرض برمی‌گردند.</div></div>
+        <div class="col-12 table-responsive"><table class="table table-sm align-middle" id="advTable"><thead><tr><th>گروه</th><th>کلید / برچسب</th><th style="min-width:280px">مقدار</th><th></th></tr></thead><tbody>
+          <% var lastGroup = null; allKeys.forEach(function (it) { var hay = (it.key + ' ' + it.label + ' ' + it.groupTitle + ' ' + (it.type === 'secret' ? '' : it.value)).toLowerCase(); %>
+          <tr data-hay="<%= hay %>" class="<%= q && hay.indexOf(q.toLowerCase()) === -1 ? 'd-none' : '' %>">
+            <td class="fs-7 text-secondary text-nowrap"><%= it.groupTitle %></td>
+            <td><code class="ltr d-inline-block"><%= it.key %></code><div class="fs-7"><%= it.label %><%= it.help ? ' — ' + it.help : '' %></div><% if (!it.isDefault) { %><span class="badge bg-primary-subtle text-primary-emphasis fs-8">تغییریافته</span> <span class="fs-8 text-secondary">پیش‌فرض: <%= it.defaultValue === '' ? '(خالی)' : it.defaultValue.slice(0, 40) %></span><% } %></td>
+            <td>
+              <% if (it.type === 'internal') { %><span class="text-secondary fs-7 ltr d-inline-block"><%= it.display || '—' %></span><% } else { %>
+              <form method="post" action="/system/settings/advanced/set" class="d-flex gap-1 align-items-start adv-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="key" value="<%= it.key %>"><input type="hidden" name="q" value="<%= q %>">
+                <% if (it.type === 'bool') { %><select class="form-select form-select-sm" name="value" data-no-search aria-label="مقدار <%= it.key %>"><option value="1" <%= it.value === '1' ? 'selected' : '' %>>فعال (۱)</option><option value="0" <%= it.value !== '1' ? 'selected' : '' %>>غیرفعال (۰)</option></select>
+                <% } else if (it.type === 'textarea') { %><textarea class="form-control form-control-sm" name="value" rows="2" aria-label="مقدار <%= it.key %>"><%= it.value %></textarea>
+                <% } else { %><input class="form-control form-control-sm <%= it.type === 'number' || it.type === 'secret' ? 'ltr' : '' %>" name="value" value="<%= it.type === 'secret' ? it.display : it.value %>" aria-label="مقدار <%= it.key %>" <%- it.type === 'number' ? 'inputmode="numeric"' : '' %>><% } %>
+                <button class="btn btn-sm btn-outline-primary" title="ذخیره"><i class="bi bi-check-lg"></i></button>
+              </form><% } %>
+            </td>
+            <td class="text-nowrap"><% if (it.type !== 'internal' && !it.isDefault) { %><a href="#" data-post="/system/settings/advanced/set" data-params='{"key":"<%= it.key %>","reset":"1","q":"<%= q %>"}' data-confirm="«<%= it.label %>» به مقدار پیش‌فرض برگردد؟" class="btn btn-sm btn-outline-secondary" title="بازگشت به پیش‌فرض"><i class="bi bi-arrow-counterclockwise"></i></a><% } %></td>
+          </tr>
+          <% }); %>
+        </tbody></table></div>
+        <script>
+          (function () { var inp = document.getElementById('advSearch'), rows = Array.prototype.slice.call(document.querySelectorAll('#advTable tbody tr')), cnt = document.getElementById('advCount');
+            function fa(n) { return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
+            function filter() { var q = (inp.value || '').trim().toLowerCase(); var n = 0; rows.forEach(function (r) { var ok = !q || r.getAttribute('data-hay').indexOf(q) !== -1; r.classList.toggle('d-none', !ok); if (ok) n++; }); cnt.textContent = fa(n) + ' کلید'; }
+            inp.addEventListener('input', filter); filter(); })();
+        </script>
       <% } else if (tab === 'appearance') { %>
         <div class="col-md-4"><label class="form-label" for="f_primary_color">رنگ اصلی</label><input type="color" class="form-control form-control-color w-100" name="primary_color" value="<%= s.primary_color || '#2563eb' %>" id="f_primary_color"></div>
         <div class="col-md-8"><label class="form-label">رنگ‌های پیشنهادی</label><div class="d-flex gap-2 flex-wrap pt-1"><% ['#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#16a34a','#0d9488','#0891b2','#4f46e5','#0f766e','#334155'].forEach(function (c) { %><button type="button" class="btn btn-sm border" style="background:<%= c %>;width:32px;height:32px" onclick="document.querySelector('[name=primary_color]').value='<%= c %>'"></button><% }); %></div></div>
@@ -154,6 +206,11 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('disk_alert_min_mb', 'حداقل فضای آزاد (مگابایت)', { col: 3, ltr: true, help: 'کمتر از این مقدار = هشدار؛ نصف آن = بحرانی' }) %>
         <%- inp('disk_alert_percent', 'حداکثر درصد استفاده', { col: 3, ltr: true, help: 'بین ۵۰ تا ۹۹' }) %>
         <% } %>
+        <div class="col-12 mt-4"><h6 class="text-brand"><i class="bi bi-folder2-open me-1"></i>فایل‌ها و نگه‌داری داده‌های موقت</h6></div>
+        <%- inp('upload_max_mb', 'سقف حجم پیوست‌های کاربران (مگابایت)', { col: 4, ltr: true, help: 'تکالیف، مدارک، تیکت‌ها، گواهی غیبت و پیش‌ثبت‌نام؛ ۰ = سقف پیش‌فرض هر فرم (۵ تا ۲۰ مگابایت)' }) %>
+        <%- inp('log_keep_days', 'نگه‌داری فایل‌های لاگ خطا (روز)', { col: 4, ltr: true }) %><%- inp('cleanup_notifications_days', 'حذف اعلان‌های خوانده‌شده پس از (روز)', { col: 4, ltr: true }) %>
+        <%- inp('cleanup_login_logs_days', 'حذف لاگ ورود کاربران پس از (روز)', { col: 4, ltr: true }) %><%- inp('cleanup_job_runs_days', 'حذف سابقهٔ اجرای کارها پس از (روز)', { col: 4, ltr: true }) %>
+        <div class="col-12"><div class="form-text">این مقادیر در کار زمان‌بندی‌شدهٔ «پاک‌سازی داده‌های موقت» اعمال می‌شوند.</div></div>
       <% } else if (tab === 'demo') { %>
         <div class="col-12">
           <p>دادهٔ نمونه شامل معلمان، کلاس‌ها، دانش‌آموزان، حضور و غیاب، نمرات، تیکت‌ها، اطلاعیه‌ها، تکالیف، رویدادها، شهریه‌ها، کتاب‌ها و… است و برای آشنایی با سامانه کاربرد دارد.</p>
@@ -165,7 +222,7 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         </div>
       <% } %>
       </div></div>
-      <% if (tab !== 'demo') { %>
+      <% if (tab !== 'demo' && tab !== 'advanced') { %>
       <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
         <% if (tab === 'sms' || tab === 'email') { %>
           <div class="input-group input-group-sm" style="max-width:360px"><input class="form-control ltr" placeholder="<%= tab === 'sms' ? '09123456789' : 'you@example.com' %>" form="testForm" name="to"><button class="btn btn-outline-secondary" form="testForm">ارسال آزمایشی</button></div>
@@ -182,6 +239,14 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
       <% } %>
     </form>
     <% if (tab === 'sms' || tab === 'email' || tab === 'offsite') { %><form id="testForm" method="post" action="/system/settings/test/<%= tab %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
+    <% if (tab === 'advanced') { %>
+    <div class="modal fade" id="importSettingsModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="post" action="/system/settings/import" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="modal-header"><h6 class="modal-title">ورودی تنظیمات از فایل JSON</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+      <div class="modal-body"><p class="fs-7 text-secondary">فایل خروجی همین صفحه (از این مدرسه یا مدرسهٔ دیگر) را انتخاب کنید. کلیدهای محرمانه (رمزها، کلید API) و داخلی هرگز وارد نمی‌شوند؛ کلیدهای ناشناخته فقط با تیک زیر پذیرفته می‌شوند.</p>
+        <input type="file" class="form-control" name="file" id="importSettingsFile" accept=".json,application/json" required aria-label="فایل JSON تنظیمات">
+        <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="allow_unknown" value="1" id="allowUnknown"><label class="form-check-label fs-7" for="allowUnknown">کلیدهای ناشناخته (مثلاً ماژول‌های سفارشی) هم وارد شوند</label></div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary"><i class="bi bi-upload me-1"></i>اعمال</button></div></form></div></div>
+    <% } %>
     <% if (tab === 'maintenance') { %><form id="quickMaintForm" method="post" action="/system/maintenance/toggle"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><form id="diskCheckForm" method="post" action="/system/update/disk-check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
   </div>
 </div>

@@ -10,7 +10,7 @@ module.exports = [
       const ids = rows.filter((r) => r.status !== 'overdue').map((r) => r.id);
       if (ids.length) await db.table('book_loans').whereIn('id', ids).update({ status: 'overdue' });
       let n = 0;
-      for (const r of rows) { if (!r.user_id) continue; const days = J.diffDays(r.due_at, today); if (days !== 1 && days % 7 !== 1) continue; await notify.push([r.user_id], { title: 'دیرکرد کتاب', body: `کتاب «${r.title}» ${J.toPersianDigits(days)} روز دیرکرد دارد؛ لطفاً به کتابخانه برگردانید.`, link: '/library/my', type: 'warning' }); n++; }
+      for (const r of rows) { if (!r.user_id) continue; const days = J.diffDays(r.due_at, today); const every = Math.max(1, require('../../core/settings').getInt('reminder_interval_days', 7)); if (days !== 1 && days % every !== 1) continue; await notify.push([r.user_id], { title: 'دیرکرد کتاب', body: `کتاب «${r.title}» ${J.toPersianDigits(days)} روز دیرکرد دارد؛ لطفاً به کتابخانه برگردانید.`, link: '/library/my', type: 'warning' }); n++; }
       return `${rows.length} دیرکرد، ${ids.length} به‌روزرسانی وضعیت، ${n} اعلان`;
     }
   }

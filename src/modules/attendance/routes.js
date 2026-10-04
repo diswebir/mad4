@@ -90,7 +90,7 @@ router.post('/take', async (req, res) => {
   const classId = Number(req.body.class_id); const csId = req.body.class_subject_id ? Number(req.body.class_subject_id) : null;
   const date = parseDate(req.body.date);
   if (!classId || !(await canTake(req, classId, csId))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
-  if (req.user.role === 'teacher' && E('attendance.edit_window') && J.diffDays(date, J.todayISO()) > 3) { req.flash('danger', 'مهلت ویرایش این تاریخ به پایان رسیده است.'); return res.redirect('/attendance'); }
+  if (req.user.role === 'teacher' && E('attendance.edit_window') && J.diffDays(date, J.todayISO()) > Math.max(0, settings.getInt('attendance_edit_days', 3))) { req.flash('danger', 'مهلت ویرایش این تاریخ به پایان رسیده است.'); return res.redirect('/attendance'); }
   const holidayTitle = await holidayOn(date);
   if (holidayTitle && req.user.role === 'teacher') { req.flash('danger', `تاریخ ${J.formatDate(date)} تعطیل رسمی است (${holidayTitle}) و ثبت حضور و غیاب در آن مجاز نیست.`); return res.redirect('/attendance?date=' + date); }
   if (holidayTitle && req.body.confirm_holiday !== '1') { req.flash('warning', `تاریخ ${J.formatDate(date)} تعطیل رسمی است (${holidayTitle}). برای ثبت، گزینهٔ «با وجود تعطیلی ثبت شود» را علامت بزنید.`); return res.redirect('/attendance/take?class_id=' + classId + (csId ? '&class_subject_id=' + csId : '') + '&date=' + date); }
@@ -249,7 +249,7 @@ router.get('/excuses', modules.requireEnabled('attendance.excuses'), async (req,
   const myAbsences = me ? await db.table('attendance').where('student_id', me.id).where('status', 'absent').where('session_key', 'daily').whereRaw('id NOT IN (SELECT COALESCE(attendance_id, 0) FROM absence_excuses)').orderBy('date', 'desc').limit(20).all() : [];
   res.render(v('excuses'), { title: 'درخواست‌های موجه‌شدن غیبت', result, status, me, myAbsences, query: req.query });
 });
-router.post('/excuses', auth.requireRole('student', 'parent'), modules.requireEnabled('attendance.excuses'), ...upload.form('excuses', 'single', 'file', { maxMb: 5 }), async (req, res) => {
+router.post('/excuses', auth.requireRole('student', 'parent'), modules.requireEnabled('attendance.excuses'), ...upload.form('excuses', 'single', 'file', { userContent: true, maxMb: 5 }), async (req, res) => {
   const me = await people.studentOf(req);
   if (!me) return res.redirect('/attendance/excuses');
   if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/attendance/excuses'); }

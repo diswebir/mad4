@@ -21,7 +21,8 @@ module.exports = [
       let n = 0;
       for (const inv of rows) {
         const days = J.diffDays(inv.due_date, today);
-        if (days % 7 !== 1 && days !== 1) continue; // روز اول و سپس هفتگی
+        const every = Math.max(1, settings.getInt('reminder_interval_days', 7));
+        if (days % every !== 1 && days !== 1) continue; // روز اول و سپس هر N روز
         const remain = Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0);
         const body = `ماندهٔ «${inv.title}» به مبلغ ${utils.money(remain, unit)} ${J.toPersianDigits(days)} روز از سررسید گذشته است.`;
         if (inv.user_id) await notify.push([inv.user_id], { title: 'یادآوری پرداخت', body, link: '/finance/my', type: 'warning' });

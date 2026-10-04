@@ -128,7 +128,7 @@ router.get('/:id', modules.requireEnabled('teachers.profile'), async (req, res) 
 });
 
 // ---- مدارک ----
-router.post('/:id/documents', auth.requireRoleOrPermission(['admin', 'teacher'], 'teachers.manage'), modules.requireEnabled('teachers.documents'), ...upload.form('teachers/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/:id/documents', auth.requireRoleOrPermission(['admin', 'teacher'], 'teachers.manage'), modules.requireEnabled('teachers.documents'), ...upload.form('teachers/docs', 'single', 'file', { userContent: true, maxMb: 10 }), async (req, res) => {
   const t = await db.findById('teachers', req.params.id);
   if (!t || (req.user.role === 'teacher' && t.user_id !== req.user.id)) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده است'); return res.redirect(`/teachers/${t.id}#docs`); }

@@ -29,7 +29,7 @@ router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled(
 router.get('/report', auth.requireRoleOrPermission(['admin', 'teacher'], 'discipline.view', 'discipline.manage'), modules.requireEnabled('discipline.report'), async (req, res) => {
   const classes = await people.classOptions(req);
   const classId = Number(req.query.class_id) || (classes[0] && classes[0].value) || null;
-  const from = req.query.from ? J.toGregorian(req.query.from) : J.addDays(J.todayISO(), -90);
+  const from = req.query.from ? J.toGregorian(req.query.from) : J.addDays(J.todayISO(), -Math.max(7, require('../../core/settings').getInt('discipline_report_days', 90)));
   const to = req.query.to ? J.toGregorian(req.query.to) : J.todayISO();
   let rows = []; let byCat = [];
   if (classId) {

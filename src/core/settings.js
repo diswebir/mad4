@@ -19,6 +19,7 @@ const DEFAULTS = {
   email_enabled: '0', smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', smtp_from: '', smtp_secure: '0',
   login_captcha: '1', login_max_attempts: '5', login_lock_minutes: '15', session_days: '7', demo_mode: '0', allow_student_tickets_to_admin: '1',
   school_days: '0,1,2,3,4', working_hours: '07:30-13:30', currency_unit: 'تومان', student_number_prefix: '', student_number_next: '1001',
+  sms_webhook_url: '', attendance_edit_days: '3', max_weekly_hours: '24', leave_days_per_year: '30', student_default_password: '', force_password_change: '0', school_short_name: '', invoice_due_days: '30', reminder_interval_days: '7', homework_reminder_days: '1', upload_max_mb: '0', cleanup_notifications_days: '90', cleanup_login_logs_days: '180', cleanup_job_runs_days: '30', dashboard_events_days: '30', dashboard_announcements_count: '5', discipline_report_days: '90',
   maintenance_mode: '0', maintenance_message: '', maintenance_until: '', maintenance_allow_ips: '', disk_alert_enabled: '1', disk_alert_min_mb: '500', disk_alert_percent: '90', app_version: '', app_updated_at: '',
   scheduler_mode: 'internal', backup_keep: '7', backup_offsite_mode: 'none', sms_price: '0', backup_offsite_max_mb: '20', backup_email_to: '', backup_ftp_host: '', backup_ftp_port: '21', backup_ftp_user: '', backup_ftp_pass: '', backup_ftp_dir: 'backups', backup_ftp_secure: '0', backup_webdav_url: '', backup_webdav_user: '', backup_webdav_pass: '', backup_offsite_last: '', log_keep_days: '14', cron_token: '', site_url: '', password_reset_enabled: '1', password_min_length: '6', parent_default_password: '123456', parent_force_change_password: '0', attendance_sms_mode: 'scheduled',
   lesson_log_edit_days: '7',   admissions_open: '0', admissions_year: '', admissions_grades: '', admissions_text: '', admissions_docs: 'شناسنامه، کارت ملی، کارنامهٔ سال قبل، عکس ۳×۴', school_district: '', signature_image: '', stamp_image: '', letterhead_header: 'جمهوری اسلامی ایران\nوزارت آموزش و پرورش', letterhead_footer: '', signatory_title: 'مدیر مدرسه',
@@ -27,11 +28,13 @@ const DEFAULTS = {
 };
 
 let cache = null;
+let stored = new Set();
 
 async function load() {
   const rows = await db.table('settings').all();
   cache = Object.assign({}, DEFAULTS);
-  for (const r of rows) cache[r.key] = r.value;
+  stored = new Set();
+  for (const r of rows) { cache[r.key] = r.value; stored.add(r.key); }
   return cache;
 }
 function get(key, def) {
@@ -47,9 +50,13 @@ async function set(key, value) {
   value = value == null ? '' : String(value);
   await db.upsert('settings', { key }, { value, updated_at: db.now() });
   if (!cache) cache = Object.assign({}, DEFAULTS);
-  cache[key] = value;
+  cache[key] = value; stored.add(key);
 }
 async function setMany(obj) { for (const [k, v] of Object.entries(obj)) await set(k, v); }
+/** حذف مقدار ذخیره‌شده (بازگشت به پیش‌فرض) */
+async function unset(key) { await db.table('settings').where('key', key).delete(); stored.delete(key); if (cache) { if (DEFAULTS[key] !== undefined) cache[key] = DEFAULTS[key]; else delete cache[key]; } }
+/** کلیدهایی که در پایگاه داده مقدار دارند (برای تشخیص «تغییر یافته نسبت به پیش‌فرض») */
+function storedKeys() { return [...stored]; }
 function reset() { cache = null; }
 
-module.exports = { DEFAULTS, load, get, getInt, getBool, getList, all, set, setMany, reset };
+module.exports = { DEFAULTS, load, get, getInt, getBool, getList, all, set, setMany, unset, storedKeys, reset };

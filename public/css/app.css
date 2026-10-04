@@ -55,6 +55,7 @@ a { text-decoration: none; }
 .ltr { direction: ltr; text-align: left; }
 .num { font-variant-numeric: tabular-nums; }
 .fs-7 { font-size: .8rem; }
+.fs-8 { font-size: .7rem; }
 .fw-500 { font-weight: 500; }
 .text-brand { color: var(--brand) !important; }
 .bg-brand { background: var(--brand) !important; color: #fff; }

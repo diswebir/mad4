@@ -124,15 +124,18 @@ function vars(s, extra) {
 }
 
 /** آیا امروز اعلانی با این عنوان برای این کاربر ثبت شده؟ (جلوگیری از تکرار در اجرای مجدد کار) */
-async function alreadyNotified(userIds, title) {
+// یکتا در روز: همان عنوان + همان متن (اگر فهرست دانش‌آموزان یا قالب تغییر کند، اعلان تازه با متن جدید می‌رود)
+async function alreadyNotified(userIds, title, body) {
   if (!userIds.length) return false;
   const since = J.localToUtc(`${J.todayISO()} 00:00:00`) || `${J.todayISO()} 00:00:00`;
-  return db.table('notifications').whereIn('user_id', userIds).where('type', 'birthday').where('title', title.slice(0, 200)).where('created_at', '>=', since).exists();
+  const q = db.table('notifications').whereIn('user_id', userIds).where('type', 'birthday').where('title', title.slice(0, 200)).where('created_at', '>=', since);
+  if (body) q.where('body', body);
+  return q.exists();
 }
 
 async function pushOnce(userIds, payload) {
   const ids = [...new Set((Array.isArray(userIds) ? userIds : [userIds]).filter(Boolean))];
-  if (!ids.length || await alreadyNotified(ids, payload.title)) return 0;
+  if (!ids.length || await alreadyNotified(ids, payload.title, payload.body)) return 0;
   return notify.push(ids, Object.assign({ type: 'birthday' }, payload));
 }
 

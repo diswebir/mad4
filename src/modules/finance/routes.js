@@ -132,7 +132,7 @@ crud(router, {
     { name: 'status', label: 'وضعیت', type: 'select', list: true, filter: true, options: { unpaid: 'پرداخت نشده', partial: 'پرداخت جزئی', paid: 'پرداخت شده', cancelled: 'لغو شده' }, format: (val) => utils.statusBadge(val), help: 'وضعیت بر اساس پرداخت‌ها به‌صورت خودکار محاسبه می‌شود؛ فقط «لغو» را دستی انتخاب کنید' },
     { name: 'notes', label: 'یادداشت', type: 'textarea' }
   ],
-  defaults: (req) => ({ due_date: J.addDays(J.todayISO(), 30), status: 'unpaid', student_id: req.query.student_id || '' }),
+  defaults: (req) => ({ due_date: J.addDays(J.todayISO(), Math.max(1, settings.getInt('invoice_due_days', 30))), status: 'unpaid', student_id: req.query.student_id || '' }),
   beforeSave: async (d, req, isNew, row) => {
     if (isNew) { d.number = await nextNumber(); d.created_by = req.user.id; d.paid_amount = 0; }
     if (!d.fee_id) d.fee_id = null; if (!E('finance.discount')) d.discount = row ? row.discount : 0; d.discount = d.discount || 0;

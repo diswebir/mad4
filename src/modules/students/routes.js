@@ -554,7 +554,7 @@ router.post('/:id/notes/:nid/delete', auth.requireRoleOrPermission(['admin', 'te
   if (n && (req.user.role === 'admin' || n.author_id === req.user.id)) await db.remove('student_notes', { id: n.id });
   res.redirect(`/students/${req.params.id}?tab=notes`);
 });
-router.post('/:id/documents', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.documents'), ...upload.form('students/docs', 'single', 'file', { maxMb: 10 }), async (req, res) => {
+router.post('/:id/documents', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.documents'), ...upload.form('students/docs', 'single', 'file', { userContent: true, maxMb: 10 }), async (req, res) => {
   const row = await db.findById('students', req.params.id);
   if (!row) return res.redirect('/students');
   if (req.uploadError || !req.file) { req.flash('danger', req.uploadError || 'فایلی انتخاب نشده'); return res.redirect(`/students/${row.id}?tab=docs`); }
