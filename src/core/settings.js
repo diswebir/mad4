@@ -9,6 +9,7 @@ const DEFAULTS = {
   school_phone: '', school_email: '', school_address: '', school_website: '', school_logo: '', principal_name: '', deputy_name: '',
   primary_color: '#2563eb', sidebar_style: 'dark', sidebar_mode: 'accordion', sidebar_single: '0',
   notify_retry_max: '5', backup_auto_type: 'db',
+  payment_gateway: 'none', zarinpal_merchant_id: '', zarinpal_sandbox: '0', zarinpal_base_url: '', payment_min_amount: '', payment_allow_partial: '1', payment_description: 'پرداخت {title} — {school}',
   // تولد دانش‌آموزان
   birthday_days_before: '3', birthday_notify_admin: '1', birthday_notify_teacher: '1', birthday_notify_student: '1', birthday_notify_parents: '1', birthday_sms_student: '0', birthday_sms_parents: '0',
   birthday_tpl_admin_upcoming: '', birthday_tpl_admin_today: '', birthday_tpl_teacher: '', birthday_tpl_student: '', birthday_tpl_parent: '', default_theme: 'light', items_per_page: '20', timezone_offset: '+03:30',

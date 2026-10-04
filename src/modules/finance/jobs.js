@@ -3,6 +3,15 @@ const notify = require('../../core/notify');
 const utils = require('../../core/utils');
 module.exports = [
   {
+    key: 'online_payments_reconcile', name: 'استعلام پرداخت‌های آنلاین', description: 'تأیید تراکنش‌های پرداخت‌شده‌ای که کاربر به سایت برنگشته و منقضی‌کردن تراکنش‌های نیمه‌کاره (هر ساعت)', schedule: 'hourly',
+    async run() {
+      if (!require('../../core/modules').isEnabled('finance.online_payment')) return 'پرداخت آنلاین غیرفعال است';
+      const gw = require('./gateway'); if (!gw.configured()) return 'درگاه پیکربندی نشده است';
+      const r = await gw.reconcile();
+      return `${r.checked} تراکنش در انتظار بررسی شد: ${r.verified} تأیید، ${r.expired} منقضی${r.error ? ' — خطا: ' + r.error : ''}`;
+    }
+  },
+  {
     key: 'finance_overdue', name: 'یادآوری شهریهٔ معوق', description: 'اعلان به دانش‌آموز و ولی برای صورت‌حساب‌های سررسیدگذشته (هر ۷ روز یک بار برای هر صورت‌حساب)', schedule: 'daily', defaultTime: '08:00',
     async run({ db, settings, J }) {
       const today = J.todayISO();

@@ -14,8 +14,24 @@ const J = require('../../core/jalali');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
-router.use(auth.requireAuth);
 const E = modules.isEnabled;
+const gateway = require('./gateway');
+
+// ---------- بازگشت از درگاه پرداخت (بدون نیاز به ورود؛ کاربر ممکن است با مرورگر دیگری برگردد) ----------
+router.get('/pay/callback', modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const authority = String(req.query.Authority || req.query.authority || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 64);
+  if (!authority) return res.status(400).render(v('pay-result'), { layout: 'layouts/public', title: 'نتیجهٔ پرداخت', ok: false, error: 'شناسهٔ تراکنش نامعتبر است', payment: null, invoice: null, unit: unit() });
+  const r = await gateway.verify(authority, req.query.Status || req.query.status);
+  if (r.ok && !r.already && r.invoice) {
+    const st = await db.findById('students', r.invoice.student_id);
+    if (st && st.user_id && E('notifications.inapp')) await notify.push([st.user_id], { title: 'پرداخت آنلاین موفق', body: `${utils.money(r.payment.amount, unit())} بابت ${r.invoice.title} — کد پیگیری ${r.refId || ''}`, link: '/finance/my', type: 'success' });
+    if (E('notifications.inapp')) await notify.pushRole('admin', { title: 'پرداخت آنلاین جدید', body: `${st ? st.first_name + ' ' + st.last_name : ''} — ${utils.money(r.payment.amount, unit())} بابت ${r.invoice.title}`, link: '/finance/invoices/' + r.invoice.id, type: 'success' });
+    await activity.log(req, 'create', 'payments', r.payment.payment_id, `پرداخت آنلاین ${utils.money(r.payment.amount)} برای ${r.invoice.number} (زرین‌پال ${r.refId || ''})`);
+  }
+  res.status(r.ok ? 200 : 402).render(v('pay-result'), { layout: req.user ? undefined : 'layouts/public', title: 'نتیجهٔ پرداخت', ok: r.ok, already: !!r.already, error: r.error || null, payment: r.payment || null, invoice: r.invoice || null, refId: r.refId || (r.payment && r.payment.ref_id) || null, unit: unit() });
+});
+
+router.use(auth.requireAuth);
 const staff = [auth.requireRoleOrPermission(['admin'], 'finance.view', 'finance.manage', 'finance.payments')];
 const canWrite = [auth.requireRoleOrPermission(['admin'], 'finance.manage', 'finance.payments')];
 const FEE_TYPES = { tuition: 'شهریه', transport: 'سرویس', books: 'کتاب و لوازم', food: 'تغذیه', trip: 'اردو', uniform: 'لباس فرم', other: 'سایر' };
@@ -141,7 +157,8 @@ router.get('/invoices/:id', ...staff, async (req, res) => {
   if (!inv) return res.status(404).render('errors/404', { title: 'یافت نشد' });
   const payments = await db.table('payments as p').leftJoin('users as u', 'u.id', 'p.recorded_by').select('p.*', 'u.name as recorder').where('p.invoice_id', inv.id).orderBy('p.paid_at').all();
   const print = req.query.print === '1' && E('finance.receipt');
-  res.render(v('invoice'), { title: 'صورت‌حساب ' + inv.number, layout: print ? 'layouts/print' : undefined, print, inv, payments, METHODS, FEE_TYPES, unit: unit(), remaining: Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0), canPay: E('finance.payments') && inv.status !== 'cancelled' && inv.status !== 'paid', schoolInfo: { name: settings.get('school_name'), phone: settings.get('school_phone'), address: settings.get('school_address') } });
+  const onlineTx = E('finance.online_payment') ? await db.table('online_payments').where('invoice_id', inv.id).orderBy('id', 'desc').all() : [];
+  res.render(v('invoice'), { title: 'صورت‌حساب ' + inv.number, layout: print ? 'layouts/print' : undefined, print, inv, payments, onlineTx, GW_STATUSES: gateway.STATUSES, METHODS, FEE_TYPES, unit: unit(), remaining: Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0), canPay: E('finance.payments') && inv.status !== 'cancelled' && inv.status !== 'paid', schoolInfo: { name: settings.get('school_name'), phone: settings.get('school_phone'), address: settings.get('school_address') } });
 });
 router.post('/invoices/:id/pay', ...canWrite, modules.requireEnabled('finance.payments'), async (req, res) => {
   const inv = await db.findById('invoices', req.params.id); if (!inv) return res.status(404).render('errors/404', { title: 'یافت نشد' });
@@ -191,6 +208,33 @@ crud(router, {
 });
 
 // ---------- گزارش ----------
+// ---------- تراکنش‌های آنلاین (مدیر) ----------
+router.get('/online', ...staff, modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1), per = 40;
+  const q = db.table('online_payments as o').leftJoin('students as s', 's.id', 'o.student_id').leftJoin('invoices as i', 'i.id', 'o.invoice_id').select('o.*', 's.first_name', 's.last_name', 's.student_number', 'i.number as invoice_number', 'i.title as invoice_title');
+  if (req.query.status) q.where('o.status', req.query.status);
+  if (req.query.q) { const term = J.toEnglishDigits(req.query.q); q.where((b) => b.where('o.authority', 'like', `%${term}%`).orWhere('o.ref_id', 'like', `%${term}%`).orWhere('s.student_number', 'like', `%${term}%`).orWhere('s.last_name', 'like', `%${utils.normalizePersian(req.query.q)}%`)); }
+  const total = await q.clone().count();
+  const rows = await q.clone().orderBy('o.id', 'desc').limit(per).offset((page - 1) * per).all();
+  const stats = {}; for (const r of await db.table('online_payments').select('status', 'COUNT(*) as c', 'COALESCE(SUM(amount),0) as sum').groupBy('status').all()) stats[r.status] = { count: Number(r.c), sum: Number(r.sum) };
+  res.render(v('online'), { title: 'تراکنش‌های آنلاین', rows, total, page, pages: Math.ceil(total / per), stats, f: { status: req.query.status || '', q: req.query.q || '' }, STATUSES: gateway.STATUSES, unit: unit(), configured: gateway.configured(), enabledGw: gateway.enabled(), baseUrl: gateway.baseUrl(), sandbox: settings.getBool('zarinpal_sandbox') });
+});
+router.post('/online/reconcile', ...canWrite, modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const r = await gateway.reconcile();
+  req.flash(r.error ? 'warning' : 'success', r.error && !r.checked ? 'استعلام ناموفق: ' + r.error : `${J.toPersianDigits(r.checked)} تراکنش در انتظار بررسی شد: ${J.toPersianDigits(r.verified)} تأیید، ${J.toPersianDigits(r.expired)} منقضی.`);
+  res.redirect('/finance/online');
+});
+router.post('/online/:id/verify', ...canWrite, modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const p = await db.findById('online_payments', Number(req.params.id));
+  if (!p || !p.authority) { req.flash('danger', 'تراکنش یافت نشد.'); return res.redirect('/finance/online'); }
+  if (p.status === 'paid') { req.flash('info', 'این تراکنش قبلاً تأیید شده است.'); return res.redirect('/finance/online'); }
+  await db.update('online_payments', { status: 'pending', updated_at: db.now() }, { id: p.id });
+  const r = await gateway.verify(p.authority, 'OK');
+  if (r.ok) await activity.log(req, 'create', 'payments', r.payment.payment_id, `تأیید دستی پرداخت آنلاین ${utils.money(p.amount)} (${r.refId || ''})`);
+  req.flash(r.ok ? 'success' : 'danger', r.ok ? `تراکنش تأیید و پرداخت ثبت شد (کد پیگیری ${J.toPersianDigits(r.refId || '')}).` : 'تأیید ناموفق: ' + r.error);
+  res.redirect('/finance/online');
+});
+
 router.get('/reports', ...staff, modules.requireEnabled('finance.reports'), async (req, res) => {
   const byClass = await db.table('invoices as i').join('students as s', 's.id', 'i.student_id').leftJoin('classes as c', 'c.id', 's.class_id').select('c.title as class_title', 'COUNT(*) as cnt', 'COALESCE(SUM(i.amount - COALESCE(i.discount,0)),0) as due', 'COALESCE(SUM(i.paid_amount),0) as paid').where('i.status', '!=', 'cancelled').groupBy('c.title').orderBy('c.title').all();
   const byType = await db.table('invoices as i').leftJoin('fees as f', 'f.id', 'i.fee_id').select('f.type', 'COUNT(*) as cnt', 'COALESCE(SUM(i.amount - COALESCE(i.discount,0)),0) as due', 'COALESCE(SUM(i.paid_amount),0) as paid').where('i.status', '!=', 'cancelled').groupBy('f.type').all();
@@ -201,12 +245,39 @@ router.get('/reports', ...staff, modules.requireEnabled('finance.reports'), asyn
 });
 
 // ---------- پنل دانش‌آموز ----------
+// ---------- پرداخت آنلاین توسط دانش‌آموز/ولی ----------
+router.post('/pay/:invoiceId', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const inv = await db.table('invoices').where('id', Number(req.params.invoiceId)).where('student_id', s.id).first();
+  if (!inv || inv.status === 'cancelled') { req.flash('danger', 'صورت‌حساب یافت نشد.'); return res.redirect('/finance/my'); }
+  if (!gateway.configured()) { req.flash('danger', 'درگاه پرداخت آنلاین فعال نیست. لطفاً با امور مالی مدرسه تماس بگیرید.'); return res.redirect('/finance/my'); }
+  const remaining = Number(inv.amount) - Number(inv.discount || 0) - Number(inv.paid_amount || 0);
+  if (remaining <= 0) { req.flash('info', 'این صورت‌حساب قبلاً تسویه شده است.'); return res.redirect('/finance/my'); }
+  let amount = settings.getBool('payment_allow_partial') && req.body.amount ? Math.round(Number(J.toEnglishDigits(String(req.body.amount)).replace(/[^\d.]/g, ''))) : remaining;
+  if (!Number.isFinite(amount) || amount <= 0) amount = remaining;
+  if (amount > remaining) amount = remaining;
+  if (amount < gateway.minAmount() && remaining >= gateway.minAmount()) { req.flash('danger', `حداقل مبلغ پرداخت آنلاین ${utils.money(gateway.minAmount(), unit())} است.`); return res.redirect('/finance/my'); }
+  const r = await gateway.request(req, { invoice: inv, student: s, amount, user: req.user });
+  if (!r.ok) { req.flash('danger', 'اتصال به درگاه ناموفق بود: ' + r.error); return res.redirect('/finance/my'); }
+  await activity.log(req, 'create', 'online_payments', r.id, `شروع پرداخت آنلاین ${utils.money(amount)} برای ${inv.number}`);
+  if (auth.wantsJson(req)) return res.json({ ok: true, url: r.url, authority: r.authority });
+  res.redirect(r.url);
+});
+router.get('/pay/status/:id', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.online_payment'), async (req, res) => {
+  const s = await people.studentOf(req);
+  const p = s ? await db.table('online_payments').where('id', Number(req.params.id)).where('student_id', s.id).first() : null;
+  if (!p) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  res.json({ ok: true, status: p.status, ref_id: p.ref_id, error: p.error });
+});
+
 router.get('/my', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.student_view'), async (req, res) => {
   const s = await people.studentOf(req); if (!s) return res.status(404).render('errors/404', { title: 'یافت نشد' });
+  const online = E('finance.online_payment') && gateway.configured();
+  const onlineTx = E('finance.online_payment') ? await db.table('online_payments').where('student_id', s.id).orderBy('id', 'desc').limit(10).all() : [];
   const invoices = await db.table('invoices').where('student_id', s.id).where('status', '!=', 'cancelled').orderBy('due_date', 'desc').all();
   const payments = await db.table('payments as p').leftJoin('invoices as i', 'i.id', 'p.invoice_id').select('p.*', 'i.title as invoice_title', 'i.number').where('p.student_id', s.id).orderBy('p.paid_at', 'desc').all();
   const total = invoices.reduce((a, i) => a + Number(i.amount) - Number(i.discount || 0), 0); const paid = invoices.reduce((a, i) => a + Number(i.paid_amount || 0), 0);
-  res.render(v('my'), { title: 'شهریه و پرداخت‌ها', s, invoices, payments, total, paid, METHODS, unit: unit(), today: J.todayISO() });
+  res.render(v('my'), { title: 'شهریه و پرداخت‌ها', s, invoices, payments, total, paid, METHODS, unit: unit(), today: J.todayISO(), online, onlineTx, allowPartial: settings.getBool('payment_allow_partial'), minAmount: gateway.minAmount(), GW_STATUSES: gateway.STATUSES });
 });
 router.get('/my/:id', auth.requireRole('student', 'parent'), modules.requireEnabled('finance.student_view'), async (req, res) => {
   const s = await people.studentOf(req);

@@ -43,6 +43,7 @@ const TABS = [
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
   { key: 'birthdays', title: 'تولدها', icon: 'bi-cake2', feature: 'students.birthdays' },
+  { key: 'payment', title: 'درگاه پرداخت', icon: 'bi-credit-card', feature: 'finance.online_payment' },
   { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
@@ -57,6 +58,7 @@ const FIELDS = {
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price', 'notify_retry_max'],
+  payment: ['payment_gateway', 'zarinpal_merchant_id', 'zarinpal_sandbox', 'zarinpal_base_url', 'payment_min_amount', 'payment_allow_partial', 'payment_description', 'site_url'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']

@@ -83,6 +83,17 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-12"><h6 class="text-brand mt-2">قالب گواهی اشتغال به تحصیل</h6></div>
         <%- inp('certificate_template', 'متن پیش‌فرض گواهی', { col: 12, type: 'textarea', help: 'متغیرها: {student} {father} {student_number} {national_id} {birth_date} {class} {grade} {year} {school} {date} {principal} {recipient}' }) %>
         <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>برای درج نشانی استعلام روی اسناد، «نشانی عمومی سامانه» را در تب پیامک تنظیم کنید. پیش‌نمایش سربرگ: <a href="/documents/new?type=certificate" target="_blank">صدور گواهی</a>.</div></div>
+      <% } else if (tab === 'payment') { %>
+        <div class="col-12"><div class="alert alert-light border small mb-0"><i class="bi bi-info-circle ms-1"></i>با فعال‌کردن درگاه، دانش‌آموز/اولیا می‌توانند صورت‌حساب‌ها را از پنل خود به‌صورت آنلاین بپردازند. پرداخت‌های موفق به‌طور خودکار در صورت‌حساب ثبت می‌شوند. برای زرین‌پال، «مرچنت‌کد» ۳۶ کاراکتری را از پنل زرین‌پال دریافت کنید. نشانی بازگشت: <code class="ltr"><%= (s.site_url || '') + '/finance/pay/callback' %></code></div></div>
+        <%- sel('payment_gateway', 'درگاه پرداخت', { none: 'غیرفعال', zarinpal: 'زرین‌پال' }, { col: 4 }) %>
+        <%- inp('zarinpal_merchant_id', 'مرچنت‌کد زرین‌پال', { col: 8, ltr: true, placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' }) %>
+        <%- sel('zarinpal_sandbox', 'حالت آزمایشی (Sandbox)', { '0': 'خیر — پرداخت واقعی', '1': 'بله — درگاه آزمایشی زرین‌پال' }, { col: 4, help: 'در حالت آزمایشی هیچ پولی جابه‌جا نمی‌شود' }) %>
+        <%- inp('payment_min_amount', 'حداقل مبلغ پرداخت آنلاین', { type: 'number', col: 4, help: 'خالی = پیش‌فرض درگاه (۱٬۰۰۰ تومان)' }) %>
+        <%- sel('payment_allow_partial', 'پرداخت بخشی از صورت‌حساب', { '1': 'مجاز (کاربر مبلغ را انتخاب می‌کند)', '0': 'فقط پرداخت کامل مانده' }, { col: 4 }) %>
+        <%- inp('site_url', 'نشانی عمومی سامانه (برای بازگشت از درگاه)', { col: 8, ltr: true, placeholder: 'https://school.example.com' }) %>
+        <%- inp('payment_description', 'شرح تراکنش', { col: 4, help: 'متغیرها: {title} {number} {name} {school}' }) %>
+        <%- inp('zarinpal_base_url', 'نشانی پایهٔ درگاه (پیشرفته)', { col: 12, ltr: true, placeholder: 'خالی = خودکار (payment.zarinpal.com یا sandbox.zarinpal.com)', help: 'فقط برای آزمایش یا درگاه واسط تغییر دهید' }) %>
+        <div class="col-12"><a class="btn btn-sm btn-outline-secondary" href="/finance/online"><i class="bi bi-list-check ms-1"></i>فهرست تراکنش‌های آنلاین</a></div>
       <% } else if (tab === 'birthdays') { %>
         <div class="col-12"><div class="alert alert-light border small mb-0"><i class="bi bi-info-circle ms-1"></i>تولدها بر اساس «تقویم شمسی» محاسبه می‌شوند و کار زمان‌بندی‌شدهٔ «اطلاع‌رسانی تولد» هر روز صبح اجرا می‌شود (ساعت آن در <a href="/system/jobs">کارهای زمان‌بندی‌شده</a> قابل تغییر است). متغیرهای قابل استفاده در الگوها: <code>{name}</code> <code>{first_name}</code> <code>{class}</code> <code>{age}</code> <code>{date}</code> <code>{when}</code> <code>{school}</code> و در یادآوری مدیر <code>{list}</code>.</div></div>
         <%- inp('birthday_days_before', 'یادآوری به مدیر چند روز قبل از تولد', { type: 'number', col: 4, help: '۰ = بدون یادآوری قبلی' }) %>

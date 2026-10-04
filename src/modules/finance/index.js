@@ -11,10 +11,12 @@ module.exports = {
     { key: 'reports', name: 'گزارش مالی', description: 'وصولی، معوقات، به تفکیک کلاس و نوع هزینه با نمودار' },
     { key: 'overdue_notify', name: 'یادآوری بدهی', description: 'ارسال اعلان/پیامک به بدهکاران' },
     { key: 'student_view', name: 'نمایش به دانش‌آموز/اولیا', description: 'مشاهدهٔ صورت‌حساب‌ها و پرداخت‌ها در پنل دانش‌آموز' },
-    { key: 'export', name: 'خروجی CSV', description: 'دانلود صورت‌حساب‌ها و پرداخت‌ها' }
+    { key: 'export', name: 'خروجی CSV', description: 'دانلود صورت‌حساب‌ها و پرداخت‌ها' },
+    { key: 'online_payment', name: 'پرداخت آنلاین (زرین‌پال)', description: 'پرداخت صورت‌حساب از پنل دانش‌آموز/اولیا از طریق درگاه زرین‌پال، ثبت خودکار پرداخت موفق، استعلام تراکنش‌های تأییدنشده و فهرست تراکنش‌ها برای مدیر' }
   ],
   menu: [
     { title: 'امور مالی', href: '/finance', icon: 'bi-cash-stack', roles: ['admin'], permission: ['finance.view', 'finance.manage', 'finance.payments'] },
+    { title: 'تراکنش‌های آنلاین', href: '/finance/online', icon: 'bi-credit-card', roles: ['admin'], permission: ['finance.view', 'finance.manage', 'finance.payments'], feature: 'online_payment' },
     { title: 'شهریه و پرداخت‌ها', href: '/finance/my', icon: 'bi-cash-stack', roles: ['student', 'parent'], feature: 'student_view' }
   ],
   jobs: require('./jobs'),

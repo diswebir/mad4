@@ -1,8 +1,44 @@
 <%- include('partials/page-header', { title: 'شهریه و پرداخت‌ها', subtitle: s.first_name + ' ' + s.last_name, icon: 'bi-cash-stack' }) %>
 <div class="row g-2 mb-3"><% [['کل شهریه و هزینه‌ها', total, 'primary'], ['پرداخت‌شده', paid, 'success'], ['مانده', total - paid, total - paid > 0 ? 'danger' : 'success']].forEach(function (c) { %><div class="col-md-4"><div class="card"><div class="card-body py-2"><div class="fs-7 text-secondary"><%= c[0] %></div><div class="fs-5 fw-bold text-<%= c[2] %>"><%= utils.money(c[1], unit) %></div></div></div></div><% }); %></div>
-<div class="row g-3"><div class="col-lg-7"><div class="card table-card"><div class="card-header"><h6>صورت‌حساب‌ها</h6></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>شماره</th><th>عنوان</th><th>مبلغ</th><th>مانده</th><th>سررسید</th><th>وضعیت</th></tr></thead><tbody>
-  <% invoices.forEach(function (i) { var rem = Number(i.amount) - Number(i.discount || 0) - Number(i.paid_amount || 0); %><tr><td><a href="/finance/my/<%= i.id %>" class="ltr d-inline-block"><%= J.toPersianDigits(i.number) %></a></td><td><%= i.title %></td><td><%= utils.money(Number(i.amount) - Number(i.discount || 0), false) %></td><td class="<%= rem > 0 ? 'text-danger fw-semibold' : 'text-success' %>"><%= utils.money(rem, false) %></td><td class="<%= rem > 0 && i.due_date < today ? 'text-danger' : '' %>"><%= J.formatDate(i.due_date) %></td><td><%- utils.statusBadge(i.status) %></td></tr><% }); if (!invoices.length) { %><tr><td colspan="6"><%- include('partials/empty', { message: 'صورت‌حسابی ثبت نشده', icon: 'bi-receipt' }) %></td></tr><% } %>
+<div class="row g-3"><div class="col-lg-7"><div class="card table-card"><div class="card-header"><h6>صورت‌حساب‌ها</h6></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>شماره</th><th>عنوان</th><th>مبلغ</th><th>مانده</th><th>سررسید</th><th>وضعیت</th><% if (typeof online !== 'undefined' && online) { %><th class="text-end">پرداخت</th><% } %></tr></thead><tbody>
+  <% invoices.forEach(function (i) { var rem = Number(i.amount) - Number(i.discount || 0) - Number(i.paid_amount || 0); %><tr><td><a href="/finance/my/<%= i.id %>" class="ltr d-inline-block"><%= J.toPersianDigits(i.number) %></a></td><td><%= i.title %></td><td><%= utils.money(Number(i.amount) - Number(i.discount || 0), false) %></td><td class="<%= rem > 0 ? 'text-danger fw-semibold' : 'text-success' %>"><%= utils.money(rem, false) %></td><td class="<%= rem > 0 && i.due_date < today ? 'text-danger' : '' %>"><%= J.formatDate(i.due_date) %></td><td><%- utils.statusBadge(i.status) %></td><% if (typeof online !== 'undefined' && online) { %><td class="text-end"><% if (rem > 0) { %>
+      <% if (allowPartial) { %><button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#payModal" data-id="<%= i.id %>" data-title="<%= i.title %>" data-remaining="<%= rem %>"><i class="bi bi-credit-card ms-1"></i>پرداخت آنلاین</button>
+      <% } else { %><form method="post" action="/finance/pay/<%= i.id %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-success"><i class="bi bi-credit-card ms-1"></i>پرداخت آنلاین</button></form><% } %>
+    <% } %></td><% } %></tr><% }); if (!invoices.length) { %><tr><td colspan="7"><%- include('partials/empty', { message: 'صورت‌حسابی ثبت نشده', icon: 'bi-receipt' }) %></td></tr><% } %>
 </tbody></table></div></div></div>
 <div class="col-lg-5"><div class="card table-card"><div class="card-header"><h6>پرداخت‌های انجام‌شده</h6></div><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>تاریخ</th><th>بابت</th><th>روش</th><th>مبلغ</th></tr></thead><tbody>
   <% payments.forEach(function (p) { %><tr><td class="fs-7"><%= J.formatDate(p.paid_at) %></td><td class="fs-7"><%= p.invoice_title || '' %></td><td class="fs-7"><%= METHODS[p.method] || p.method %></td><td class="fw-semibold text-success"><%= utils.money(p.amount, false) %></td></tr><% }); if (!payments.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">پرداختی ثبت نشده</td></tr><% } %>
-</tbody></table></div></div><div class="fs-7 text-secondary mt-2"><i class="bi bi-info-circle me-1"></i>برای پرداخت به دفتر مدرسه مراجعه کنید یا با امور مالی تماس بگیرید. مبالغ به <%= unit %> است.</div></div></div>
+</tbody></table></div></div><% if (typeof onlineTx !== 'undefined' && onlineTx.length) { %>
+<div class="card table-card mt-3"><div class="card-header"><h6><i class="bi bi-credit-card me-1"></i>تراکنش‌های آنلاین</h6></div><div class="table-responsive"><table class="table table-sm align-middle mb-0 fs-7"><thead><tr><th>زمان</th><th>مبلغ</th><th>کد پیگیری</th><th>وضعیت</th></tr></thead><tbody>
+  <% onlineTx.forEach(function (t) { var badge = { paid: 'text-bg-success', pending: 'text-bg-warning', failed: 'text-bg-danger', cancelled: 'text-bg-secondary', expired: 'text-bg-light' }[t.status] || 'text-bg-light'; %><tr><td><%= J.formatDateTime(t.created_at) %></td><td><%= utils.money(t.amount, false) %></td><td class="ltr text-end"><%= t.ref_id ? J.toPersianDigits(t.ref_id) : '—' %></td><td><span class="badge <%= badge %>"><%= GW_STATUSES[t.status] || t.status %></span></td></tr><% }); %>
+</tbody></table></div></div>
+<% } %>
+<div class="fs-7 text-secondary mt-2"><i class="bi bi-info-circle me-1"></i><% if (typeof online !== 'undefined' && online) { %>پرداخت آنلاین از طریق درگاه امن زرین‌پال انجام می‌شود و پس از پرداخت موفق، بلافاصله در صورت‌حساب ثبت می‌گردد. همچنین می‌توانید<% } else { %>برای پرداخت<% } %> به دفتر مدرسه مراجعه کنید یا با امور مالی تماس بگیرید. مبالغ به <%= unit %> است.</div></div></div>
+<% if (typeof online !== 'undefined' && online && allowPartial) { %>
+<div class="modal fade" id="payModal" tabindex="-1" aria-labelledby="payModalTitle" aria-hidden="true"><div class="modal-dialog"><form method="post" action="" class="modal-content" id="payForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="modal-header"><h6 class="modal-title" id="payModalTitle"><i class="bi bi-credit-card ms-1"></i>پرداخت آنلاین</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+  <div class="modal-body">
+    <div class="mb-2 text-secondary fs-7">بابت: <strong id="payTitle" class="text-dark"></strong></div>
+    <label class="form-label" for="payAmount">مبلغ (<%= unit %>)</label>
+    <input type="text" class="form-control form-control-lg ltr" id="payAmount" name="amount" inputmode="numeric" required>
+    <div class="form-text">ماندهٔ صورت‌حساب: <span id="payRemaining"></span> — حداقل پرداخت <%= utils.money(minAmount, unit) %>. می‌توانید بخشی از مبلغ را بپردازید.</div>
+    <div class="btn-group btn-group-sm mt-2" role="group" aria-label="مبلغ‌های پیشنهادی"><button type="button" class="btn btn-outline-secondary" data-part="1">کل مانده</button><button type="button" class="btn btn-outline-secondary" data-part="0.5">نصف</button><button type="button" class="btn btn-outline-secondary" data-part="0.25">یک‌چهارم</button></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-success"><i class="bi bi-shield-lock ms-1"></i>انتقال به درگاه</button></div>
+</form></div></div>
+<script>
+(function () {
+  var modal = document.getElementById('payModal'); if (!modal) return;
+  var remaining = 0; var fa = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+  modal.addEventListener('show.bs.modal', function (ev) {
+    var b = ev.relatedTarget; remaining = Number(b.getAttribute('data-remaining')) || 0;
+    document.getElementById('payForm').action = '/finance/pay/' + b.getAttribute('data-id');
+    document.getElementById('payTitle').textContent = b.getAttribute('data-title');
+    document.getElementById('payRemaining').textContent = fa(remaining);
+    document.getElementById('payAmount').value = remaining;
+  });
+  modal.querySelectorAll('[data-part]').forEach(function (btn) { btn.addEventListener('click', function () { document.getElementById('payAmount').value = Math.round(remaining * Number(btn.getAttribute('data-part'))); }); });
+})();
+</script>
+<% } %>
