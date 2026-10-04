@@ -27,6 +27,9 @@ const flash = require('./core/flash');
 const DbSessionStore = require('./core/session-store');
 const pkg = require('../package.json');
 const logger = require('./core/logger');
+const maintenance = require('./core/maintenance');
+const health = require('./core/health');
+const updater = require('./core/updater');
 
 const ROOT = config.ROOT;
 
@@ -42,8 +45,23 @@ async function boot(log) {
   await modules.loadStates();
   await permissions.ensureDefaults();
   permissions.reload();
+  await noteVersion(log);
   scheduler.start();
   return { installed: true };
+}
+
+/** ثبت نسخهٔ در حال اجرا؛ اگر فایل‌ها به نسخهٔ جدیدی جایگزین شده باشند، رخداد «به‌روزرسانی» ثبت و اعلان یک‌بارهٔ مدیر فعال می‌شود */
+async function noteVersion(log) {
+  try {
+    const prev = settings.get('app_version', '');
+    if (prev === pkg.version) return;
+    await settings.setMany({ app_version: pkg.version, app_updated_at: new Date().toISOString() });
+    if (prev) {
+      updater.writeState({ prevVersion: prev, upgradedAt: new Date().toISOString(), lastVersion: pkg.version });
+      try { await db.insert('activity_logs', { user_id: null, action: 'update', entity: 'system', entity_id: null, description: `به‌روزرسانی سامانه از نسخهٔ ${prev} به نسخهٔ ${pkg.version}`, ip: null, created_at: db.now() }); } catch (e) { /* ignore */ }
+      if (log) log(`نسخهٔ برنامه از ${prev} به ${pkg.version} به‌روز شد`);
+    }
+  } catch (e) { /* ignore */ }
 }
 
 function createApp() {
@@ -87,7 +105,7 @@ function createApp() {
     const results = await scheduler.runDue('cron');
     res.json({ ok: true, ran: results.length, results: results.map((r) => ({ key: r.key, status: r.status || (r.skipped ? 'skipped' : 'unknown'), message: r.message })) });
   });
-  app.get('/healthz', (req, res) => res.json({ ok: true, installed: config.get().installed, db: db.info ? db.info.driver : null, version: pkg.version, uptime: Math.round(process.uptime()) }));
+  app.get('/healthz', (req, res) => res.json({ ok: true, installed: config.get().installed, db: db.info ? db.info.driver : null, version: pkg.version, uptime: Math.round(process.uptime()), maintenance: config.get().installed ? maintenance.isOn() : false }));
 
   // پیش از نصب: فقط ویزارد نصب در دسترس است
   const installer = require('./installer/routes');
@@ -135,10 +153,18 @@ function createApp() {
   });
   app.use(flash());
   app.use(auth.loadUser());
+  // حالت تعمیر و نگهداری: غیرمدیران صفحهٔ ۵۰۳ می‌بینند (src/core/maintenance.js)
+  app.use(maintenance.middleware());
 
   // داده‌های مشترک قالب
   app.use(async (req, res, next) => {
     res.locals.menu = req.user ? modules.menuFor(req.user) : [];
+    res.locals.diskWarning = null;
+    res.locals.updatedFrom = null;
+    if (req.user && req.user.role === 'admin') {
+      if (modules.isEnabled('system.disk_alert')) { try { const h = await health.cached(); if (h && h.level !== 'ok') res.locals.diskWarning = h; } catch (e) { /* ignore */ } }
+      if (modules.isEnabled('system.updates')) { const n = updater.notice(); if (n && req.session && req.session.updateSeen !== pkg.version) res.locals.updatedFrom = n.prevVersion; }
+    }
     res.locals.theme = (req.user && req.user.theme) || (req.session && req.session.theme) || settings.get('default_theme') || 'light';
     res.locals.unreadNotifications = 0;
     res.locals.unreadMessages = 0;

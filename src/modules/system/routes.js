@@ -35,6 +35,11 @@ router.use('/sms-log', P('system.logs'), modules.requireEnabled('system.sms_log'
 router.use('/logs', P('system.logs'), modules.requireEnabled('system.error_log'));
 router.use('/notify-queue', P('system.logs'), modules.requireEnabled('notifications.retry_queue'));
 const logger = require('../../core/logger');
+const maintenance = require('../../core/maintenance');
+const health = require('../../core/health');
+const updater = require('../../core/updater');
+router.use('/maintenance', P('system.settings'), modules.requireEnabled('system.maintenance'));
+router.use('/update', P('system.settings'), modules.requireEnabled('system.updates'));
 
 const TABS = [
   { key: 'school', title: 'مدرسه', icon: 'bi-building' },
@@ -48,8 +53,10 @@ const TABS = [
   { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
   { key: 'admissions', title: 'پیش‌ثبت‌نام', icon: 'bi-person-plus', feature: 'admissions.public_form' },
+  { key: 'maintenance', title: 'نگهداری و دیسک', icon: 'bi-tools', feature: ['system.maintenance', 'system.disk_alert'] },
   { key: 'demo', title: 'دادهٔ نمونه', icon: 'bi-database-add', feature: 'system.demo_data' }
 ];
+const tabEnabled = (t) => !t.feature || [].concat(t.feature).some((f) => modules.isEnabled(f));
 const FIELDS = {
   school: ['school_name', 'school_slogan', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
   academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
@@ -60,16 +67,18 @@ const FIELDS = {
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price', 'notify_retry_max'],
   payment: ['payment_gateway', 'zarinpal_merchant_id', 'zarinpal_sandbox', 'zarinpal_base_url', 'payment_min_amount', 'payment_allow_partial', 'payment_description', 'site_url'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
+  maintenance: ['maintenance_mode', 'maintenance_message', 'maintenance_until', 'maintenance_allow_ips', 'disk_alert_enabled', 'disk_alert_min_mb', 'disk_alert_percent'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };
 
 router.get('/settings', async (req, res) => {
-  const tab = TABS.find((t) => t.key === req.query.tab && (!t.feature || modules.isEnabled(t.feature))) || TABS[0];
+  const tab = TABS.find((t) => t.key === req.query.tab && tabEnabled(t)) || TABS[0];
   const extra = {};
+  if (tab.key === 'maintenance') { extra.healthInfo = await health.check(); extra.maintenanceActive = maintenance.isOn(); extra.maintenanceReason = maintenance.reason(); }
   if (tab.key === 'birthdays') { const bd = require('../students/birthdays'); extra.birthdayPreview = bd.preview(); extra.birthdayDefaults = bd.DEFAULT_TPL; }
   if (tab.key === 'admissions') { extra.gradeLevels = await db.table('grade_levels').orderBy('sort_order').all(); extra.years = await db.table('academic_years').orderBy('id', 'desc').all(); extra.appCount = await db.table('applications').count(); }
-  res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter((t) => !t.feature || modules.isEnabled(t.feature)), tab: tab.key, s: settings.all() }, extra));
+  res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter(tabEnabled), tab: tab.key, s: settings.all() }, extra));
 });
 
 router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'school_logo', maxCount: 1 }, { name: 'signature_image', maxCount: 1 }, { name: 'stamp_image', maxCount: 1 }], { images: true, maxMb: 2, maxFiles: 3 }), async (req, res) => {
@@ -97,6 +106,16 @@ router.post('/settings/:tab', ...upload.form('branding', 'fields', [{ name: 'sch
   }
   if (tab === 'admissions') { data.admissions_open = req.body.admissions_open === '1' ? '1' : '0'; data.admissions_grades = [].concat(req.body.admissions_grades || []).map((x) => parseInt(x, 10)).filter(Boolean).join(','); }
   if (data.timezone_offset) J.setTimezoneOffset(data.timezone_offset);
+  if (tab === 'maintenance') {
+    if (!modules.isEnabled('system.maintenance')) for (const k of Object.keys(data)) if (k.startsWith('maintenance_')) delete data[k];
+    if (!modules.isEnabled('system.disk_alert')) for (const k of Object.keys(data)) if (k.startsWith('disk_alert_')) delete data[k];
+    if (data.disk_alert_min_mb !== undefined) data.disk_alert_min_mb = String(Math.max(50, parseInt(data.disk_alert_min_mb, 10) || 500));
+    if (data.disk_alert_percent !== undefined) data.disk_alert_percent = String(Math.min(99, Math.max(50, parseInt(data.disk_alert_percent, 10) || 90)));
+    const before = settings.get('maintenance_mode') === '1';
+    const after = data.maintenance_mode === '1';
+    if (before !== after) await activity.log(req, 'toggle', 'maintenance', null, after ? 'فعال‌سازی حالت تعمیر و نگهداری' : 'خروج از حالت تعمیر و نگهداری');
+    health.invalidate();
+  }
   await settings.setMany(data);
   await activity.log(req, 'settings', 'settings', null, 'به‌روزرسانی تنظیمات: ' + tab);
   req.flash('success', 'تنظیمات ذخیره شد.');
@@ -238,6 +257,95 @@ router.post('/demo/clear', modules.requireEnabled('system.demo_data'), async (re
   res.redirect('/system/settings?tab=demo');
 });
 
+// ---------- حالت تعمیر و نگهداری (کلید سریع) ----------
+router.post('/maintenance/toggle', async (req, res) => {
+  const on = req.body.enabled === '1' || req.body.enabled === 'on';
+  const data = { maintenance_mode: on ? '1' : '0' };
+  if (on && req.body.message !== undefined) data.maintenance_message = utils.normalizePersian(String(req.body.message || '')).slice(0, 500);
+  if (on && req.body.until !== undefined) data.maintenance_until = utils.normalizePersian(String(req.body.until || '')).slice(0, 80);
+  if (!on) { maintenance.clearFlag(); data.maintenance_until = ''; }
+  await settings.setMany(data);
+  await activity.log(req, 'toggle', 'maintenance', null, on ? 'فعال‌سازی حالت تعمیر و نگهداری' : 'خروج از حالت تعمیر و نگهداری');
+  if (auth.wantsJson(req)) return res.json({ ok: true, maintenance: maintenance.isOn() });
+  req.flash(on ? 'warning' : 'success', on ? 'حالت تعمیر و نگهداری فعال شد؛ فقط مدیران به سامانه دسترسی دارند.' : 'سامانه از حالت تعمیر و نگهداری خارج شد.');
+  res.redirect(req.body.back && /^\/[^/\\]/.test(req.body.back) ? req.body.back : '/system/settings?tab=maintenance');
+});
+
+// ---------- به‌روزرسانی سامانه ----------
+const UPDATE_ZIP_TYPES = ['application/zip', 'application/x-zip-compressed', 'application/octet-stream', 'multipart/x-zip'];
+router.get('/update', async (req, res) => {
+  if (req.session) req.session.updateSeen = pkg.version;
+  const st = updater.state(settings);
+  const npm = updater.npmBin();
+  const h = await health.check({ withUsage: false });
+  const recent = await db.table('activity_logs').where('action', 'update').orderBy('id', 'desc').limit(10).all();
+  const lastBackup = backup.list().slice(0, 1)[0] || null;
+  res.render(v('update'), { title: 'به‌روزرسانی سامانه', st, npm, healthInfo: h, recent, lastBackup, log: updater.readLog(60), maintenanceActive: maintenance.isOn(), changelog: readChangelog() });
+});
+function readChangelog() {
+  try {
+    const txt = fs.readFileSync(path.join(config.ROOT, 'CHANGELOG.md'), 'utf8');
+    const m = txt.match(/^## [^\n]*\n([\s\S]*?)(?=^## |\Z(?![\s\S]))/m);
+    return m ? m[0].trim().split('\n').slice(0, 40).join('\n') : '';
+  } catch (e) { return ''; }
+}
+router.get('/update/log', (req, res) => {
+  const st = updater.readState();
+  res.json({ ok: true, running: !!st.running && Date.now() - new Date(st.startedAt || 0).getTime() < 30 * 60 * 1000, status: st.status || null, message: st.message || null, finishedAt: st.finishedAt || null, lines: updater.readLog(parseInt(req.query.lines, 10) || 120), maintenance: maintenance.isOn(), version: pkg.version });
+});
+router.post('/update/run', async (req, res) => {
+  const st = updater.readState();
+  if (st.running && Date.now() - new Date(st.startedAt || 0).getTime() < 30 * 60 * 1000) { req.flash('warning', 'یک به‌روزرسانی در حال اجراست.'); return res.redirect('/system/update'); }
+  updater.clearLog();
+  const args = [];
+  if (req.body.force_install === '1') args.push('--force-install');
+  if (req.body.skip_install === '1') args.push('--skip-install');
+  if (req.body.backup_first === '1') { try { const name = await backup.create(db.info.client === 'sqlite' ? 'file' : 'json', 'auto'); updater.appendLog('پشتیبان پیش از به‌روزرسانی: ' + name); } catch (e) { updater.appendLog('پشتیبان‌گیری پیش از به‌روزرسانی ناموفق: ' + e.message); } }
+  const pid = updater.spawnRunner(args);
+  await activity.log(req, 'update', 'system', null, `اجرای به‌روزرسانی از پنل (pid ${pid})`);
+  if (auth.wantsJson(req)) return res.json({ ok: true, pid });
+  req.flash('info', 'به‌روزرسانی در پس‌زمینه آغاز شد؛ گزارش زنده را در همین صفحه دنبال کنید.');
+  res.redirect('/system/update');
+});
+router.post('/update/upload', ...upload.form('updates', 'single', 'package', { maxMb: 512, maxFiles: 1, types: UPDATE_ZIP_TYPES }), async (req, res) => {
+  const cleanup = () => { try { if (req.file) fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ } };
+  if (req.uploadError) { req.flash('danger', req.uploadError); return res.redirect('/system/update'); }
+  if (!req.file || !/\.zip$/i.test(req.file.originalname || '')) { cleanup(); req.flash('danger', 'فقط بستهٔ ZIP نسخهٔ جدید پذیرفته می‌شود.'); return res.redirect('/system/update'); }
+  const st = updater.readState();
+  if (st.running && Date.now() - new Date(st.startedAt || 0).getTime() < 30 * 60 * 1000) { cleanup(); req.flash('warning', 'یک به‌روزرسانی در حال اجراست.'); return res.redirect('/system/update'); }
+  updater.clearLog();
+  try {
+    const name = await backup.create(db.info.client === 'sqlite' ? 'file' : 'json', 'auto');
+    updater.appendLog('پشتیبان پیش از به‌روزرسانی: ' + name);
+    const before = pkg.version;
+    const r = await updater.applyPackage(req.file.path, { log: (m) => updater.appendLog(m), force: req.body.force === '1' });
+    await activity.log(req, 'update', 'system', null, `بارگذاری بستهٔ نسخهٔ ${r.version} (${r.files} فایل) روی نسخهٔ ${before}`);
+    const pid = updater.spawnRunner([]);
+    updater.appendLog(`مراحل نصب در پس‌زمینه آغاز شد (pid ${pid})`);
+    req.flash('success', `بستهٔ نسخهٔ ${r.version} اعمال شد (${r.files} فایل). مراحل نصب در حال اجراست…`);
+  } catch (e) {
+    updater.appendLog('خطا: ' + e.message);
+    logger.error('update upload failed', e, req);
+    req.flash('danger', 'به‌روزرسانی انجام نشد: ' + e.message);
+  } finally { cleanup(); }
+  res.redirect('/system/update');
+});
+router.post('/update/restart', async (req, res) => {
+  const ok = updater.touchRestart();
+  await activity.log(req, 'update', 'system', null, 'درخواست ری‌استارت برنامه');
+  const passenger = !!(process.env.PASSENGER_APP_ENV || process.env.PASSENGER_BASE_URI);
+  if (auth.wantsJson(req)) return res.json({ ok, passenger });
+  req.flash(ok ? 'success' : 'danger', ok ? (passenger ? 'درخواست ری‌استارت ثبت شد؛ Passenger در درخواست بعدی برنامه را از نو اجرا می‌کند.' : 'فایل tmp/restart.txt نوشته شد. اگر برنامه با Passenger اجرا نمی‌شود، سرویس را به‌صورت دستی دوباره اجرا کنید (pm2 restart / systemctl restart).') : 'نوشتن tmp/restart.txt ممکن نشد؛ دسترسی پوشه را بررسی کنید.');
+  res.redirect('/system/update');
+});
+router.post('/update/disk-check', modules.requireEnabled('system.disk_alert'), async (req, res) => {
+  health.invalidate();
+  const h = await health.check();
+  if (auth.wantsJson(req)) return res.json({ ok: true, level: h.level, disk: h.disk, usage: h.usage, message: h.message });
+  req.flash(h.level === 'ok' ? 'success' : (h.level === 'critical' ? 'danger' : 'warning'), h.level === 'ok' ? `فضای دیسک کافی است: ${health.fmt(h.disk ? h.disk.free : 0)} آزاد.` : h.message);
+  res.redirect(req.get('referer') || '/system/info');
+});
+
 // اطلاعات سامانه
 router.get('/info', modules.requireEnabled('system.system_info'), async (req, res) => {
   const tables = [];
@@ -249,7 +357,8 @@ router.get('/info', modules.requireEnabled('system.system_info'), async (req, re
     passenger: !!process.env.PASSENGER_APP_ENV || !!process.env.PASSENGER_BASE_URI, cwd: process.cwd(), storage: config.get().storage,
     modules: modules.stats(), installedAt: settings.get('installed_at')
   };
-  res.render(v('info'), { title: 'اطلاعات سامانه', info, tables });
+  const healthInfo = modules.isEnabled('system.disk_alert') ? await health.check() : null;
+  res.render(v('info'), { title: 'اطلاعات سامانه', info, tables, healthInfo, fmtBytes: health.fmt });
 });
 
 // ---------- کارهای زمان‌بندی‌شده ----------

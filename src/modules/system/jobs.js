@@ -20,6 +20,29 @@ module.exports = [
     }
   },
   {
+    key: 'disk_check', name: 'پایش فضای دیسک', description: 'بررسی ساعتی فضای آزاد پارتیشن storage و حجم پوشه‌های آپلود/پشتیبان/لاگ؛ در صورت عبور از آستانه (disk_alert_min_mb / disk_alert_percent) به مدیران اعلان می‌دهد و در لاگ خطا ثبت می‌کند', schedule: 'hourly',
+    async run({ J }) {
+      const modules = require('../../core/modules');
+      if (!modules.isEnabled('system.disk_alert')) return 'قابلیت پایش دیسک غیرفعال است';
+      const health = require('../../core/health');
+      const settingsMod = require('../../core/settings');
+      if (settingsMod.get('disk_alert_enabled', '1') === '0') return 'هشدار دیسک در تنظیمات خاموش است';
+      health.invalidate();
+      const h = await health.check();
+      if (!h.disk) return 'اطلاعات دیسک در دسترس نیست (fs.statfs پشتیبانی نمی‌شود)';
+      const summary = `آزاد ${health.fmt(h.disk.free)} از ${health.fmt(h.disk.total)} (${Number(h.disk.percent).toLocaleString('fa-IR')}٪ استفاده‌شده)؛ آپلودها ${health.fmt(h.usage.uploads.bytes)}، پشتیبان‌ها ${health.fmt(h.usage.backups.bytes)}، لاگ‌ها ${health.fmt(h.usage.logs.bytes)}`;
+      if (h.level === 'ok') return 'وضعیت عادی — ' + summary;
+      const logger = require('../../core/logger');
+      logger.warn('disk space ' + h.level, { free: h.disk.free, percent: h.disk.percent, usage: Object.fromEntries(Object.entries(h.usage).map(([k, v]) => [k, v.bytes || v])) });
+      // اعلان روزانه (عنوان شامل تاریخ است تا با سازوکار جلوگیری از تکرار، روزی یک بار ارسال شود)
+      const title = (h.level === 'critical' ? 'فضای دیسک سرور تقریباً پر شده است' : 'هشدار: فضای دیسک سرور رو به اتمام است') + ' — ' + J.toJalali(J.todayISO());
+      const db = require('../../core/db');
+      const already = await db.table('notifications').where('title', title).first();
+      const sent = already ? 0 : await notify.pushRole('admin', { title, body: h.message + ' ' + summary, link: '/system/info', type: h.level === 'critical' ? 'danger' : 'warning' });
+      return `${h.level === 'critical' ? 'بحرانی' : 'هشدار'} — ${summary}؛ ${already ? 'اعلان امروز قبلاً ارسال شده' : `اعلان برای ${Number(sent) || 0} مدیر`}`;
+    }
+  },
+  {
     key: 'cleanup', name: 'پاک‌سازی داده‌های موقت', description: 'حذف نشست‌های منقضی، کدهای بازیابی منقضی، لاگ اجرای کارهای قدیمی‌تر از ۳۰ روز، اعلان‌های خوانده‌شدهٔ قدیمی‌تر از ۹۰ روز و لاگ ورود قدیمی‌تر از ۱۸۰ روز', schedule: 'daily', defaultTime: '03:00',
     async run({ db, J }) {
       const now = db.now();

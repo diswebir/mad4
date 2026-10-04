@@ -137,6 +137,23 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <%- inp('backup_webdav_url', 'نشانی پوشهٔ WebDAV', { col: 12, ltr: true, ph: 'https://cloud.example.com/remote.php/dav/files/USER/backups', help: 'پوشه باید از قبل وجود داشته باشد' }) %>
         <%- inp('backup_webdav_user', 'نام کاربری', { col: 6, ltr: true }) %><%- inp('backup_webdav_pass', 'رمز عبور / App password', { col: 6, ltr: true, type: 'password' }) %>
         <script>(function(){var sel=document.getElementById('st_backup_offsite_mode');if(!sel)return;function upd(){var m=sel.value;document.querySelectorAll('[name^="backup_ftp_"],[name^="backup_webdav_"],[name="backup_email_to"],.offsite-sec').forEach(function(el){var box=el.classList.contains('offsite-sec')?el:el.closest('.col-md-2,.col-md-3,.col-md-5,.col-md-6,.col-md-12,.col-12');if(!box)return;var mode=el.getAttribute('data-mode')||(el.name.indexOf('backup_ftp_')===0?'ftp':el.name.indexOf('backup_webdav_')===0?'webdav':'email');box.style.display=(m===mode)?'':'none';});}sel.addEventListener('change',upd);upd();})()</script>
+      <% } else if (tab === 'maintenance') { %>
+        <% if (enabled('system.maintenance')) { %>
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2"><h6 class="text-brand mb-0"><i class="bi bi-tools me-1"></i>حالت تعمیر و نگهداری</h6>
+          <% if (maintenanceActive) { %><span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>فعال<%= maintenanceReason ? ' (توسط فرایند به‌روزرسانی)' : '' %></span><% } else { %><span class="badge bg-success-subtle text-success-emphasis">غیرفعال — سامانه در دسترس همه است</span><% } %></div>
+        <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>با فعال‌شدن این حالت، همهٔ کاربران به‌جز <strong>مدیران</strong> و IPهای مجاز، صفحهٔ «در حال تعمیر» (کد ۵۰۳) می‌بینند؛ صفحهٔ ورود باز می‌ماند تا مدیر بتواند وارد شود. درخواست‌های API پاسخ JSON با کد ۵۰۳ می‌گیرند و بازگشت درگاه پرداخت و cron مسدود نمی‌شوند. هنگام به‌روزرسانی از پنل، این حالت به‌طور خودکار فعال و سپس خاموش می‌شود.</div></div>
+        <%- sw('maintenance_mode', 'فعال‌سازی حالت تعمیر و نگهداری', 'فقط مدیران می‌توانند وارد شوند؛ نوار هشدار در بالای صفحه برای مدیر نمایش داده می‌شود') %>
+        <%- inp('maintenance_until', 'زمان تقریبی بازگشت (متن آزاد)', { ph: 'مثلاً: امروز ساعت ۱۸', help: 'در صفحهٔ ۵۰۳ به کاربران نشان داده می‌شود' }) %>
+        <%- inp('maintenance_message', 'پیام نمایش‌داده‌شده به کاربران', { col: 12, type: 'textarea', ph: 'سامانه به‌طور موقت برای به‌روزرسانی در دسترس نیست…' }) %>
+        <%- inp('maintenance_allow_ips', 'IPهای مجاز (با کاما)', { col: 12, ltr: true, ph: '192.168.1.10, 85.9.*', help: 'این آدرس‌ها حتی بدون ورود مدیر هم به سامانه دسترسی دارند؛ ستاره در انتها به‌معنی پیشوند است' }) %>
+        <% } %>
+        <% if (enabled('system.disk_alert')) { %>
+        <div class="col-12 mt-4"><h6 class="text-brand"><i class="bi bi-hdd-network me-1"></i>پایش فضای دیسک</h6></div>
+        <div class="col-12"><div class="border rounded-3 p-3 bg-body-tertiary"><%- include('partials/disk-gauge', { h: healthInfo, compact: false }) %></div></div>
+        <%- sw('disk_alert_enabled', 'هشدار پرشدن دیسک به مدیران', 'کار ساعتی «پایش فضای دیسک» در صورت عبور از آستانه، روزی یک بار اعلان می‌فرستد و نوار هشدار بالای صفحه نمایش داده می‌شود') %>
+        <%- inp('disk_alert_min_mb', 'حداقل فضای آزاد (مگابایت)', { col: 3, ltr: true, help: 'کمتر از این مقدار = هشدار؛ نصف آن = بحرانی' }) %>
+        <%- inp('disk_alert_percent', 'حداکثر درصد استفاده', { col: 3, ltr: true, help: 'بین ۵۰ تا ۹۹' }) %>
+        <% } %>
       <% } else if (tab === 'demo') { %>
         <div class="col-12">
           <p>دادهٔ نمونه شامل معلمان، کلاس‌ها، دانش‌آموزان، حضور و غیاب، نمرات، تیکت‌ها، اطلاعیه‌ها، تکالیف، رویدادها، شهریه‌ها، کتاب‌ها و… است و برای آشنایی با سامانه کاربرد دارد.</p>
@@ -154,11 +171,17 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
           <div class="input-group input-group-sm" style="max-width:360px"><input class="form-control ltr" placeholder="<%= tab === 'sms' ? '09123456789' : 'you@example.com' %>" form="testForm" name="to"><button class="btn btn-outline-secondary" form="testForm">ارسال آزمایشی</button></div>
         <% } else if (tab === 'offsite') { %>
           <button class="btn btn-outline-secondary btn-sm" form="testForm"><i class="bi bi-plug me-1"></i>آزمایش اتصال (با تنظیمات ذخیره‌شده)</button>
+        <% } else if (tab === 'maintenance') { %>
+          <div class="d-flex gap-2 flex-wrap">
+            <% if (enabled('system.maintenance')) { %><button class="btn btn-sm <%= maintenanceActive ? 'btn-success' : 'btn-outline-warning' %>" form="quickMaintForm" name="enabled" value="<%= maintenanceActive ? '0' : '1' %>"><i class="bi <%= maintenanceActive ? 'bi-unlock' : 'bi-lock' %> me-1"></i><%= maintenanceActive ? 'خروج فوری از حالت نگهداری' : 'فعال‌سازی فوری (با پیام فعلی)' %></button><% } %>
+            <% if (enabled('system.disk_alert')) { %><button class="btn btn-sm btn-outline-secondary" form="diskCheckForm"><i class="bi bi-arrow-clockwise me-1"></i>بررسی دوبارهٔ دیسک</button><% } %>
+          </div>
         <% } else { %><span></span><% } %>
         <button class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>ذخیره</button>
       </div>
       <% } %>
     </form>
     <% if (tab === 'sms' || tab === 'email' || tab === 'offsite') { %><form id="testForm" method="post" action="/system/settings/test/<%= tab %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
+    <% if (tab === 'maintenance') { %><form id="quickMaintForm" method="post" action="/system/maintenance/toggle"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><form id="diskCheckForm" method="post" action="/system/update/disk-check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form><% } %>
   </div>
 </div>

@@ -22,7 +22,10 @@ module.exports = {
     { key: 'rtl_vazir', name: 'رابط راست‌چین با فونت وزیرمتن', description: 'همیشه فعال', locked: true },
     { key: 'dark_mode', name: 'حالت تاریک', description: 'دکمهٔ تغییر پوسته در نوار بالا' },
     { key: 'pwa', name: 'نصب به‌عنوان اپلیکیشن (PWA)', description: 'مانیفست وب‌اپ با نام/رنگ مدرسه، آیکون تولیدشده، سرویس‌ورکر (کش دارایی‌های ایستا و صفحهٔ آفلاین) و گزینهٔ «نصب روی گوشی» برای دانش‌آموزان و اولیا' },
-    { key: 'installer', name: 'ویزارد نصب وب و بازیابی اتصال', description: 'همیشه فعال', locked: true }
+    { key: 'installer', name: 'ویزارد نصب وب و بازیابی اتصال', description: 'همیشه فعال', locked: true },
+    { key: 'maintenance', name: 'حالت تعمیر و نگهداری', description: 'بستن موقت سامانه روی غیرمدیران با پیام و زمان بازگشت دلخواه (صفحهٔ ۵۰۳)، IPهای مجاز، فعال‌سازی خودکار هنگام به‌روزرسانی و نوار هشدار برای مدیر' },
+    { key: 'disk_alert', name: 'پایش فضای دیسک و هشدار پرشدن', description: 'بررسی ساعتی فضای آزاد پارتیشن storage و حجم پوشه‌های آپلود/پشتیبان/لاگ؛ هشدار به مدیر (اعلان + نوار بالای صفحه) هنگام عبور از آستانهٔ تنظیم‌شده' },
+    { key: 'updates', name: 'به‌روزرسانی نسخه از پنل', description: 'نمایش نسخهٔ نصب‌شده و تاریخچه، بارگذاری بستهٔ نسخهٔ جدید (ZIP)، اجرای npm install و همگام‌سازی جدول‌ها در پس‌زمینه با گزارش زنده و ری‌استارت خودکار روی cPanel' }
   ],
   menu: [
     { title: 'تنظیمات مدرسه', href: '/system/settings', icon: 'bi-sliders', roles: ['admin'], permission: 'system.settings' },
@@ -32,7 +35,8 @@ module.exports = {
     { title: 'کارهای زمان‌بندی‌شده', href: '/system/jobs', icon: 'bi-alarm', roles: ['admin'], permission: 'system.jobs', feature: 'scheduler' },
     { title: 'لاگ پیامک', href: '/system/sms-log', icon: 'bi-chat-left-dots', roles: ['admin'], permission: 'system.logs', feature: 'sms_log' },
     { title: 'گزارش خطاها', href: '/system/logs', icon: 'bi-bug', roles: ['admin'], permission: 'system.logs', feature: 'error_log' },
-    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], permission: ['system.settings', 'system.logs'], feature: 'system_info' }
+    { title: 'اطلاعات سامانه', href: '/system/info', icon: 'bi-info-circle', roles: ['admin'], permission: ['system.settings', 'system.logs'], feature: 'system_info' },
+    { title: 'به‌روزرسانی سامانه', href: '/system/update', icon: 'bi-arrow-repeat', roles: ['admin'], permission: 'system.settings', feature: 'updates' }
   ],
   jobs: require('./jobs'),
   routes: require('./routes')

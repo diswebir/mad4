@@ -1,0 +1,27 @@
+<%
+/* نوارهای هشدار مدیر: حالت نگهداری، کمبود فضای دیسک، به‌روزرسانی انجام‌شده (مقادیر از src/app.js) */
+var _maint = typeof maintenanceOn !== 'undefined' && maintenanceOn && currentUser && currentUser.role === 'admin';
+var _disk = typeof diskWarning !== 'undefined' && diskWarning && diskWarning.disk;
+var _upd = typeof updatedFrom !== 'undefined' && updatedFrom;
+%>
+<% if (_maint) { %>
+<div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3 admin-banner" role="status">
+  <i class="bi bi-tools fs-5"></i>
+  <div class="flex-grow-1"><strong>حالت تعمیر و نگهداری فعال است.</strong> <span class="fs-7">کاربران غیرمدیر صفحهٔ «در حال تعمیر» (۵۰۳) می‌بینند.<%= typeof maintenanceMessage !== 'undefined' && maintenanceMessage ? ' پیام: «' + maintenanceMessage.slice(0, 80) + (maintenanceMessage.length > 80 ? '…' : '') + '»' : '' %></span></div>
+  <% if (enabled('system.maintenance')) { %><a href="#" data-post="/system/maintenance/toggle" data-params='{"enabled":"0","back":"<%= currentPath %>"}' class="btn btn-sm btn-dark text-nowrap"><i class="bi bi-unlock me-1"></i>خروج از حالت نگهداری</a><a href="/system/settings?tab=maintenance" class="btn btn-sm btn-outline-dark" title="تنظیمات"><i class="bi bi-sliders"></i></a><% } %>
+</div>
+<% } %>
+<% if (_disk) { var _c = diskWarning.level === 'critical' ? 'danger' : 'warning'; %>
+<div class="alert alert-<%= _c %> d-flex align-items-center gap-2 py-2 mb-3 admin-banner" role="alert">
+  <i class="bi bi-hdd-fill fs-5"></i>
+  <div class="flex-grow-1"><strong><%= diskWarning.level === 'critical' ? 'فضای دیسک سرور تقریباً پر شده است!' : 'فضای دیسک سرور رو به اتمام است.' %></strong> <span class="fs-7"><%= utils.fileSize(diskWarning.disk.free) %> آزاد (<%= J.toPersianDigits(diskWarning.disk.percent) %>٪ استفاده‌شده). پشتیبان‌های قدیمی یا فایل‌های غیرضروری را پاک کنید.</span></div>
+  <a href="/system/backup" class="btn btn-sm btn-outline-dark text-nowrap"><i class="bi bi-trash3 me-1"></i>مدیریت پشتیبان‌ها</a><a href="/system/info" class="btn btn-sm btn-dark text-nowrap"><i class="bi bi-hdd-network me-1"></i>جزئیات</a>
+</div>
+<% } %>
+<% if (_upd) { %>
+<div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3 admin-banner" role="status">
+  <i class="bi bi-arrow-repeat fs-5"></i>
+  <div class="flex-grow-1"><strong>سامانه با موفقیت به نسخهٔ <%= J.toPersianDigits(appVersion) %> به‌روزرسانی شد</strong> <span class="fs-7">(نسخهٔ قبلی: <%= J.toPersianDigits(updatedFrom) %>)</span></div>
+  <a href="/system/update" class="btn btn-sm btn-success text-nowrap"><i class="bi bi-list-check me-1"></i>تغییرات و وضعیت</a>
+</div>
+<% } %>

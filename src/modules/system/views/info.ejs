@@ -16,6 +16,14 @@
       <div class="item"><div class="k">پوشهٔ داده</div><div class="v ltr text-end fs-7"><%= info.storage %></div></div>
     </div></div>
   </div>
+  <% if (healthInfo) { %>
+  <div class="col-lg-6">
+    <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0">فضای دیسک و حجم داده‌ها</h6>
+      <div class="d-flex gap-1"><a href="#" data-post="/system/update/disk-check" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>بررسی دوباره</a><a href="/system/settings?tab=maintenance" class="btn btn-sm btn-outline-secondary" title="آستانه‌های هشدار"><i class="bi bi-sliders"></i></a></div></div>
+      <div class="card-body"><%- include('partials/disk-gauge', { h: healthInfo, fmtBytes: fmtBytes, compact: false }) %></div>
+    </div>
+  </div>
+  <% } %>
   <div class="col-lg-6">
     <div class="card table-card"><div class="card-header"><h6>جدول‌های پایگاه داده</h6><span class="fs-7 text-secondary"><%= J.toPersianDigits(tables.length) %> جدول</span></div>
       <div class="table-responsive" style="max-height:520px;overflow:auto"><table class="table table-sm table-sticky"><thead><tr><th>جدول</th><th>رکوردها</th></tr></thead><tbody>

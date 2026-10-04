@@ -26,3 +26,5 @@ tmp/*
 .DS_Store
 *.log
 npm-debug.log*
+storage/update-state.json
+storage/maintenance.flag

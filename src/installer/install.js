@@ -42,7 +42,7 @@ async function performInstall({ dbCfg, form, log }) {
     await settings.setMany({
       school_name: form.school_name, school_type: form.school_type || 'متوسطه اول', school_gender: form.school_gender || 'mixed',
       school_phone: form.school_phone || '', school_address: form.school_address || '', principal_name: form.admin_name, timezone_offset: form.timezone_offset || '+03:30',
-      demo_mode: form.demo === '1' || form.demo === true ? '1' : '0', installed_at: J.nowISO()
+      demo_mode: form.demo === '1' || form.demo === true ? '1' : '0', installed_at: J.nowISO(), app_version: pkg.version, app_updated_at: new Date().toISOString()
     });
     J.setTimezoneOffset(settings.get('timezone_offset'));
     // ۴) سال تحصیلی جاری

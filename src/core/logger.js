@@ -48,6 +48,8 @@ const api = {
   warn: (m, meta) => write('warn', m, meta),
   /** ثبت خطا (با درخواست اختیاری) */
   error(message, err, req, extra) {
+    // اگر پارامتر دوم شیء سادهٔ متادیتا باشد (نه Error/رشته)، به‌جای خطا به‌عنوان جزئیات ثبت می‌شود
+    if (err && typeof err === 'object' && !(err instanceof Error) && err.message === undefined && err.stack === undefined) { extra = Object.assign({}, err, extra || {}); err = null; }
     const e = serializeError(err);
     return write('error', message || (e && e.message) || 'خطا', Object.assign({ error: e }, fromReq(req), extra || {}));
   },
