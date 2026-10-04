@@ -155,7 +155,7 @@ async function runDaily(todayIso) {
     const list = joinFa(soon.map((s) => `${s.name} (${s.class_title || 'بدون کلاس'})`));
     const first = soon[0];
     const body = notify.template(tpl('birthday_tpl_admin_upcoming'), vars(first, { list, name: list }));
-    const title = soon.length === 1 ? `تولد ${first.name} نزدیک است` : `تولد ${J.toPersianDigits(soon.length)} دانش‌آموز نزدیک است`;
+    const title = (soon.length === 1 ? `تولد ${first.name} نزدیک است` : `تولد ${J.toPersianDigits(soon.length)} دانش‌آموز نزدیک است`) + ` (${J.formatDate(first.bday.date)})`;
     stats.admin += await pushOnce(adminIds, { title, body, link: `/students/birthdays?range=upcoming` });
   }
 

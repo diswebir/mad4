@@ -36,13 +36,14 @@ const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.in
     const res = await a.post('/students', body); if (res.status !== 302) console.log('create student status', res.status, (res.text.match(/alert-danger[\s\S]{0,300}/) || [''])[0]);
     const row = await a.get('/students?q=' + encodeURIComponent(first + ' ' + 'تولدی' + tag)); const m = /href="\/students\/(\d+)"/.exec(row.text); return m ? Number(m[1]) : null;
   };
-  const idToday = await mk(0, 'امروزی'); const idSoon = await mk(5, 'نزدیک');
+  const soonDays = 4 + Math.floor(Math.random() * 20); // هر اجرا با فاصلهٔ متفاوت تا یادآوری «نزدیک» قابل‌تشخیص باشد
+  const idToday = await mk(0, 'امروزی'); const idSoon = await mk(soonDays, 'نزدیک');
   assert(idToday && idSoon, 'two test students created (' + idToday + ', ' + idSoon + ')');
 
   // ---- صفحهٔ تولدها و بازه‌ها
   r = await a.get('/students/birthdays'); assert(r.status === 200 && /تولد دانش‌آموزان/.test(r.text), 'birthdays page');
   assert(r.text.includes('امروزی تولدی' + tag) && /🎂 امروز/.test(r.text) && /table-danger/.test(r.text), 'today birthday highlighted');
-  assert(r.text.includes('نزدیک تولدی' + tag) && /۵ روز دیگر/.test(r.text), 'upcoming birthday with countdown 5 days');
+  assert(r.text.includes('نزدیک تولدی' + tag) && r.text.includes(J.toPersianDigits(soonDays) + ' روز دیگر'), 'upcoming birthday with countdown ' + soonDays + ' days');
   r = await a.get('/students/birthdays?range=week'); assert(r.status === 200 && /این هفته \(/.test(r.text) && /هفتهٔ آینده \(/.test(r.text) && r.text.includes('امروزی تولدی' + tag), 'week view groups this/next week');
   r = await a.get(`/students/birthdays?range=month&m=${tp.jm}`); assert(r.status === 200 && r.text.includes('امروزی تولدی' + tag), 'month view lists today birthday');
   r = await a.get('/students/birthdays?range=all&class_id=1'); assert(r.status === 200 && r.text.includes('امروزی تولدی' + tag), 'all-year view filtered by class');
@@ -64,12 +65,12 @@ const en = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.in
   r = await a.get('/students/birthdays'); assert(/تبریک تولد ارسال شد/.test(r.text), 'greet flash shown');
 
   // ---- کار روزانه: اجرای دستی + اعلان‌ها (در صورت اجرای قبلی در همان روز، تکراری ارسال نمی‌شود)
-  await a.post('/system/settings/birthdays', { birthday_days_before: '5', birthday_notify_admin: '1', birthday_notify_teacher: '1', birthday_notify_student: '1', birthday_notify_parents: '1', birthday_sms_student: '0', birthday_sms_parents: '0', birthday_tpl_student: '{first_name} جان تولدت مبارک — {school} [tpl' + tag + ']', birthday_tpl_admin_today: 'امروز تولد {name} از {class} است ({age} ساله) [adm' + tag + ']', birthday_tpl_admin_upcoming: 'تولد {list} {when} است [up' + tag + ']' });
+  await a.post('/system/settings/birthdays', { birthday_days_before: String(soonDays), birthday_notify_admin: '1', birthday_notify_teacher: '1', birthday_notify_student: '1', birthday_notify_parents: '1', birthday_sms_student: '0', birthday_sms_parents: '0', birthday_tpl_student: '{first_name} جان تولدت مبارک — {school} [tpl' + tag + ']', birthday_tpl_admin_today: 'امروز تولد {name} از {class} است ({age} ساله) [adm' + tag + ']', birthday_tpl_admin_upcoming: 'تولد {list} {when} است [up' + tag + ']' });
   r = await a.get('/system/settings?tab=birthdays'); assert(r.status === 200 && r.text.includes('[tpl' + tag + ']') && /سارا جان تولدت مبارک/.test(r.text), 'birthday settings saved + live preview uses sample data');
   r = await a.post('/system/jobs/birthday_notify', { action: 'run' }); assert(r.status === 302, 'run birthday job');
   r = await a.get('/system/jobs'); assert(/تولد امروز/.test(r.text) && /تولد نزدیک/.test(r.text), 'job summary recorded');
   r = await a.get('/notifications'); assert(r.text.includes('[adm' + tag + ']') || r.text.includes('امروزی تولدی' + tag), 'admin got today-birthday notification with admin template');
-  assert(r.text.includes('[up' + tag + ']') || /نزدیک است/.test(r.text), 'admin got upcoming reminder (days_before=5)');
+  assert(r.text.includes('[up' + tag + ']') && r.text.includes('نزدیک تولدی' + tag), 'admin got upcoming reminder (days_before=' + soonDays + ') with upcoming template');
   // اجرای دوباره نباید اعلان تکراری بسازد
   const before = (r.text.match(new RegExp('\\[adm' + tag + '\\]', 'g')) || []).length;
   await a.post('/system/jobs/birthday_notify', { action: 'run' });
