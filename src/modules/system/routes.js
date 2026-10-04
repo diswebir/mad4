@@ -33,6 +33,7 @@ router.use('/info', P('system.settings', 'system.logs'));
 router.use('/jobs', P('system.jobs'), modules.requireEnabled('system.scheduler'));
 router.use('/sms-log', P('system.logs'), modules.requireEnabled('system.sms_log'));
 router.use('/logs', P('system.logs'), modules.requireEnabled('system.error_log'));
+router.use('/notify-queue', P('system.logs'), modules.requireEnabled('notifications.retry_queue'));
 const logger = require('../../core/logger');
 
 const TABS = [
@@ -55,7 +56,7 @@ const FIELDS = {
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
-  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price'],
+  sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price', 'notify_retry_max'],
   birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
@@ -107,12 +108,12 @@ router.post('/settings/test/offsite', modules.requireEnabled('system.backup_offs
 });
 router.post('/settings/test/sms', async (req, res) => {
   const r = await notify.sms(req.body.to, 'پیام آزمایشی از سامانه مدیریت مدرسه ' + settings.get('school_name'), 'test');
-  req.flash(r.ok ? 'success' : 'danger', r.ok ? 'پیامک آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || r.skipped ? 'پیامک غیرفعال است' : 'خطای درگاه'));
+  req.flash(r.ok ? 'success' : (r.queued ? 'warning' : 'danger'), r.ok ? 'پیامک آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || (r.skipped ? 'پیامک غیرفعال است' : 'خطای درگاه')) + (r.queued ? ' — در <a href="/system/notify-queue">صف تلاش مجدد</a> قرار گرفت.' : ''));
   res.redirect('/system/settings?tab=sms');
 });
 router.post('/settings/test/email', async (req, res) => {
   const r = await notify.email(req.body.to, 'ایمیل آزمایشی', '<p>این یک ایمیل آزمایشی از سامانه مدیریت مدرسه است.</p>');
-  req.flash(r.ok ? 'success' : 'danger', r.ok ? 'ایمیل آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || 'ایمیل غیرفعال است'));
+  req.flash(r.ok ? 'success' : (r.queued ? 'warning' : 'danger'), r.ok ? 'ایمیل آزمایشی ارسال شد.' : 'ارسال ناموفق: ' + (r.error || 'ایمیل غیرفعال است') + (r.queued ? ' — در <a href="/system/notify-queue">صف تلاش مجدد</a> قرار گرفت.' : ''));
   res.redirect('/system/settings?tab=email');
 });
 
@@ -337,6 +338,50 @@ router.get('/sms-log/report', modules.requireEnabled('system.sms_report'), async
 router.post('/sms-log/clear', async (req, res) => { await db.table('sms_log').where('created_at', '<', J.addDays(J.todayISO(), -30)).delete(); req.flash('success', 'لاگ‌های قدیمی‌تر از ۳۰ روز پاک شد'); res.redirect('/system/sms-log'); });
 
 // ---------- گزارش خطاها و لاگ سامانه ----------
+// ---------- صف تلاش مجدد پیامک/ایمیل ----------
+const notifyQueue = require('../../core/notifyQueue');
+router.get('/notify-queue', async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1), per = 40;
+  const q = db.table('notify_queue');
+  if (req.query.status) q.where('status', req.query.status);
+  if (req.query.channel) q.where('channel', req.query.channel);
+  if (req.query.q) q.where('recipient', 'like', `%${J.toEnglishDigits(req.query.q)}%`);
+  const total = await q.clone().count();
+  const rows = (await q.clone().orderBy('id', 'desc').limit(per).offset((page - 1) * per).all()).map((r) => { try { r.data = JSON.parse(r.payload || '{}'); } catch (e) { r.data = {}; } return r; });
+  const stats = await notifyQueue.stats();
+  const job = await db.table('scheduled_jobs').where('key', 'notify_retry').first();
+  res.render(v('notify-queue'), { title: 'صف ارسال پیامک/ایمیل', rows, total, page, pages: Math.ceil(total / per), stats, job, f: { status: req.query.status || '', channel: req.query.channel || '', q: req.query.q || '' }, STATUSES: notifyQueue.STATUSES, CHANNELS: notifyQueue.CHANNELS, maxAttempts: notifyQueue.maxAttempts(), backoff: notifyQueue.BACKOFF_MINUTES });
+});
+router.post('/notify-queue/process', async (req, res) => {
+  const r = await notifyQueue.process({ force: req.body.force === '1' });
+  await activity.log(req, 'run', 'notify_queue', null, 'پردازش دستی صف ارسال');
+  req.flash(r.failed ? 'warning' : 'success', r.processed ? `${J.toPersianDigits(r.processed)} مورد پردازش شد: ${J.toPersianDigits(r.sent)} ارسال، ${J.toPersianDigits(r.retry)} در انتظار تلاش بعدی، ${J.toPersianDigits(r.failed)} ناموفق نهایی.` : 'موردی برای پردازش نبود.');
+  res.redirect('/system/notify-queue');
+});
+router.post('/notify-queue/:id/retry', async (req, res) => {
+  const id = Number(req.params.id); const row = await db.findById('notify_queue', id);
+  if (!row) { req.flash('error', 'مورد یافت نشد'); return res.redirect('/system/notify-queue'); }
+  await notifyQueue.requeue([id]);
+  const r = await notifyQueue.process({ force: true, ids: [id] });
+  req.flash(r.sent ? 'success' : 'warning', r.sent ? 'با موفقیت ارسال شد.' : `ارسال دوباره ناموفق بود${r.failed ? ' و از صف خارج شد' : '؛ در زمان بعدی دوباره تلاش می‌شود'}.`);
+  res.redirect(req.get('referer') || '/system/notify-queue');
+});
+router.post('/notify-queue/:id/cancel', async (req, res) => {
+  await notifyQueue.cancel([Number(req.params.id)]);
+  req.flash('success', 'از صف خارج شد.'); res.redirect(req.get('referer') || '/system/notify-queue');
+});
+router.post('/notify-queue/retry-failed', async (req, res) => {
+  const ids = await db.table('notify_queue').where('status', 'failed').pluck('id');
+  if (ids.length) await notifyQueue.requeue(ids);
+  const r = ids.length ? await notifyQueue.process({ force: true, ids }) : { processed: 0, sent: 0, retry: 0, failed: 0 };
+  req.flash(r.sent ? 'success' : 'warning', `${J.toPersianDigits(ids.length)} مورد ناموفق دوباره تلاش شد: ${J.toPersianDigits(r.sent)} ارسال، ${J.toPersianDigits(r.retry)} در صف، ${J.toPersianDigits(r.failed)} ناموفق.`);
+  res.redirect('/system/notify-queue');
+});
+router.post('/notify-queue/purge', async (req, res) => {
+  const n = await notifyQueue.purge(Number(req.body.days) || 30);
+  req.flash('success', `${J.toPersianDigits(n || 0)} مورد قدیمی پاک شد.`); res.redirect('/system/notify-queue');
+});
+
 const LOG_LEVELS = { error: 'خطا', warn: 'هشدار', info: 'اطلاع', debug: 'اشکال‌زدایی' };
 router.get('/logs', async (req, res) => {
   const files = logger.files();

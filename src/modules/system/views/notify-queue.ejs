@@ -1,0 +1,50 @@
+<%- include('partials/page-header', { title: 'صف ارسال پیامک/ایمیل', icon: 'bi-hourglass-split', subtitle: 'ارسال‌هایی که به‌خاطر خطای شبکه یا درگاه ناموفق بوده‌اند و به‌صورت خودکار دوباره تلاش می‌شوند', breadcrumbs: [{ title: 'سیستم' }, { title: 'صف ارسال' }], actions: [
+  { post: '/system/notify-queue/process', label: 'پردازش موارد سررسیدشده', icon: 'bi-play-circle', class: 'btn-primary' },
+  { post: '/system/notify-queue/process', params: { force: '1' }, label: 'ارسال همهٔ در انتظارها اکنون', icon: 'bi-lightning-charge', class: 'btn-outline-primary', confirm: 'همهٔ موارد در انتظار بدون توجه به زمان تلاش بعدی ارسال شوند؟' },
+  ...(stats.failed ? [{ post: '/system/notify-queue/retry-failed', label: 'تلاش دوباره برای ناموفق‌ها', icon: 'bi-arrow-repeat', class: 'btn-outline-danger', confirm: 'همهٔ موارد ناموفق دوباره به صف برگردند و ارسال شوند؟' }] : [])
+] }) %>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-hourglass-split"></i></div><div><div class="value"><%= J.toPersianDigits(stats.pending) %></div><div class="label">در انتظار (<%= J.toPersianDigits(stats.due) %> سررسیدشده)</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-send-check"></i></div><div><div class="value"><%= J.toPersianDigits(stats.sent) %></div><div class="label">ارسال‌شده پس از تلاش مجدد</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-danger"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-danger"><i class="bi bi-send-x"></i></div><div><div class="value"><%= J.toPersianDigits(stats.failed) %></div><div class="label">ناموفق نهایی</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body fs-7">
+    <div class="fw-bold mb-1"><i class="bi bi-gear ms-1"></i>سیاست تلاش مجدد</div>
+    <div>فاصلهٔ تلاش‌ها: <%= backoff.map(function (m) { return m >= 60 ? J.toPersianDigits(m / 60) + ' ساعت' : J.toPersianDigits(m) + ' دقیقه'; }).join('، ') %></div>
+    <div>سقف تلاش: <strong><%= J.toPersianDigits(maxAttempts) %></strong> بار (<a href="/system/settings?tab=sms">تغییر</a>)</div>
+    <% if (job) { %><div class="text-secondary">کار خودکار «تلاش مجدد» هر ۱۵ دقیقه — آخرین اجرا: <%= job.last_run_at ? J.timeAgo(job.last_run_at) : 'هنوز اجرا نشده' %> <% if (!job.is_enabled) { %><span class="badge text-bg-danger">غیرفعال</span><% } %> — <a href="/system/jobs">کارها</a></div><% } %>
+  </div></div></div>
+</div>
+
+<div class="card table-card">
+  <div class="card-header flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      <input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="گیرنده" style="width:180px">
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><% Object.keys(STATUSES).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= STATUSES[k] %></option><% }); %></select>
+      <select class="form-select form-select-sm w-auto" name="channel" aria-label="کانال"><option value="">پیامک و ایمیل</option><% Object.keys(CHANNELS).forEach(function (k) { %><option value="<%= k %>" <%= f.channel === k ? 'selected' : '' %>><%= CHANNELS[k] %></option><% }); %></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
+    </form>
+    <form method="post" action="/system/notify-queue/purge" data-confirm="موارد ارسال‌شده/ناموفق/لغوشدهٔ قدیمی‌تر از ۳۰ روز پاک شوند؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="days" value="30"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3 me-1"></i>پاک‌سازی قدیمی‌ها</button></form>
+  </div>
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7 align-middle"><thead><tr><th>#</th><th>کانال</th><th>گیرنده</th><th>محتوا</th><th>نوع</th><th>تلاش</th><th>تلاش بعدی</th><th>آخرین خطا</th><th>وضعیت</th><th class="text-end">عملیات</th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="10"><%- include('partials/empty', { message: 'صف خالی است — همهٔ پیامک‌ها و ایمیل‌ها با موفقیت ارسال شده‌اند' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { var badge = { pending: 'text-bg-warning', sent: 'text-bg-success', failed: 'text-bg-danger', cancelled: 'text-bg-secondary' }[r.status] || 'text-bg-light'; %>
+    <tr>
+      <td class="text-secondary"><%= J.toPersianDigits(r.id) %></td>
+      <td><i class="bi <%= r.channel === 'sms' ? 'bi-chat-left-text' : 'bi-envelope' %> me-1"></i><%= CHANNELS[r.channel] || r.channel %></td>
+      <td dir="ltr" class="text-end"><%= r.channel === 'sms' ? J.toPersianDigits(r.recipient) : r.recipient %></td>
+      <td style="max-width:320px"><div class="truncate" title="<%= r.channel === 'sms' ? (r.data.text || '') : (r.data.subject || '') %>"><%= r.channel === 'sms' ? (r.data.text || '') : (r.data.subject || '') %></div></td>
+      <td><%= r.context || '—' %></td>
+      <td><%= J.toPersianDigits(r.attempts) %>/<%= J.toPersianDigits(r.max_attempts) %></td>
+      <td class="text-nowrap"><%= r.status === 'pending' ? J.formatDateTime(r.next_attempt_at) : (r.sent_at ? J.formatDateTime(r.sent_at) : '—') %></td>
+      <td class="text-danger" style="max-width:220px"><div class="truncate" title="<%= r.last_error || '' %>"><%= r.last_error || '' %></div></td>
+      <td><span class="badge <%= badge %>"><%= STATUSES[r.status] || r.status %></span></td>
+      <td class="text-end text-nowrap">
+        <% if (r.status !== 'sent') { %><form method="post" action="/system/notify-queue/<%= r.id %>/retry" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-primary" title="ارسال دوباره اکنون"><i class="bi bi-arrow-repeat"></i></button></form><% } %>
+        <% if (r.status === 'pending') { %><form method="post" action="/system/notify-queue/<%= r.id %>/cancel" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-secondary" title="خروج از صف"><i class="bi bi-x-lg"></i></button></form><% } %>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody></table></div>
+  <% if (pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: { page: page, pages: pages } }) %></div><% } %>
+</div>
