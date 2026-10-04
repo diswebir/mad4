@@ -7,7 +7,10 @@ const db = require('./db');
 const DEFAULTS = {
   school_name: 'مدرسه نمونه', school_slogan: 'سامانه جامع مدیریت مدرسه', school_type: 'متوسطه اول', school_gender: 'mixed', school_code: '',
   school_phone: '', school_email: '', school_address: '', school_website: '', school_logo: '', principal_name: '', deputy_name: '',
-  primary_color: '#2563eb', sidebar_style: 'dark', default_theme: 'light', items_per_page: '20', timezone_offset: '+03:30',
+  primary_color: '#2563eb', sidebar_style: 'dark', sidebar_mode: 'accordion', sidebar_single: '0',
+  // تولد دانش‌آموزان
+  birthday_days_before: '3', birthday_notify_admin: '1', birthday_notify_teacher: '1', birthday_notify_student: '1', birthday_notify_parents: '1', birthday_sms_student: '0', birthday_sms_parents: '0',
+  birthday_tpl_admin_upcoming: '', birthday_tpl_admin_today: '', birthday_tpl_teacher: '', birthday_tpl_student: '', birthday_tpl_parent: '', default_theme: 'light', items_per_page: '20', timezone_offset: '+03:30',
   attendance_alert_threshold: '3', attendance_absent_notify: '1', attendance_periods: '4', late_threshold_minutes: '15',
   grading_pass_score: '10', grading_max_score: '20', ticket_categories: 'آموزشی,انضباطی,مالی,فنی,سایر', ticket_auto_close_days: '7', ticket_sla_hours: '48', ticket_sla_urgent_hours: '4', ticket_sla_high_hours: '24', ticket_sla_low_hours: '96', ticket_sla_resolve_days: '7', ticket_sla_warn_percent: '75', ticket_sla_notify: '1',
   sms_enabled: '0', sms_provider: 'log', sms_api_key: '', sms_sender: '', sms_template_absent: 'ولی گرامی، دانش‌آموز {name} امروز {date} در مدرسه حضور نداشت. {school}',

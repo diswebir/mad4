@@ -3,19 +3,33 @@
     <span class="logo"><% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt=""><% } else { %><i class="bi bi-mortarboard-fill"></i><% } %></span>
     <span class="mw-0"><span class="name d-block truncate"><%= school('school_name') %></span><span class="sub d-block truncate"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></span></span>
   </a>
-  <nav>
-    <% (menu || []).forEach(function (group) { %>
-      <div class="group-title"><%= group.title %></div>
-      <% group.items.forEach(function (item) {
-           var active = item.href === '/dashboard' ? currentPath === '/dashboard' : (currentPath === item.href || currentPath.startsWith(item.href + '/') || (item.match && currentPath.startsWith(item.match)));
-      %>
-        <a class="nav-link<%= active ? ' active' : '' %>" href="<%= item.href %>">
-          <i class="bi <%= item.icon %>"></i><span><%= item.title %></span>
-          <% if (item.badge === 'notifications' && unreadNotifications) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(unreadNotifications) %></span><% } %>
-          <% if (item.badge === 'tickets' && badgeTickets) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(badgeTickets) %></span><% } %>
-          <% if (item.badge === 'messages' && unreadMessages) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(unreadMessages) %></span><% } %>
-        </a>
-      <% }); %>
+  <nav class="<%= S.get('sidebar_mode', 'accordion') === 'flat' ? 'flat' : 'accordion' %>" id="sideNav" data-single="<%= S.get('sidebar_single', '0') === '1' ? '1' : '0' %>">
+    <% (menu || []).forEach(function (group, gi) {
+         var groupActive = false; var groupBadge = 0;
+         group.items.forEach(function (item) {
+           item._active = item.href === '/dashboard' ? currentPath === '/dashboard' : (currentPath === item.href || currentPath.startsWith(item.href + '/') || (item.match && currentPath.startsWith(item.match)));
+           if (item._active) groupActive = true;
+           var b = item.badge === 'notifications' ? (unreadNotifications || 0) : item.badge === 'tickets' ? (badgeTickets || 0) : item.badge === 'messages' ? (unreadMessages || 0) : 0; item._badge = b; groupBadge += b;
+         });
+         var pinned = group.key === 'main';
+    %>
+      <div class="nav-group<%= pinned ? ' pinned' : '' %><%= groupActive || pinned ? ' open' : '' %>" data-group="<%= group.key %>">
+        <% if (pinned) { %><div class="group-title"><%= group.title %></div><% } else { %>
+        <button type="button" class="group-toggle" aria-expanded="<%= groupActive ? 'true' : 'false' %>" aria-controls="sbg-<%= group.key %>">
+          <i class="bi <%= group.icon || 'bi-folder' %>"></i><span><%= group.title %></span>
+          <% if (groupBadge) { %><span class="badge text-bg-danger group-badge"><%= J.toPersianDigits(groupBadge) %></span><% } %>
+          <i class="bi bi-chevron-down chev"></i>
+        </button>
+        <% } %>
+        <div class="group-items" id="sbg-<%= group.key %>">
+        <% group.items.forEach(function (item) { %>
+          <a class="nav-link<%= item._active ? ' active' : '' %>" href="<%= item.href %>">
+            <i class="bi <%= item.icon %>"></i><span><%= item.title %></span>
+            <% if (item._badge) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(item._badge) %></span><% } %>
+          </a>
+        <% }); %>
+        </div>
+      </div>
     <% }); %>
   </nav>
   <div class="footer">نسخه <%= J.toPersianDigits(appVersion) %> · <%= currentUser ? utils.ROLES[currentUser.role] : '' %></div>

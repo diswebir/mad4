@@ -12,6 +12,12 @@ const settingsStore = require('../../src/core/settings');
 let seed = 20250923;
 function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
 const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+/** تاریخ تولد نمونه: سه دانش‌آموز اول تولدشان امروز، ۳ روز دیگر و ۹ روز دیگر است تا قابلیت «تولدها» در دمو دیده شود */
+function demoBirthDate(birthYear, sn) {
+  const offsets = { 40001: 0, 40002: 3, 40003: 9 };
+  if (offsets[sn] != null) { const p = J.toJalaliParts(J.addDays(J.todayISO(), offsets[sn])); return J.toGregorian(`${birthYear}/${p.jm}/${Math.min(p.jd, 29)}`); }
+  return J.toGregorian(`${birthYear}/${ri(1, 12)}/${ri(1, 29)}`);
+}
 const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
 const chance = (p) => rnd() < p;
 const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -309,7 +315,7 @@ async function run({ db, log, adminId, yearId, adminUsername }) {
         const uid = await ensureUser(sn, { password: passHash, role: 'student', name: `${first} ${last}`, phone: null, status: 'active', must_change_password: 0, login_count: ri(0, 40), last_login_at: chance(0.7) ? J.addDays(today, -ri(0, 10)) + ' 1' + ri(2, 9) + ':0' + ri(0, 9) + ':00' : null, created_at: now });
         const sid = await insert('students', {
           user_id: uid, student_number: sn, national_id: nid, first_name: first, last_name: last,
-          birth_date: J.toGregorian(`${birthYear}/${ri(1, 12)}/${ri(1, 29)}`), birth_place: city, gender, class_id: classIds[ci], grade_level_id: gradeIds[g],
+          birth_date: demoBirthDate(birthYear, sn), birth_place: city, gender, class_id: classIds[ci], grade_level_id: gradeIds[g],
           enrollment_date: g === 0 ? ay.startDate : J.toGregorian(`${jy - g}/06/${ri(10, 30)}`), status: 'active', nationality: 'ایرانی', religion: 'اسلام',
           address: `${city}، ${pick(STREETS)}، کوچه ${pick(['گلها', 'بهار', 'لاله', 'نسترن', 'یاس', 'شقایق', 'بنفشه'])}، پلاک ${ri(1, 150)}، واحد ${ri(1, 12)}`, postal_code: digits(10),
           home_phone: '0' + ri(21, 89) + digits(8), mobile: chance(0.6) ? mobile() : null, email: chance(0.3) ? `${sn}@student.test` : null,

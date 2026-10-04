@@ -52,6 +52,8 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-md-8"><label class="form-label">رنگ‌های پیشنهادی</label><div class="d-flex gap-2 flex-wrap pt-1"><% ['#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#16a34a','#0d9488','#0891b2','#4f46e5','#0f766e','#334155'].forEach(function (c) { %><button type="button" class="btn btn-sm border" style="background:<%= c %>;width:32px;height:32px" onclick="document.querySelector('[name=primary_color]').value='<%= c %>'"></button><% }); %></div></div>
         <%- sel('default_theme', 'پوستهٔ پیش‌فرض', { light: 'روشن', dark: 'تاریک' }) %>
         <%- sel('sidebar_style', 'سبک منوی کناری', { dark: 'تیره', light: 'روشن' }) %>
+        <%- sel('sidebar_mode', 'چیدمان منوی کناری', { accordion: 'آکاردئونی (گروه‌های بازشونده)', flat: 'ساده (همهٔ موارد باز)' }, { help: 'در حالت آکاردئونی، گروه صفحهٔ جاری باز می‌ماند و وضعیت بقیهٔ گروه‌ها در مرورگر هر کاربر به‌خاطر سپرده می‌شود' }) %>
+        <%- sel('sidebar_single', 'فقط یک گروه باز باشد', { '0': 'خیر (چند گروه هم‌زمان)', '1': 'بله (با باز شدن یک گروه بقیه بسته شوند)' }) %>
       <% } else if (tab === 'security') { %>
         <%- sw('login_captcha', 'سؤال امنیتی در صفحهٔ ورود') %>
         <%- inp('login_max_attempts', 'حداکثر تلاش ناموفق', { col: 4, ltr: true }) %><%- inp('login_lock_minutes', 'مدت قفل (دقیقه)', { col: 4, ltr: true }) %><%- inp('session_days', 'طول نشست «مرا به خاطر بسپار» (روز)', { col: 4, ltr: true }) %>
@@ -81,6 +83,22 @@ function sw(name, label, help) { return '<div class="col-md-6"><div class="form-
         <div class="col-12"><h6 class="text-brand mt-2">قالب گواهی اشتغال به تحصیل</h6></div>
         <%- inp('certificate_template', 'متن پیش‌فرض گواهی', { col: 12, type: 'textarea', help: 'متغیرها: {student} {father} {student_number} {national_id} {birth_date} {class} {grade} {year} {school} {date} {principal} {recipient}' }) %>
         <div class="col-12"><div class="alert alert-light border fs-7 mb-0"><i class="bi bi-info-circle me-1"></i>برای درج نشانی استعلام روی اسناد، «نشانی عمومی سامانه» را در تب پیامک تنظیم کنید. پیش‌نمایش سربرگ: <a href="/documents/new?type=certificate" target="_blank">صدور گواهی</a>.</div></div>
+      <% } else if (tab === 'birthdays') { %>
+        <div class="col-12"><div class="alert alert-light border small mb-0"><i class="bi bi-info-circle ms-1"></i>تولدها بر اساس «تقویم شمسی» محاسبه می‌شوند و کار زمان‌بندی‌شدهٔ «اطلاع‌رسانی تولد» هر روز صبح اجرا می‌شود (ساعت آن در <a href="/system/jobs">کارهای زمان‌بندی‌شده</a> قابل تغییر است). متغیرهای قابل استفاده در الگوها: <code>{name}</code> <code>{first_name}</code> <code>{class}</code> <code>{age}</code> <code>{date}</code> <code>{when}</code> <code>{school}</code> و در یادآوری مدیر <code>{list}</code>.</div></div>
+        <%- inp('birthday_days_before', 'یادآوری به مدیر چند روز قبل از تولد', { type: 'number', col: 4, help: '۰ = بدون یادآوری قبلی' }) %>
+        <%- sel('birthday_notify_admin', 'اعلان به مدیر', { '1': 'فعال', '0': 'غیرفعال' }, { col: 4 }) %>
+        <%- sel('birthday_notify_teacher', 'اعلان به معلم راهنما (روز تولد)', { '1': 'فعال', '0': 'غیرفعال' }, { col: 4 }) %>
+        <%- sel('birthday_notify_student', 'اعلان به دانش‌آموز (روز تولد)', { '1': 'فعال', '0': 'غیرفعال' }, { col: 4 }) %>
+        <%- sel('birthday_notify_parents', 'اعلان به اولیا (روز تولد)', { '1': 'فعال', '0': 'غیرفعال' }, { col: 4 }) %>
+        <div class="col-md-4"></div>
+        <%- sel('birthday_sms_student', 'پیامک تبریک به دانش‌آموز', { '0': 'خیر', '1': 'بله (در صورت فعال بودن پیامک و داشتن شمارهٔ همراه)' }, { col: 6 }) %>
+        <%- sel('birthday_sms_parents', 'پیامک تبریک به اولیا', { '0': 'خیر', '1': 'بله (در صورت فعال بودن پیامک)' }, { col: 6 }) %>
+        <div class="col-12"><h6 class="mt-2 mb-0"><i class="bi bi-chat-square-quote ms-1"></i>الگوی پیام هر گیرنده</h6><div class="text-muted fs-7">خالی بگذارید تا متن پیش‌فرض استفاده شود. پیش‌نمایش با دادهٔ نمونه زیر هر الگو نمایش داده می‌شود.</div></div>
+        <% var bp = (typeof birthdayPreview !== 'undefined' && birthdayPreview) || {}; var bd = (typeof birthdayDefaults !== 'undefined' && birthdayDefaults) || {};
+           [['birthday_tpl_admin_upcoming', 'یادآوری به مدیر (چند روز قبل)'], ['birthday_tpl_admin_today', 'اطلاع به مدیر (روز تولد)'], ['birthday_tpl_teacher', 'اطلاع به معلم راهنما'], ['birthday_tpl_student', 'تبریک به دانش‌آموز'], ['birthday_tpl_parent', 'تبریک به اولیا']].forEach(function (t) { %>
+          <%- inp(t[0], t[1], { col: 12, type: 'textarea', placeholder: bd[t[0]] }) %>
+          <div class="col-12 mt-0"><div class="fs-7 text-muted bg-light rounded p-2 mb-1"><i class="bi bi-eye ms-1"></i><span class="text-dark"><%= bp[t[0]] %></span></div></div>
+        <% }); %>
       <% } else if (tab === 'sms') { %>
         <%- sw('sms_enabled', 'فعال‌سازی ارسال پیامک') %>
         <%- sel('sms_provider', 'درگاه', { log: 'فقط ثبت در لاگ (آزمایشی، بدون هزینه)', kavenegar: 'کاوه‌نگار', webhook: 'وب‌هوک سفارشی (POST JSON)' }) %>

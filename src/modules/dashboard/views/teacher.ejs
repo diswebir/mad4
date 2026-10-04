@@ -40,6 +40,14 @@
       </ul>
     </div>
     <% } %>
+    <% if (typeof birthdays !== 'undefined' && birthdays && birthdays.length) { %>
+    <div class="card mb-3">
+      <div class="card-header"><h6><i class="bi bi-cake2 me-1 text-danger"></i>تولد دانش‌آموزان من (این هفته)</h6><a href="/students/birthdays" class="fs-7">همه</a></div>
+      <ul class="list-group list-group-flush">
+        <% birthdays.forEach(function (b) { %><li class="list-group-item d-flex justify-content-between align-items-center"><div><a href="/students/<%= b.id %>" class="fw-500 fs-7"><%= b.name %></a><div class="text-secondary" style="font-size:.74rem"><%= b.class_title || '' %> — <%= J.toPersianDigits(b.bday.turning) %> ساله می‌شود</div></div><span class="badge <%= b.bday.days === 0 ? 'text-bg-danger' : 'badge-soft-danger' %>"><%= b.bday.days === 0 ? '🎂 امروز' : (b.bday.days === 1 ? 'فردا' : J.toPersianDigits(b.bday.days) + ' روز دیگر') %></span></li><% }); %>
+      </ul>
+    </div>
+    <% } %>
     <% if (typeof tickets !== 'undefined') { %>
     <div class="card mb-3">
       <div class="card-header"><h6><i class="bi bi-ticket-detailed me-1 text-brand"></i>تیکت‌های در انتظار پاسخ</h6><a href="/tickets" class="fs-7">همه</a></div>

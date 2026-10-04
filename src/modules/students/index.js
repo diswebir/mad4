@@ -22,10 +22,18 @@ module.exports = {
     { key: 'panel', name: 'پنل دانش‌آموز', description: 'مشاهدهٔ پروندهٔ شخصی توسط دانش‌آموز', locked: true },
     { key: 'timeline', name: 'خط زمانی پرونده', description: 'آخرین رویدادها: غیبت، نمره، انضباطی، تیکت در یک نگاه' },
     { key: 'bulk', name: 'عملیات گروهی', description: 'انتخاب چند دانش‌آموز (یا همهٔ نتایج فیلتر) و انجام یک‌جا: انتقال کلاس، تغییر وضعیت، اعلان، پیامک به اولیا، خروجی CSV، چاپ کارت و بازنشانی رمز' },
-    { key: 'siblings', name: 'تشخیص خواهر/برادر', description: 'نمایش دانش‌آموزان با کد ملی پدر/مادر مشترک' }
+    { key: 'siblings', name: 'تشخیص خواهر/برادر', description: 'نمایش دانش‌آموزان با کد ملی پدر/مادر مشترک' },
+    { key: 'birthdays', name: 'تولد دانش‌آموزان', description: 'فهرست تولدها بر اساس تقویم شمسی، نمایش در تقویم و داشبورد، شمارش معکوس در پنل دانش‌آموز و اطلاع‌رسانی خودکار با الگوی جداگانه برای مدیر، معلم، دانش‌آموز و اولیا' }
+  ],
+  jobs: [
+    {
+      key: 'birthday_notify', name: 'اطلاع‌رسانی تولد', description: 'یادآوری چند روز قبل به مدیر و تبریک روز تولد به مدیر، معلم راهنما، دانش‌آموز و اولیا (در صورت فعال بودن پیامک، ارسال پیامک)', schedule: 'daily', defaultTime: '07:30',
+      async run() { if (!require('../../core/modules').isEnabled('students.birthdays')) return 'قابلیت تولد غیرفعال است'; return require('./birthdays').runDaily(); }
+    }
   ],
   menu: [
     { title: 'دانش‌آموزان', href: '/students', icon: 'bi-people', roles: ['admin', 'teacher'], permission: ['students.view', 'students.manage'] },
+    { title: 'تولدها', href: '/students/birthdays', icon: 'bi-cake2', roles: ['admin', 'teacher'], permission: ['students.view', 'students.manage'], feature: 'birthdays', match: '/students/birthdays' },
     { title: 'پروندهٔ من', href: '/students/me', icon: 'bi-person-vcard', roles: ['student', 'parent'], feature: 'panel' }
   ],
   routes: require('./routes')

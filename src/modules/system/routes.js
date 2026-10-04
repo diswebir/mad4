@@ -41,6 +41,7 @@ const TABS = [
   { key: 'appearance', title: 'ظاهر', icon: 'bi-palette', feature: 'system.appearance' },
   { key: 'security', title: 'امنیت', icon: 'bi-shield-lock', feature: 'system.security_settings' },
   { key: 'sms', title: 'پیامک', icon: 'bi-chat-left-text', feature: 'system.sms_settings' },
+  { key: 'birthdays', title: 'تولدها', icon: 'bi-cake2', feature: 'students.birthdays' },
   { key: 'email', title: 'ایمیل', icon: 'bi-envelope', feature: 'system.email_settings' },
   { key: 'offsite', title: 'پشتیبان بیرونی', icon: 'bi-cloud-upload', feature: 'system.backup_offsite' },
   { key: 'documents', title: 'اسناد و سربرگ', icon: 'bi-file-earmark-ruled', feature: 'documents.letterhead' },
@@ -50,11 +51,12 @@ const TABS = [
 const FIELDS = {
   school: ['school_name', 'school_slogan', 'school_type', 'school_gender', 'school_code', 'school_phone', 'school_email', 'school_address', 'school_website', 'principal_name', 'deputy_name', 'timezone_offset'],
   academic: ['school_days', 'working_hours', 'weekly_periods', 'period_times', 'attendance_periods', 'late_threshold_minutes', 'attendance_alert_threshold', 'attendance_absent_notify', 'attendance_sms_mode', 'grading_pass_score', 'grading_max_score', 'lesson_log_edit_days', 'student_number_prefix', 'student_number_next', 'ticket_categories', 'ticket_auto_close_days', 'ticket_sla_hours', 'ticket_sla_urgent_hours', 'ticket_sla_high_hours', 'ticket_sla_low_hours', 'ticket_sla_resolve_days', 'ticket_sla_warn_percent', 'ticket_sla_notify', 'homework_late_allowed', 'library_loan_days', 'library_max_loans', 'currency_unit', 'invoice_prefix', 'items_per_page', 'announcement_days_on_dashboard'],
-  appearance: ['primary_color', 'default_theme', 'sidebar_style'],
+  appearance: ['primary_color', 'default_theme', 'sidebar_style', 'sidebar_mode', 'sidebar_single'],
   security: ['login_captcha', 'login_max_attempts', 'login_lock_minutes', 'session_days', 'password_reset_enabled', 'password_min_length', 'log_keep_days'],
   documents: ['school_district', 'letterhead_header', 'letterhead_footer', 'signatory_title', 'certificate_template'],
   admissions: ['admissions_open', 'admissions_year', 'admissions_text', 'admissions_docs'],
   sms: ['sms_enabled', 'sms_provider', 'sms_api_key', 'sms_sender', 'sms_webhook_url', 'sms_template_absent', 'site_url', 'sms_price'],
+  birthdays: ['birthday_days_before', 'birthday_notify_admin', 'birthday_notify_teacher', 'birthday_notify_student', 'birthday_notify_parents', 'birthday_sms_student', 'birthday_sms_parents', 'birthday_tpl_admin_upcoming', 'birthday_tpl_admin_today', 'birthday_tpl_teacher', 'birthday_tpl_student', 'birthday_tpl_parent'],
   email: ['email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure'],
   offsite: ['backup_offsite_mode', 'backup_offsite_max_mb', 'backup_email_to', 'backup_ftp_host', 'backup_ftp_port', 'backup_ftp_user', 'backup_ftp_pass', 'backup_ftp_dir', 'backup_ftp_secure', 'backup_webdav_url', 'backup_webdav_user', 'backup_webdav_pass']
 };
@@ -62,6 +64,7 @@ const FIELDS = {
 router.get('/settings', async (req, res) => {
   const tab = TABS.find((t) => t.key === req.query.tab && (!t.feature || modules.isEnabled(t.feature))) || TABS[0];
   const extra = {};
+  if (tab.key === 'birthdays') { const bd = require('../students/birthdays'); extra.birthdayPreview = bd.preview(); extra.birthdayDefaults = bd.DEFAULT_TPL; }
   if (tab.key === 'admissions') { extra.gradeLevels = await db.table('grade_levels').orderBy('sort_order').all(); extra.years = await db.table('academic_years').orderBy('id', 'desc').all(); extra.appCount = await db.table('applications').count(); }
   res.render(v('settings'), Object.assign({ title: 'تنظیمات مدرسه', tabs: TABS.filter((t) => !t.feature || modules.isEnabled(t.feature)), tab: tab.key, s: settings.all() }, extra));
 });
@@ -303,7 +306,7 @@ router.get('/sms-log', async (req, res) => {
   res.render(v('sms-log'), { title: 'لاگ پیامک', rows, total, page, pages: Math.ceil(total / per), stats, contexts, f: { q: req.query.q || '', status: req.query.status || '', context: req.query.context || '' }, provider: settings.get('sms_provider', 'log'), smsEnabled: settings.getBool('sms_enabled') });
 });
 // ---------- گزارش مصرف پیامک ----------
-const SMS_CONTEXTS = { attendance: 'غیبت/تأخیر', finance: 'یادآوری شهریه', discipline: 'انضباطی/تشویق', broadcast: 'اطلاع‌رسانی گروهی', students_bulk: 'ارسال گروهی به دانش‌آموزان', parent_credentials: 'حساب اولیا', password_reset: 'بازیابی رمز', admissions: 'پیش‌ثبت‌نام', test: 'آزمایشی' };
+const SMS_CONTEXTS = { attendance: 'غیبت/تأخیر', finance: 'یادآوری شهریه', discipline: 'انضباطی/تشویق', broadcast: 'اطلاع‌رسانی گروهی', students_bulk: 'ارسال گروهی به دانش‌آموزان', students_birthday: 'تبریک تولد', parent_credentials: 'حساب اولیا', password_reset: 'بازیابی رمز', admissions: 'پیش‌ثبت‌نام', test: 'آزمایشی' };
 /** تعداد بخش‌های پیامک (استاندارد UCS-2 برای متن فارسی: ۷۰ نویسه تک‌بخشی، سپس ۶۷ نویسه در هر بخش) */
 function smsParts(text) { const len = [...String(text || '')].length; if (len <= 70) return len ? 1 : 0; return Math.ceil(len / 67); }
 router.get('/sms-log/report', modules.requireEnabled('system.sms_report'), async (req, res) => {

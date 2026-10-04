@@ -154,3 +154,27 @@
   document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== input) box.classList.add('d-none'); });
   input.addEventListener('keydown', function (e) { if (e.key === 'Escape') box.classList.add('d-none'); });
 })();
+
+// منوی کناری آکاردئونی: باز/بسته‌کردن گروه‌ها با حافظهٔ محلی؛ گروه صفحهٔ جاری همیشه باز است
+(function () {
+  var nav = document.getElementById('sideNav');
+  if (!nav || !nav.classList.contains('accordion')) return;
+  var KEY = 'sb-open';
+  var saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { saved = {}; }
+  var single = nav.getAttribute('data-single') === '1';
+  nav.querySelectorAll('.nav-group:not(.pinned)').forEach(function (g) {
+    var key = g.getAttribute('data-group');
+    var hasActive = !!g.querySelector('.nav-link.active');
+    if (!hasActive && saved[key] === true) g.classList.add('open');
+    if (!hasActive && saved[key] === false) g.classList.remove('open');
+    var btn = g.querySelector('.group-toggle');
+    if (btn) btn.setAttribute('aria-expanded', g.classList.contains('open') ? 'true' : 'false');
+    btn && btn.addEventListener('click', function () {
+      var open = !g.classList.contains('open');
+      if (open && single) nav.querySelectorAll('.nav-group.open:not(.pinned)').forEach(function (o) { if (o !== g) { o.classList.remove('open'); saved[o.getAttribute('data-group')] = false; o.querySelector('.group-toggle').setAttribute('aria-expanded', 'false'); } });
+      g.classList.toggle('open', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      saved[key] = open; try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
+    });
+  });
+  var active = nav.querySelector('.nav-link.active'); if (active && active.scrollIntoView) { try { active.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ } }
+})();

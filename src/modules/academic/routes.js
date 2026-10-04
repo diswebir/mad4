@@ -300,13 +300,30 @@ router.post('/schedule/class/:id/copy', auth.requireRoleOrPermission(['admin'], 
   // کپی برنامه از کلاس دیگر (فقط دروس هم‌نام)
   const src = Number(req.body.source_id); const dst = Number(req.params.id);
   if (!Number.isInteger(src) || src <= 0 || src === dst) { req.flash('danger', 'کلاس مبدأ را انتخاب کنید.'); return res.redirect(`/academic/schedule/class/${req.params.id}`); }
-  const srcSlots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').select('ss.*', 'cs.subject_id').where('ss.class_id', src).all();
-  const dstCs = await db.table('class_subjects').where('class_id', dst).all();
-  const map = Object.fromEntries(dstCs.map((c) => [c.subject_id, c.id]));
+  const srcSlots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').join('subjects as sb', 'sb.id', 'cs.subject_id').select('ss.*', 'cs.subject_id', 'sb.title as subject_title').where('ss.class_id', src).all();
+  const dstCs = await db.table('class_subjects as cs').leftJoin('teachers as t', 't.id', 'cs.teacher_id').leftJoin('users as u', 'u.id', 't.user_id').select('cs.*', 'u.name as teacher_name').where('cs.class_id', dst).all();
+  const map = Object.fromEntries(dstCs.map((c) => [c.subject_id, c]));
+  // تداخل معلمان کلاس مقصد با سایر کلاس‌ها (به‌جز خود مقصد که پاک می‌شود)
+  const teacherIds = [...new Set(dstCs.map((c) => c.teacher_id).filter(Boolean))];
+  const busy = new Map();
+  if (teacherIds.length) {
+    const rows = await db.table('schedule_slots as ss').join('class_subjects as c2', 'c2.id', 'ss.class_subject_id').join('classes as c', 'c.id', 'ss.class_id').select('c2.teacher_id', 'ss.day_of_week', 'ss.period', 'c.title').whereIn('c2.teacher_id', teacherIds).where('ss.class_id', '!=', dst).all();
+    for (const r of rows) busy.set(`${r.teacher_id}:${r.day_of_week}:${r.period}`, r.title);
+  }
   await db.remove('schedule_slots', { class_id: dst });
-  let n = 0;
-  for (const s of srcSlots) if (map[s.subject_id]) { await db.insert('schedule_slots', { class_id: dst, class_subject_id: map[s.subject_id], day_of_week: s.day_of_week, period: s.period, start_time: s.start_time, end_time: s.end_time, room_id: null, created_at: db.now() }); n++; }
-  req.flash('success', `${J.toPersianDigits(n)} زنگ کپی شد.`); res.redirect(`/academic/schedule/class/${dst}`);
+  let n = 0; const skipped = []; const noSubject = new Set();
+  for (const s of srcSlots) {
+    const cs = map[s.subject_id];
+    if (!cs) { noSubject.add(s.subject_title); continue; }
+    const clash = cs.teacher_id ? busy.get(`${cs.teacher_id}:${s.day_of_week}:${s.period}`) : null;
+    if (clash) { skipped.push(`${J.WEEKDAYS[s.day_of_week]} زنگ ${J.toPersianDigits(s.period)} (${s.subject_title} — ${cs.teacher_name} در «${clash}»)`); continue; }
+    await db.insert('schedule_slots', { class_id: dst, class_subject_id: cs.id, day_of_week: s.day_of_week, period: s.period, start_time: s.start_time, end_time: s.end_time, room_id: null, created_at: db.now() }); n++;
+  }
+  await activity.log(req, 'update', 'schedule_slots', dst, `کپی برنامه از کلاس ${src}: ${n} زنگ، ${skipped.length} تداخل`);
+  let msg = `${J.toPersianDigits(n)} زنگ کپی شد.`;
+  if (skipped.length) msg += `<br>${J.toPersianDigits(skipped.length)} زنگ به‌دلیل تداخل معلم کپی نشد: ${skipped.slice(0, 6).join('؛ ')}${skipped.length > 6 ? ' و…' : ''}`;
+  if (noSubject.size) msg += `<br>درس‌های بدون تخصیص در کلاس مقصد (کپی نشد): ${[...noSubject].join('، ')}`;
+  req.flash(skipped.length || noSubject.size ? 'warning' : 'success', msg); res.redirect(`/academic/schedule/class/${dst}`);
 });
 
 // ---------- ارتقای گروهی ----------

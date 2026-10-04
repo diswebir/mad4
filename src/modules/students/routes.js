@@ -135,6 +135,39 @@ router.get('/', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.vie
   res.render(v('index'), { title: 'دانش‌آموزان', result, classes, grades, f, search, sort, dir: req.query.dir || 'asc', canManage: canManage(req), query: req.query, canBulk: canManage(req) && E('students.bulk') && req.user.role !== 'teacher' });
 });
 
+// ---------- تولدها ----------
+const birthdays = require('./birthdays');
+router.get('/birthdays', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.birthdays'), async (req, res) => {
+  const scope = await teacherScope(req);
+  const cur = J.currentJalali();
+  const range = ['upcoming', 'week', 'month', 'all'].includes(req.query.range) ? req.query.range : 'upcoming';
+  const jm = Math.min(12, Math.max(1, Number(req.query.m) || cur.jm));
+  const classId = Number(req.query.class_id) || null;
+  const opts = { classIds: scope };
+  if (classId) opts.classIds = scope ? scope.filter((c) => c === classId) : [classId];
+  let rows, weeks = null;
+  if (range === 'week') { weeks = await birthdays.forWeeks(opts); rows = weeks.thisWeek.concat(weeks.nextWeek); }
+  else if (range === 'month') rows = await birthdays.inMonth(jm, opts);
+  else if (range === 'all') rows = await birthdays.upcoming(Object.assign({ days: 400 }, opts));
+  else rows = await birthdays.upcoming(Object.assign({ days: 30 }, opts));
+  if (req.query.export && E('students.export')) {
+    const cols = [{ label: 'نام', value: (r) => r.name }, { label: 'شماره دانش‌آموزی', value: (r) => r.student_number }, { label: 'کلاس', value: (r) => r.class_title || '' }, { label: 'تاریخ تولد', value: (r) => J.toJalali(r.birth_date) }, { label: 'تولد بعدی', value: (r) => J.toJalali(r.bday.date) }, { label: 'روز مانده', value: (r) => r.bday.days }, { label: 'سن', value: (r) => r.bday.turning }, { label: 'تلفن پدر', value: (r) => r.father_phone || '' }, { label: 'تلفن مادر', value: (r) => r.mother_phone || '' }];
+    return utils.sendExport(res, `birthdays-${J.todayISO()}`, rows, cols, req.query.export);
+  }
+  const classes = await db.table('classes as c').leftJoin('grade_levels as g', 'g.id', 'c.grade_level_id').select('c.id', 'c.title').where('c.is_active', 1).when(scope, (qq) => qq.whereIn('c.id', scope)).orderBy('g.sort_order').orderBy('c.title').all();
+  const stats = { today: rows.filter((r) => r.bday.days === 0).length, week: rows.filter((r) => r.bday.days <= 6).length, total: rows.length };
+  res.render(v('birthdays'), { title: 'تولد دانش‌آموزان', rows, weeks, range, jm, cur, classId, classes, stats, canGreet: req.user.role !== 'teacher' || true, isTeacher: req.user.role === 'teacher', query: req.query });
+});
+router.post('/birthdays/greet/:id', auth.requireRoleOrPermission(['admin', 'teacher'], 'students.view', 'students.manage'), modules.requireEnabled('students.birthdays'), async (req, res) => {
+  const scope = await teacherScope(req);
+  const st = await db.findById('students', req.params.id);
+  if (!st || (scope && !scope.includes(st.class_id))) return res.status(403).render('errors/403', { title: 'دسترسی غیرمجاز' });
+  const r = await birthdays.greet(st.id, { sms: req.body.sms === '1' && req.user.role !== 'teacher' });
+  if (!r.ok) req.flash('error', r.error);
+  else { await activity.log(req, 'notify', 'students', st.id, 'ارسال تبریک تولد'); req.flash('success', `تبریک تولد ارسال شد (دانش‌آموز: ${J.toPersianDigits(r.student)}، اولیا: ${J.toPersianDigits(r.parent)}${r.sms ? `، پیامک: ${J.toPersianDigits(r.sms)}` : ''}).`); }
+  res.redirect(req.get('referer') || '/students/birthdays');
+});
+
 // ---------- عملیات گروهی ----------
 const BULK_ACTIONS = { transfer: 'انتقال به کلاس', status: 'تغییر وضعیت تحصیلی', notify: 'اعلان درون‌برنامه‌ای به دانش‌آموزان', sms: 'پیامک به اولیا', export: 'خروجی CSV منتخب', cards: 'چاپ کارت‌های منتخب', reset_password: 'بازنشانی رمز عبور' };
 router.post('/bulk', auth.requireRoleOrPermission(['admin'], 'students.manage'), modules.requireEnabled('students.bulk'), async (req, res) => {

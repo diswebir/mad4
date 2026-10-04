@@ -48,6 +48,7 @@ router.get('/panel', auth.requireRole('parent'), modules.requireEnabled('parents
   if (E('announcements')) d.announcements = await db.table('announcements as a').select('a.id', 'a.title', 'a.created_at', 'a.is_pinned').where('a.is_active', 1).where((b) => b.whereNull('a.publish_at').orWhere('a.publish_at', '<=', today)).where((b) => b.whereNull('a.expires_at').orWhere('a.expires_at', '>=', today)).where((b) => { b.whereIn('a.audience', ['all', 'students', 'parents']); if (student.class_id) b.orWhere((x) => x.where('a.audience', 'class').where('a.class_id', student.class_id)); }).orderBy('a.is_pinned', 'desc').orderBy('a.id', 'desc').limit(5).all();
   if (E('calendar')) d.events = (await db.table('events').where('start_date', '>=', today).where((b) => { b.whereIn('audience', ['all', 'students', 'parents']); if (student.class_id) b.orWhere((x) => x.where('audience', 'class').where('class_id', student.class_id)); }).orderBy('start_date').limit(5).all()).map((e) => Object.assign(e, { date: e.start_date }));
   if (E('messages')) d.unreadMsgs = await db.table('messages').where({ receiver_id: req.user.id, is_read: 0, deleted_by_receiver: 0 }).count();
+  if (E('students.birthdays') && student.birth_date) d.birthday = require('../students/birthdays').nextBirthday(student.birth_date, today);
   res.render(v('dashboard'), d);
 });
 router.get('/switch/:id', auth.requireRole('parent'), async (req, res) => {

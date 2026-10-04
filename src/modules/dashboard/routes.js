@@ -80,11 +80,7 @@ async function adminDashboard(req, res, { today, year }) {
   d.announcements = await announcementsFor(req.user);
   d.events = await upcomingEvents();
   if (on('exams.schedule')) d.exams = await db.table('exams as e').select('e.*', 'c.title as class_title', 's.title as subject_title').leftJoin('classes as c', 'e.class_id', 'c.id').leftJoin('subjects as s', 'e.subject_id', 's.id').where('e.date', '>=', today).orderBy('e.date').limit(6).all();
-  if (on('dashboard.birthdays')) {
-    const md = today.slice(5);
-    const all = await db.table('students').select('id', 'first_name', 'last_name', 'birth_date', 'class_id').where('status', 'active').whereNotNull('birth_date').all();
-    d.birthdays = all.filter((s) => s.birth_date && s.birth_date.slice(5) === md);
-  }
+  if (on('dashboard.birthdays') && on('students.birthdays')) d.birthdays = await require('../students/birthdays').upcoming({ today, days: 7, limit: 8 });
   if (on('system.activity_log')) d.activity = await db.table('activity_logs as a').select('a.*', 'u.name as user_name').leftJoin('users as u', 'a.user_id', 'u.id').orderBy('a.id', 'desc').limit(8).all();
   if (on('discipline')) d.discipline = await db.table('discipline_records').where('date', '>=', J.addDays(today, -7)).count();
   if (on('finance')) d.finance = { collected: await db.table('payments').where('paid_at', '>=', today.slice(0, 7) + '-01').sum('amount'), due: (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('amount')) - (await db.table('invoices').whereIn('status', ['unpaid', 'partial']).sum('paid_amount')) };
@@ -127,6 +123,7 @@ async function teacherDashboard(req, res, { today, year }) {
   d.announcements = await announcementsFor(req.user);
   d.events = await upcomingEvents();
   if (on('hr.leaves')) d.leaves = await db.table('leave_requests').where('user_id', req.user.id).orderBy('id', 'desc').limit(3).all();
+  if (on('dashboard.birthdays') && on('students.birthdays')) d.birthdays = await require('../students/birthdays').upcoming({ today, days: 7, limit: 8, classIds });
   res.render(v('teacher'), Object.assign({ title: 'داشبورد معلم' }, d));
 }
 
@@ -171,6 +168,7 @@ async function studentDashboard(req, res, { today, year }) {
   d.announcements = await announcementsFor(req.user, student);
   d.events = await upcomingEvents(student.class_id);
   if (on('polls')) d.polls = await db.table('polls').where('is_active', 1).where((b) => b.where('audience', 'all').orWhere('audience', 'students').orWhere((c) => c.where('audience', 'class').where('class_id', student.class_id))).orderBy('id', 'desc').limit(2).all();
+  if (on('students.birthdays') && student.birth_date) d.birthday = require('../students/birthdays').nextBirthday(student.birth_date, today);
   res.render(v('student'), Object.assign({ title: 'پنل دانش‌آموز' }, d));
 }
 

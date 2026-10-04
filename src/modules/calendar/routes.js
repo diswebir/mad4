@@ -39,7 +39,21 @@ async function extraItems(req, from, to) {
     else q.limit(0);
     if (req.user.role !== 'admin' && req.user.role !== 'staff') (await q.all()).forEach((x) => items.push({ kind: 'homework', date: x.due_date, title: `مهلت تکلیف ${x.subject}`, sub: x.title, color: COLORS.deadline, link: '/homework/' + x.id }));
   }
+  if (E('calendar.birthdays') && E('students.birthdays')) {
+    const bd = require('../students/birthdays');
+    const scope = await birthdayScope(req);
+    if (scope !== false) {
+      const all = await bd.upcoming(Object.assign({ today: from, days: Math.max(0, J.diffDays(from, to)) }, scope || {}));
+      all.forEach((x) => items.push({ kind: 'birthday', date: x.bday.date, title: `🎂 تولد ${x.name}`, sub: `${x.class_title || ''} — ${J.toPersianDigits(x.bday.turning)} سالگی`, color: bd.COLOR, link: (req.user.role === 'student' || req.user.role === 'parent') ? '/dashboard' : `/students/${x.id}` }));
+    }
+  }
   return items;
+}
+/** محدودهٔ نمایش تولدها بر اساس نقش: مدیر/کارمند همه، معلم کلاس‌های خودش، دانش‌آموز/ولی فقط خودش */
+async function birthdayScope(req) {
+  if (req.user.role === 'admin' || req.user.role === 'staff') return {};
+  if (req.user.role === 'teacher') return { classIds: await people.teacherClassIds(req.user.id) };
+  const s = await people.studentOf(req); return s ? { studentId: s.id } : false;
 }
 router.get('/', async (req, res) => {
   const cur = J.currentJalali();
@@ -56,7 +70,9 @@ router.get('/', async (req, res) => {
   const days = []; for (let d = 1; d <= monthLen; d++) { const iso = J.toGregorian(`${jy}/${jm}/${d}`); days.push({ d, iso, weekday: (firstWeekday + d - 1) % 7, items: byDay[iso] || [] }); }
   const prev = jm === 1 ? { y: jy - 1, m: 12 } : { y: jy, m: jm - 1 }; const next = jm === 12 ? { y: jy + 1, m: 1 } : { y: jy, m: jm + 1 };
   const upcoming = Object.keys(byDay).filter((d) => d >= J.todayISO()).sort().slice(0, 8).map((d) => ({ date: d, items: byDay[d] }));
-  res.render(v('month'), { title: 'تقویم', jy, jm, days, firstWeekday, prev, next, today: J.todayISO(), MONTHS: J.MONTHS, WEEKDAYS: J.WEEKDAYS_SHORT, upcoming, canManage: ['admin', 'staff', 'teacher'].includes(req.user.role), TYPES, monthlyView: E('calendar.monthly_view') });
+  let birthdayWeeks = null;
+  if (E('calendar.birthdays') && E('students.birthdays') && ['admin', 'staff', 'teacher'].includes(req.user.role)) { const scope = await birthdayScope(req); birthdayWeeks = await require('../students/birthdays').forWeeks(scope || {}); }
+  res.render(v('month'), { title: 'تقویم', birthdayWeeks, jy, jm, days, firstWeekday, prev, next, today: J.todayISO(), MONTHS: J.MONTHS, WEEKDAYS: J.WEEKDAYS_SHORT, upcoming, canManage: ['admin', 'staff', 'teacher'].includes(req.user.role), TYPES, monthlyView: E('calendar.monthly_view') });
 });
 router.get('/ical', modules.requireEnabled('calendar.ical'), async (req, res) => {
   const from = J.addDays(J.todayISO(), -30); const to = J.addDays(J.todayISO(), 365);

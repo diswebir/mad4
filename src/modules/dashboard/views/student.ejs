@@ -62,6 +62,9 @@
     </div>
   </div>
   <div class="col-xl-4">
+    <% if (typeof birthday !== 'undefined' && birthday) { %>
+      <%- include('partials/birthday-widget', { b: birthday, who: 'self', firstName: student.first_name }) %>
+    <% } %>
     <% if (typeof schedule !== 'undefined') { %>
     <div class="card mb-3">
       <div class="card-header"><h6><i class="bi bi-table me-1 text-brand"></i>برنامهٔ امروز (<%= todayName %>)</h6><a href="/academic/schedule/class/<%= student.class_id %>" class="fs-7">هفتگی</a></div>

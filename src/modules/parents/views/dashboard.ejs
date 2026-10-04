@@ -24,6 +24,7 @@
     </div>
   </div>
 </div>
+<% if (typeof birthday !== 'undefined' && birthday) { %><%- include('partials/birthday-widget', { b: birthday, who: 'child', firstName: student.first_name }) %><% } %>
 
 <div class="row g-3 mb-3">
   <% if (att) { %>

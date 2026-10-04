@@ -20,4 +20,15 @@
 <% } %>
 </div>
 <div class="col-xl-3"><div class="card"><div class="card-header"><h6><i class="bi bi-clock-history me-1"></i>رویدادهای پیش رو</h6></div><ul class="list-group list-group-flush"><% upcoming.forEach(function (u) { %><li class="list-group-item"><div class="fs-7 text-secondary"><%= J.formatLong(u.date) %></div><% u.items.forEach(function (x) { %><a href="<%= x.link %>" class="d-block text-body"><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:<%= x.color %>"></span><%= x.title %><% if (x.time) { %> <span class="fs-7 text-secondary"><%= J.formatTime(x.time) %></span><% } %></a><% }); %></li><% }); if (!upcoming.length) { %><li class="list-group-item text-secondary fs-7">رویدادی در این ماه نیست</li><% } %></ul></div>
-<div class="card mt-3"><div class="card-body fs-7"><div class="fw-semibold mb-1">راهنما</div><% Object.entries(TYPES).forEach(function (t) { %><span class="badge me-1 mb-1" style="background:<%= { event: '#2563eb', holiday: '#dc2626', meeting: '#7c3aed', trip: '#059669', ceremony: '#d97706', exam: '#0891b2', deadline: '#be123c', other: '#64748b' }[t[0]] %>"><%= t[1] %></span><% }); %></div></div></div></div>
+<% if (typeof birthdayWeeks !== 'undefined' && birthdayWeeks) { var bw = birthdayWeeks; %>
+<div class="card mt-3"><div class="card-header"><h6><i class="bi bi-cake2 me-1 text-danger"></i>تولدها</h6><a href="/students/birthdays?range=week" class="fs-7">همه</a></div>
+  <ul class="list-group list-group-flush">
+    <% [['این هفته', bw.thisWeek], ['هفتهٔ آینده', bw.nextWeek]].forEach(function (g) { %>
+      <li class="list-group-item py-1 bg-light fs-7 fw-semibold"><%= g[0] %> <span class="text-secondary fw-normal">(<%= J.toPersianDigits(g[1].length) %>)</span></li>
+      <% if (!g[1].length) { %><li class="list-group-item fs-7 text-secondary">تولدی نیست</li><% } %>
+      <% g[1].forEach(function (b) { %><li class="list-group-item d-flex justify-content-between align-items-center fs-7"><a href="/students/<%= b.id %>"><%= b.name %><span class="text-secondary"> — <%= b.class_title || 'بدون کلاس' %></span></a><span class="badge <%= b.bday.days === 0 ? 'text-bg-danger' : 'badge-soft-danger' %>"><%= b.bday.days === 0 ? 'امروز' : b.bday.weekday + ' ' + J.toPersianDigits(b.bday.jd) %></span></li><% }); %>
+    <% }); %>
+  </ul>
+</div>
+<% } %>
+<div class="card mt-3"><div class="card-body fs-7"><div class="fw-semibold mb-1">راهنما</div><% if (enabled('calendar.birthdays') && enabled('students.birthdays')) { %><span class="badge me-1 mb-1" style="background:#db2777">تولد</span><% } %><% Object.entries(TYPES).forEach(function (t) { %><span class="badge me-1 mb-1" style="background:<%= { event: '#2563eb', holiday: '#dc2626', meeting: '#7c3aed', trip: '#059669', ceremony: '#d97706', exam: '#0891b2', deadline: '#be123c', other: '#64748b' }[t[0]] %>"><%= t[1] %></span><% }); %></div></div></div></div>

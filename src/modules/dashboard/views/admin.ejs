@@ -110,6 +110,18 @@
   </div>
   <% } %>
 
+  <% if (typeof birthdays !== 'undefined' && birthdays) { %>
+  <div class="col-xl-4">
+    <div class="card h-100 birthday-card">
+      <div class="card-header"><h6><i class="bi bi-cake2 me-1 text-danger"></i>تولدهای این هفته</h6><a href="/students/birthdays" class="fs-7">همه</a></div>
+      <ul class="list-group list-group-flush">
+        <% if (!birthdays.length) { %><li class="list-group-item text-secondary fs-7">در ۷ روز آینده تولدی نیست</li><% } %>
+        <% birthdays.forEach(function (b) { %><li class="list-group-item d-flex justify-content-between align-items-center"><div><a href="/students/<%= b.id %>" class="fw-500 fs-7"><%= b.name %></a><div class="text-secondary" style="font-size:.74rem"><%= b.class_title || 'بدون کلاس' %> — <%= J.toPersianDigits(b.bday.turning) %> ساله می‌شود</div></div><span class="badge <%= b.bday.days === 0 ? 'text-bg-danger' : 'badge-soft-danger' %>"><%= b.bday.days === 0 ? '🎂 امروز' : (b.bday.days === 1 ? 'فردا' : J.toPersianDigits(b.bday.days) + ' روز دیگر') %></span></li><% }); %>
+      </ul>
+    </div>
+  </div>
+  <% } %>
+
   <div class="col-xl-4">
     <div class="card h-100">
       <div class="card-header"><h6><i class="bi bi-calendar-event me-1 text-brand"></i>رویدادهای نزدیک</h6><% if (enabled('calendar')) { %><a href="/calendar" class="fs-7">تقویم</a><% } %></div>
@@ -124,7 +136,6 @@
     <div class="card h-100">
       <div class="card-header"><h6><i class="bi bi-activity me-1 text-brand"></i>فعالیت‌های اخیر</h6><% if (enabled('system.activity_log')) { %><a href="/system/activity" class="fs-7">همه</a><% } %></div>
       <ul class="list-group list-group-flush">
-        <% if (typeof birthdays !== 'undefined' && birthdays && birthdays.length) { %><li class="list-group-item fs-7"><i class="bi bi-cake2 text-danger me-1"></i>تولد امروز: <% birthdays.forEach(function (b, i) { %><a href="/students/<%= b.id %>"><%= b.first_name %> <%= b.last_name %></a><%= i < birthdays.length - 1 ? '، ' : '' %><% }); %></li><% } %>
         <% (typeof activity !== 'undefined' ? activity : []).forEach(function (a) { %><li class="list-group-item fs-7 d-flex justify-content-between gap-2"><span class="truncate"><strong><%= a.user_name || 'سیستم' %></strong> <%= a.description %></span><span class="text-secondary text-nowrap"><%= J.timeAgo(a.created_at) %></span></li><% }); %>
         <% if (typeof finance !== 'undefined' && finance) { %><li class="list-group-item fs-7 d-flex justify-content-between"><span><i class="bi bi-cash-stack text-success me-1"></i>دریافتی این ماه</span><strong><%= utils.money(finance.collected) %></strong></li><li class="list-group-item fs-7 d-flex justify-content-between"><span><i class="bi bi-exclamation-circle text-danger me-1"></i>مطالبات معوق</span><strong><%= utils.money(finance.due) %></strong></li><% } %>
       </ul>

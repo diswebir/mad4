@@ -110,6 +110,23 @@ function toCSV(rows, columns) {
   const lines = rows.map((r) => columns.map((c) => esc(typeof c.value === 'function' ? c.value(r) : r[c.key])).join(','));
   return '\uFEFF' + [header, ...lines].join('\r\n');
 }
+/**
+ * ارسال خروجی جدول به مرورگر: format = 'xlsx' → فایل Excel واقعی، در غیر این صورت CSV (با BOM برای Excel فارسی)
+ * columns همان قالب toCSV است: [{ key|value, label, text? }]
+ */
+function sendExport(res, baseName, rows, columns, format) {
+  const name = String(baseName || 'export').replace(/[^\w.\-\u0600-\u06FF]+/g, '-');
+  const encoded = encodeURIComponent(name);
+  if (String(format).toLowerCase() === 'xlsx') {
+    const xlsx = require('./xlsx');
+    res.setHeader('Content-Type', xlsx.MIME);
+    res.setHeader('Content-Disposition', `attachment; filename="${encoded}.xlsx"; filename*=UTF-8''${encoded}.xlsx`);
+    return res.send(xlsx.fromColumns(rows, columns));
+  }
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${encoded}.csv"; filename*=UTF-8''${encoded}.csv`);
+  return res.send(toCSV(rows, columns));
+}
 /** تجزیهٔ CSV ساده (با پشتیبانی از کوتیشن) */
 function parseCSV(text) {
   text = String(text || '').replace(/^\uFEFF/, '');
@@ -156,6 +173,7 @@ function colorFor(str) {
 }
 
 module.exports = {
+  sendExport,
   RELATIONS,
   ROLES, GENDERS, GENDERS_ADULT, STAGES, STUDENT_STATUS, ATT_STATUS, ATT_COLORS, PRIORITIES, PRIORITY_COLORS, BLOOD_TYPES, EDUCATIONS, DESCRIPTIVE_GRADES, GENERIC_STATUS, statusBadge, attBadge, priorityBadge, normalizePersian, escapeHtml, nl2br, truncate, money, num, percent, randomString, randomDigits, slugify,
   isValidNationalId, normalizePhone, isValidMobile, isValidEmail, cleanBody, toCSV, parseCSV, parseCSVObjects, pick, groupBy, indexBy, sumBy, avg, clampInt, fileSize, initials, colorFor
