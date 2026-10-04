@@ -3,9 +3,9 @@
   <div class="card-header flex-wrap gap-2">
     <form class="d-flex gap-2 flex-wrap" method="get">
       <input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="نام دانش‌آموز، آزمون یا دلیل" style="width:220px">
-      <select class="form-select form-select-sm w-auto" name="term_id"><option value="">همهٔ نوبت‌ها</option><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.term_id) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' 🔒' : '' %></option><% }); %></select>
-      <select class="form-select form-select-sm w-auto" name="class_id"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
-      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+      <select class="form-select form-select-sm w-auto" name="term_id" aria-label="نوبت"><option value="">همهٔ نوبت‌ها</option><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.term_id) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' 🔒' : '' %></option><% }); %></select>
+      <select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
     </form>
     <span class="fs-7 text-secondary"><%= J.toPersianDigits(total) %> تغییر</span>
   </div>

@@ -12,7 +12,7 @@
         <% students.forEach(function (st) { var x = subs[st.id]; %><tr><td><a href="/students/<%= st.id %>" class="text-body fw-semibold"><%= st.first_name %> <%= st.last_name %></a></td>
           <td><% if (!x || (!x.submitted_at && x.score == null)) { %><span class="badge badge-soft-<%= past ? 'danger' : 'secondary' %>"><%= past ? 'ارسال نشده' : 'در انتظار' %></span><% } else { %><%- utils.statusBadge(x.status) %><% if (x.submitted_at) { %><div class="fs-7 text-secondary"><%= J.formatDateTime(x.submitted_at) %></div><% } %><% } %></td>
           <td class="fs-7" style="max-width:260px"><% if (x && x.content) { %><%= utils.truncate(x.content, 120) %><% } %><% if (x && x.file_path) { %> <a href="/files/<%= x.file_path %>" target="_blank"><i class="bi bi-paperclip"></i> <%= x.file_name || 'فایل' %></a><% } %></td>
-          <% if (enabled('homework.grade')) { %><td><input class="form-control form-control-sm ltr text-center" name="score_<%= st.id %>" value="<%= x && x.score != null ? J.toPersianDigits(x.score) : '' %>" <%= manage ? '' : 'readonly' %>></td><td><input class="form-control form-control-sm" name="feedback_<%= st.id %>" value="<%= x && x.feedback ? x.feedback : '' %>" <%= manage ? '' : 'readonly' %>></td><% } %></tr><% }); %>
+          <% if (enabled('homework.grade')) { %><td><input class="form-control form-control-sm ltr text-center" name="score_<%= st.id %>" value="<%= x && x.score != null ? J.toPersianDigits(x.score) : '' %>" <%= manage ? '' : 'readonly' %> aria-label="نمره"></td><td><input class="form-control form-control-sm" name="feedback_<%= st.id %>" value="<%= x && x.feedback ? x.feedback : '' %>" <%= manage ? '' : 'readonly' %> aria-label="بازخورد"></td><% } %></tr><% }); %>
       </tbody></table></div>
       <% if (manage && enabled('homework.grade')) { %><div class="card-footer bg-transparent text-end"><button class="btn btn-primary px-4"><i class="bi bi-save me-1"></i>ذخیرهٔ نمرات</button></div><% } %>
     </form>
@@ -27,7 +27,7 @@
         <% if (canSubmit) { %><form method="post" action="/homework/<%= hw.id %>/submit" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% if (isLate) { %><div class="alert alert-warning fs-7 py-2">مهلت گذشته است؛ ارسال شما با برچسب «با تأخیر» ثبت می‌شود.</div><% } %>
           <textarea class="form-control mb-2" name="content" rows="5" placeholder="متن پاسخ…"><%= sub && sub.content ? sub.content : '' %></textarea>
-          <input type="file" class="form-control form-control-sm mb-3" name="file">
+          <input type="file" class="form-control form-control-sm mb-3" name="file" aria-label="فایل">
           <button class="btn btn-primary w-100"><i class="bi bi-send me-1"></i><%= sub && sub.submitted_at ? 'ویرایش و ارسال مجدد' : 'ارسال پاسخ' %></button></form>
         <% } else if (!sub || !sub.submitted_at) { %><div class="text-secondary fs-7"><%= hw.allow_submission ? 'مهلت ارسال به پایان رسیده است.' : 'این تکلیف نیاز به ارسال آنلاین ندارد.' %></div><% } %>
       </div></div>

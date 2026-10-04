@@ -44,7 +44,7 @@ var attrs = (f.required ? ' required' : '') + (f.readonly ? ' readonly' : '') + 
       <input type="text" inputmode="decimal" data-digits class="form-control en-digits" id="<%= id %>" name="<%= f.name %>" value="<%= val %>" <%- f.min != null ? 'data-min="' + f.min + '"' : '' %> placeholder="<%= f.placeholder || '' %>"<%- attrs %>>
     <% } else if (f.type === 'file') { %>
       <input type="file" class="form-control" id="<%= id %>" name="<%= f.name %>" <%- f.accept ? 'accept="' + f.accept + '"' : '' %><%- attrs %>>
-      <% if (_row[f.name]) { %><div class="form-text d-flex align-items-center gap-2"><% if (f.images) { %><img src="/files/<%= _row[f.name] %>" alt="" style="height:36px;border-radius:6px"><% } %>فایل فعلی: <a href="/files/<%= _row[f.name] %>" target="_blank">مشاهده</a> <label class="ms-2"><input type="checkbox" name="remove_<%= f.name %>" value="1" class="form-check-input me-1">حذف</label></div><% } %>
+      <% if (_row[f.name]) { %><div class="form-text d-flex align-items-center gap-2"><% if (f.images) { %><img src="/files/<%= _row[f.name] %>" alt="" style="height:36px;border-radius:6px"><% } %>فایل فعلی: <a href="/files/<%= _row[f.name] %>" target="_blank">مشاهده</a> <label class="ms-2"><input type="checkbox" name="remove_<%= f.name %>" value="1" class="form-check-input me-1" aria-label="حذف">حذف</label></div><% } %>
     <% } else if (f.type === 'color') { %>
       <input type="color" class="form-control form-control-color" id="<%= id %>" name="<%= f.name %>" value="<%= val || '#2563eb' %>"<%- attrs %>>
     <% } else if (f.type === 'time') { %>

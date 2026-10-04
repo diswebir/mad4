@@ -6,10 +6,10 @@
 <form method="get" class="card mb-3"><div class="card-body py-2">
   <div class="row g-2 align-items-center">
     <div class="col-md-4"><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" name="q" value="<%= search %>" placeholder="<%= enabled('students.search') ? 'نام، شماره، کد ملی، نام پدر، تلفن…' : 'نام یا شماره دانش‌آموزی' %>"></div></div>
-    <div class="col-md-2"><select class="form-select" name="class_id" data-auto-submit><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
-    <div class="col-md-2"><select class="form-select" name="grade_level_id" data-auto-submit><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
-    <div class="col-md-2"><select class="form-select" name="status" data-auto-submit><option value="" <%= f.status === '' ? 'selected' : '' %>>همهٔ وضعیت‌ها</option><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
-    <div class="col-md-1"><select class="form-select" name="gender" data-auto-submit><option value="">جنسیت</option><option value="male" <%= f.gender === 'male' ? 'selected' : '' %>>پسر</option><option value="female" <%= f.gender === 'female' ? 'selected' : '' %>>دختر</option></select></div>
+    <div class="col-md-2"><select class="form-select" name="class_id" data-auto-submit aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="grade_level_id" data-auto-submit aria-label="پایه"><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="status" data-auto-submit aria-label="وضعیت"><option value="" <%= f.status === '' ? 'selected' : '' %>>همهٔ وضعیت‌ها</option><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
+    <div class="col-md-1"><select class="form-select" name="gender" data-auto-submit aria-label="جنسیت"><option value="">جنسیت</option><option value="male" <%= f.gender === 'male' ? 'selected' : '' %>>پسر</option><option value="female" <%= f.gender === 'female' ? 'selected' : '' %>>دختر</option></select></div>
     <div class="col-md-1 d-grid"><button class="btn btn-outline-primary">جستجو</button></div>
   </div>
   <% if (f.status === '') { %><input type="hidden" name="all" value="1"><% } %>
@@ -27,7 +27,7 @@
       <th>وضعیت</th><th class="text-end">عملیات</th></tr></thead>
     <tbody><% result.data.forEach(function (s) { %>
       <tr>
-        <% if (canBulk) { %><td><input type="checkbox" class="form-check-input bulk-cb" value="<%= s.id %>" data-name="<%= s.first_name %> <%= s.last_name %>"></td><% } %>
+        <% if (canBulk) { %><td><input type="checkbox" class="form-check-input bulk-cb" value="<%= s.id %>" data-name="<%= s.first_name %> <%= s.last_name %>" aria-label="انتخاب <%= s.first_name %> <%= s.last_name %>"></td><% } %>
         <td class="ltr text-end text-secondary"><%= J.toPersianDigits(s.student_number) %></td>
         <td><a href="/students/<%= s.id %>" class="d-flex align-items-center gap-2 fw-semibold"><%- include('partials/avatar', { user: { name: s.first_name + ' ' + s.last_name, avatar: s.photo }, size: 32 }) %><span><%= s.first_name %> <%= s.last_name %><% if (s.gender) { %> <span class="fs-7 text-secondary fw-normal">(<%= utils.GENDERS[s.gender] %>)</span><% } %></span></a></td>
         <td><% if (s.class_id) { %><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a><div class="fs-7 text-secondary"><%= s.grade_title || '' %></div><% } else { %><span class="badge badge-soft-warning">بدون کلاس</span><% } %></td>
@@ -53,7 +53,7 @@
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="fw-bold"><i class="bi bi-check2-square me-1 text-primary"></i><span id="bulkCount">۰</span> دانش‌آموز انتخاب شده</span>
       <a href="#" id="bulkPickAll" class="fs-7">انتخاب همهٔ <%= J.toPersianDigits(result.total) %> نتیجهٔ فیلتر</a>
-      <select class="form-select form-select-sm w-auto" name="action" id="bulkAction" required>
+      <select class="form-select form-select-sm w-auto" name="action" id="bulkAction" required aria-label="عملیات">
         <option value="">— عملیات —</option>
         <% if (enabled('students.transfer')) { %><option value="transfer">انتقال به کلاس</option><% } %>
         <% if (enabled('students.status')) { %><option value="status">تغییر وضعیت تحصیلی</option><% } %>
@@ -63,13 +63,13 @@
         <% if (enabled('students.id_card')) { %><option value="cards">چاپ کارت‌های منتخب</option><% } %>
         <% if (enabled('students.user_account')) { %><option value="reset_password">بازنشانی رمز عبور</option><% } %>
       </select>
-      <div class="bulk-opt d-none" data-for="transfer"><select class="form-select form-select-sm w-auto" name="class_id"><option value="">— کلاس مقصد —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.grade_title ? ' (' + c.grade_title + ')' : '' %></option><% }); %></select></div>
-      <div class="bulk-opt d-none" data-for="status"><select class="form-select form-select-sm w-auto" name="status"><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>"><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
+      <div class="bulk-opt d-none" data-for="transfer"><select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">— کلاس مقصد —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.grade_title ? ' (' + c.grade_title + ')' : '' %></option><% }); %></select></div>
+      <div class="bulk-opt d-none" data-for="status"><select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>"><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
       <div class="bulk-opt d-none" data-for="transfer status"><input class="form-control form-control-sm" name="note" placeholder="دلیل / توضیح (اختیاری)" style="min-width:200px"></div>
       <div class="bulk-opt d-none" data-for="notify"><input class="form-control form-control-sm" name="title" placeholder="عنوان اعلان" style="min-width:160px"></div>
       <div class="bulk-opt d-none" data-for="notify sms"><input class="form-control form-control-sm" name="message" placeholder="متن پیام" style="min-width:260px"></div>
       <div class="bulk-opt d-none fs-7" data-for="notify"><label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="to_parents" value="1"> به اولیا هم ارسال شود</label></div>
-      <div class="bulk-opt d-none" data-for="reset_password"><select class="form-select form-select-sm w-auto" name="pw_mode"><option value="student_number">رمز = شماره دانش‌آموزی</option><option value="national">رمز = کد ملی</option><option value="custom">رمز دلخواه</option></select></div>
+      <div class="bulk-opt d-none" data-for="reset_password"><select class="form-select form-select-sm w-auto" name="pw_mode" aria-label="روش بازنشانی رمز"><option value="student_number">رمز = شماره دانش‌آموزی</option><option value="national">رمز = کد ملی</option><option value="custom">رمز دلخواه</option></select></div>
       <div class="bulk-opt d-none" data-for="reset_password"><input class="form-control form-control-sm ltr" name="password" placeholder="رمز دلخواه (حداقل ۶)" style="min-width:160px"></div>
       <button class="btn btn-sm btn-primary px-3" id="bulkSubmit"><i class="bi bi-play-fill me-1"></i>اجرا</button>
       <button type="button" class="btn btn-sm btn-light" id="bulkClear">لغو</button>

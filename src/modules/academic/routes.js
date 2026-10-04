@@ -299,6 +299,7 @@ router.post('/schedule/class/:id/clear', auth.requireRoleOrPermission(['admin'],
 router.post('/schedule/class/:id/copy', auth.requireRoleOrPermission(['admin'], 'academic.schedule'), modules.requireEnabled('academic.schedule'), async (req, res) => {
   // کپی برنامه از کلاس دیگر (فقط دروس هم‌نام)
   const src = Number(req.body.source_id); const dst = Number(req.params.id);
+  if (!Number.isInteger(src) || src <= 0 || src === dst) { req.flash('danger', 'کلاس مبدأ را انتخاب کنید.'); return res.redirect(`/academic/schedule/class/${req.params.id}`); }
   const srcSlots = await db.table('schedule_slots as ss').join('class_subjects as cs', 'cs.id', 'ss.class_subject_id').select('ss.*', 'cs.subject_id').where('ss.class_id', src).all();
   const dstCs = await db.table('class_subjects').where('class_id', dst).all();
   const map = Object.fromEntries(dstCs.map((c) => [c.subject_id, c.id]));

@@ -10,7 +10,7 @@
     <div class="card-footer bg-transparent d-flex gap-2">
       <a href="/users/positions/<%= p.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>ویرایش</a>
       <a href="/users?position_id=<%= p.id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>کاربران</a>
-      <form method="post" action="/users/positions/<%= p.id %>/delete" class="ms-auto" onsubmit="return confirm('حذف سمت؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger" <%= counts[p.id] ? 'disabled' : '' %>><i class="bi bi-trash"></i></button></form>
+      <form method="post" action="/users/positions/<%= p.id %>/delete" class="ms-auto" onsubmit="return confirm('حذف سمت؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger" <%= counts[p.id] ? 'disabled' : '' %> aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></button></form>
     </div>
   </div></div>
   <% }) %>

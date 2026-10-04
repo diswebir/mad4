@@ -5,13 +5,13 @@
     <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
     <p>سامانه نصب شده اما اتصال به پایگاه داده ممکن نیست. می‌توانید تنظیمات را اصلاح کنید. برای امنیت، «کلید بازیابی» لازم است: ۱۲ کاراکتر اول مقدار <code>appKey</code> در فایل <code>storage/config.json</code>.</p>
     <div class="row g-3">
-      <div class="col-md-4"><label class="form-label">کلید بازیابی</label><input class="form-control ltr" name="recovery_key" required></div>
-      <div class="col-md-4"><label class="form-label">نوع</label><select class="form-select" name="db_client"><option value="mysql" <%= form.client === 'mysql' ? 'selected' : '' %>>MySQL</option><option value="sqlite" <%= form.client === 'sqlite' ? 'selected' : '' %>>SQLite</option></select></div>
-      <div class="col-md-4"><label class="form-label">میزبان</label><input class="form-control ltr" name="db_host" value="<%= form.host || 'localhost' %>"></div>
-      <div class="col-md-3"><label class="form-label">پورت</label><input class="form-control ltr" name="db_port" value="<%= form.port || 3306 %>"></div>
-      <div class="col-md-3"><label class="form-label">نام پایگاه داده</label><input class="form-control ltr" name="db_name" value="<%= form.database || '' %>"></div>
-      <div class="col-md-3"><label class="form-label">نام کاربری</label><input class="form-control ltr" name="db_user" value="<%= form.user || '' %>"></div>
-      <div class="col-md-3"><label class="form-label">رمز عبور</label><input class="form-control ltr" type="password" name="db_password" value=""></div>
+      <div class="col-md-4"><label class="form-label" for="f_recovery_key">کلید بازیابی</label><input class="form-control ltr" name="recovery_key" required id="f_recovery_key"></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_client">نوع</label><select class="form-select" name="db_client" id="f_db_client"><option value="mysql" <%= form.client === 'mysql' ? 'selected' : '' %>>MySQL</option><option value="sqlite" <%= form.client === 'sqlite' ? 'selected' : '' %>>SQLite</option></select></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_host">میزبان</label><input class="form-control ltr" name="db_host" value="<%= form.host || 'localhost' %>" id="f_db_host"></div>
+      <div class="col-md-3"><label class="form-label" for="f_db_port">پورت</label><input class="form-control ltr" name="db_port" value="<%= form.port || 3306 %>" id="f_db_port"></div>
+      <div class="col-md-3"><label class="form-label" for="f_db_name">نام پایگاه داده</label><input class="form-control ltr" name="db_name" value="<%= form.database || '' %>" id="f_db_name"></div>
+      <div class="col-md-3"><label class="form-label" for="f_db_user">نام کاربری</label><input class="form-control ltr" name="db_user" value="<%= form.user || '' %>" id="f_db_user"></div>
+      <div class="col-md-3"><label class="form-label" for="f_db_password">رمز عبور</label><input class="form-control ltr" type="password" name="db_password" value="" id="f_db_password"></div>
     </div>
     <div class="text-end mt-3"><button class="btn btn-primary">ذخیره و اتصال مجدد</button></div>
   </form>

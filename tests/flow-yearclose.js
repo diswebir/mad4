@@ -22,18 +22,24 @@ const strip = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/
   const srcYear = /سال جاری: ([^<]+)<\/div>/.exec(page)[1].trim();
   const defTitle = /name="year_title" value="([^"]+)"/.exec(page)[1];
   assert(/^\d{4}-\d{4}$/.test(en(defTitle)), 'default next-year title: ' + defTitle);
-  const grades = [...page.matchAll(/name="cls\[c\d+\]\[grade_level_id\]">([\s\S]*?)<\/select>/g)][0][1].match(/value="(\d+)"/g).map((x) => Number(x.match(/\d+/)[0]));
+  const grades = [...page.matchAll(/name="cls\[c\d+\]\[grade_level_id\]"[^>]*>([\s\S]*?)<\/select>/g)][0][1].match(/value="(\d+)"/g).map((x) => Number(x.match(/\d+/)[0]));
   assert(grades.length >= 2, 'grade options: ' + grades.join(','));
   // کلاس‌های پایهٔ آخر پیش‌فرض فارغ‌التحصیلی
   const lastGradeRows = [...page.matchAll(/<tr data-class="(\d+)">([\s\S]*?)<\/tr>/g)].filter((m) => new RegExp('value="graduate" selected').test(m[2]));
   assert(lastGradeRows.length >= 1, 'last grade defaults to graduate: ' + lastGradeRows.length + ' classes');
   const gradClass = Number(lastGradeRows[0][1]);
-  const promoteClass = classIds.find((id) => !lastGradeRows.some((m) => Number(m[1]) === id));
+  // اولین کلاس غیرفارغ‌التحصیلی که دست‌کم ۳ دانش‌آموز فعال دارد (ترتیب کلاس‌ها بین SQLite/MySQL می‌تواند متفاوت باشد؛ کلاس‌های خالی تست‌های دیگر را رد می‌کنیم)
+  let promoteClass = null; let promoteStudents = [];
+  for (const id of classIds.filter((id) => !lastGradeRows.some((m) => Number(m[1]) === id))) {
+    const rows = (await a.get('/academic/promote/students/' + id)).json();
+    if (rows.length >= 3) { promoteClass = id; promoteStudents = rows; break; }
+  }
+  assert(promoteClass, 'found a promote class with students');
 
   // آمار قبل از اجرا
   const before = {};
   before.years = (await a.get('/academic/years')).text;
-  r = await a.get('/academic/promote/students/' + promoteClass); const promoteStudents = r.json(); assert(promoteStudents.length >= 3, 'promote class has students: ' + promoteStudents.length);
+  assert(promoteStudents.length >= 3, 'promote class has students: ' + promoteStudents.length);
   r = await a.get('/academic/promote/students/' + gradClass); const gradStudents = r.json(); assert(gradStudents.length >= 2, 'graduating class has students: ' + gradStudents.length);
   const retainId = promoteStudents[0].id, promotedId = promoteStudents[1].id, gradId = gradStudents[0].id;
 

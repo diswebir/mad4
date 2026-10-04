@@ -17,7 +17,7 @@
       <div class="card-header"><h6>بازیابی از فایل JSON</h6></div>
       <form method="post" action="/system/backup/restore" enctype="multipart/form-data" class="card-body" data-confirm="هشدار: داده‌های فعلی با محتوای فایل جایگزین می‌شوند. ادامه می‌دهید؟">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="file" class="form-control mb-2" name="file" accept=".json" required>
+        <input type="file" class="form-control mb-2" name="file" accept=".json" required aria-label="فایل">
         <button class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>بازیابی</button>
       </form>
     </div>
@@ -27,7 +27,7 @@
       <div class="card-header"><h6>فایل‌های پشتیبان</h6><span class="fs-7 text-secondary">storage/backups/</span></div>
       <table class="table table-hover"><thead><tr><th>نام فایل</th><th>حجم</th><th>زمان</th><th class="actions"></th></tr></thead><tbody>
         <% if (!files.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">هنوز نسخهٔ پشتیبانی ساخته نشده است</td></tr><% } %>
-        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>"><i class="bi bi-download"></i></a> <a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟"><i class="bi bi-trash"></i></a></td></tr><% }); %>
+        <% files.forEach(function (f) { %><tr><td class="ltr text-start"><%= f.name %></td><td><%= utils.fileSize(f.size) %></td><td class="fs-7"><%= J.formatDateTime(f.mtime) %></td><td class="actions"><a class="btn btn-sm btn-light" href="/system/backup/download/<%= f.name %>" aria-label="دانلود" title="دانلود"><i class="bi bi-download"></i></a> <a class="btn btn-sm btn-light text-danger" href="#" data-post="/system/backup/delete/<%= f.name %>" data-confirm="حذف شود؟" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td></tr><% }); %>
       </tbody></table>
     </div>
   </div>

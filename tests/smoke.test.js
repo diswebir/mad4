@@ -34,12 +34,12 @@ if (require.main !== module) return;
     console.log(`[${f}] ${oks} موفق، ${fails.length} ناموفق${r.status ? ' (خروج ' + r.status + ')' : ''}`); fails.forEach((l) => console.log('   ' + l)); if (r.status && r.stderr) console.log('   ' + r.stderr.split('\n')[0]);
     if (fails.length || r.status) failed++;
   }
-  // اسکن آثار باگ در HTML (undefined/NaN/null/[object Object])
-  {
-    const r = spawnSync(process.execPath, [path.join(__dirname, 'scan-artifacts.js')], { encoding: 'utf8', env: Object.assign({}, process.env, { BASE_URL: BASE }) });
+  // اسکن آثار باگ در HTML (undefined/NaN/null/[object Object]) و کیفیت/دسترس‌پذیری (برچسب‌ها، alt، id تکراری، CSRF)
+  for (const scan of ['scan-artifacts', 'scan-html']) {
+    const r = spawnSync(process.execPath, [path.join(__dirname, scan + '.js')], { encoding: 'utf8', env: Object.assign({}, process.env, { BASE_URL: BASE }) });
     const out = (r.stdout || '').trim().split('\n').filter((l) => !/ExperimentalWarning|trace-warnings/.test(l));
-    console.log(`[scan-artifacts] ${out[out.length - 1] || ''}${r.status ? ' (خروج ' + r.status + ')' : ''}`);
-    if (r.status) { out.slice(0, -1).forEach((l) => console.log('   ' + l)); failed++; }
+    console.log(`[${scan}] ${out[out.length - 1] || ''}${r.status ? ' (خروج ' + r.status + ')' : ''}`);
+    if (r.status) { out.slice(0, -1).slice(0, 40).forEach((l) => console.log('   ' + l)); failed++; }
   }
   console.log(failed ? `\n${failed} مجموعه ناموفق` : '\nهمهٔ تست‌ها با موفقیت اجرا شدند ✓');
   process.exit(failed ? 1 : 0);

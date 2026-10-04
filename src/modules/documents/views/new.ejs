@@ -6,14 +6,14 @@
       <% if (errors.length) { %><div class="alert alert-danger py-2"><ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e %></li><% }); %></ul></div><% } %>
       <div class="row g-3">
         <div class="col-md-6"><label class="form-label <%= type === 'certificate' ? 'required' : '' %>">دانش‌آموز</label>
-          <select class="form-select" name="student_id" id="student_id" onchange="var u = new URL(location.href); u.searchParams.set('student_id', this.value); u.searchParams.set('type', '<%= type %>'); location.href = u.toString();">
+          <select class="form-select" name="student_id" id="student_id" onchange="var u = new URL(location.href); u.searchParams.set('student_id', this.value); u.searchParams.set('type', '<%= type %>'); location.href = u.toString();" aria-label="دانش‌آموز">
             <option value="">— <%= type === 'certificate' ? 'انتخاب کنید' : 'بدون دانش‌آموز (نامهٔ عمومی)' %> —</option>
             <% students.forEach(function (o) { %><option value="<%= o.value %>" <%= String(data.student_id || (student ? student.id : '')) === String(o.value) ? 'selected' : '' %>><%= o.label %></option><% }); %>
           </select></div>
-        <div class="col-md-6"><label class="form-label required">عنوان سند</label><input class="form-control" name="title" value="<%= data.title %>" required maxlength="200"></div>
-        <div class="col-md-6"><label class="form-label">گیرنده / مرجع ارائه</label><input class="form-control" name="recipient" value="<%= data.recipient %>" maxlength="200" placeholder="مثال: ادارهٔ بیمه، سفارت، باشگاه ورزشی"><div class="form-text">به‌جای <code>{recipient}</code> در متن قرار می‌گیرد.</div></div>
-        <div class="col-md-6"><label class="form-label">موضوع / هدف صدور</label><input class="form-control" name="purpose" value="<%= data.purpose %>" maxlength="200"></div>
-        <div class="col-12"><label class="form-label required">متن سند</label><textarea class="form-control" name="body" rows="9" required><%= data.body %></textarea>
+        <div class="col-md-6"><label class="form-label required" for="f_title">عنوان سند</label><input class="form-control" name="title" value="<%= data.title %>" required maxlength="200" id="f_title"></div>
+        <div class="col-md-6"><label class="form-label" for="f_recipient">گیرنده / مرجع ارائه</label><input class="form-control" name="recipient" value="<%= data.recipient %>" maxlength="200" placeholder="مثال: ادارهٔ بیمه، سفارت، باشگاه ورزشی" id="f_recipient"><div class="form-text">به‌جای <code>{recipient}</code> در متن قرار می‌گیرد.</div></div>
+        <div class="col-md-6"><label class="form-label" for="f_purpose">موضوع / هدف صدور</label><input class="form-control" name="purpose" value="<%= data.purpose %>" maxlength="200" id="f_purpose"></div>
+        <div class="col-12"><label class="form-label required" for="f_body">متن سند</label><textarea class="form-control" name="body" rows="9" required id="f_body"><%= data.body %></textarea>
           <div class="form-text">متغیرهای قابل استفاده: <code>{student}</code> <code>{father}</code> <code>{student_number}</code> <code>{national_id}</code> <code>{birth_date}</code> <code>{class}</code> <code>{grade}</code> <code>{year}</code> <code>{school}</code> <code>{date}</code> <code>{principal}</code> <code>{recipient}</code> — هنگام صدور با مقادیر واقعی جایگزین می‌شوند.</div></div>
       </div>
     </div>

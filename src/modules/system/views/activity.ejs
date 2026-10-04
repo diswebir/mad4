@@ -5,7 +5,7 @@
       <div class="card-header">
         <form class="toolbar" data-auto-submit>
           <input type="search" class="form-control form-control-sm" name="q" value="<%= query.q || '' %>" placeholder="جستجو…">
-          <select class="form-select form-select-sm" name="action"><option value="">همهٔ اقدامات</option><% Object.keys(actions).forEach(function (k) { %><option value="<%= k %>" <%= query.action === k ? 'selected' : '' %>><%= actions[k] %></option><% }); %></select>
+          <select class="form-select form-select-sm" name="action" aria-label="عملیات"><option value="">همهٔ اقدامات</option><% Object.keys(actions).forEach(function (k) { %><option value="<%= k %>" <%= query.action === k ? 'selected' : '' %>><%= actions[k] %></option><% }); %></select>
         </form>
       </div>
       <div class="table-responsive"><table class="table table-hover"><thead><tr><th>زمان</th><th>کاربر</th><th>اقدام</th><th>شرح</th><th>IP</th></tr></thead><tbody>

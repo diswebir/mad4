@@ -24,13 +24,13 @@
         <form class="d-flex gap-2 flex-wrap" method="get">
           <input type="hidden" name="date" value="<%= date %>">
           <input class="form-control form-control-sm" name="q" value="<%= q %>" placeholder="جستجو در متن/آدرس/کاربر" style="width:220px">
-          <select class="form-select form-select-sm w-auto" name="level"><option value="">همهٔ سطوح</option><% Object.keys(LOG_LEVELS).forEach(function (k) { %><option value="<%= k %>" <%= level === k ? 'selected' : '' %>><%= LOG_LEVELS[k] %></option><% }); %></select>
-          <button class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+          <select class="form-select form-select-sm w-auto" name="level" aria-label="سطح"><option value="">همهٔ سطوح</option><% Object.keys(LOG_LEVELS).forEach(function (k) { %><option value="<%= k %>" <%= level === k ? 'selected' : '' %>><%= LOG_LEVELS[k] %></option><% }); %></select>
+          <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
         </form>
         <div class="d-flex gap-2">
           <% if (files.some(function (f) { return f.date === date; })) { %>
             <a class="btn btn-sm btn-outline-secondary" href="/system/logs/download?date=<%= date %>"><i class="bi bi-download me-1"></i>دانلود</a>
-            <form method="post" action="/system/logs/delete" onsubmit="return confirm('فایل لاگ این روز حذف شود؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="date" value="<%= date %>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+            <form method="post" action="/system/logs/delete" onsubmit="return confirm('فایل لاگ این روز حذف شود؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="date" value="<%= date %>"><button class="btn btn-sm btn-outline-danger" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></button></form>
           <% } %>
         </div>
       </div>

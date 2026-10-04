@@ -19,11 +19,11 @@
       </div>
     </div>
     <div id="mysqlBox" class="row g-3 <%= form.db_client === 'mysql' ? '' : 'd-none' %>">
-      <div class="col-md-8"><label class="form-label">میزبان (Host)</label><input class="form-control ltr" name="db_host" value="<%= form.db_host || 'localhost' %>"></div>
-      <div class="col-md-4"><label class="form-label">پورت</label><input class="form-control ltr" name="db_port" value="<%= form.db_port || '3306' %>"></div>
-      <div class="col-md-4"><label class="form-label">نام پایگاه داده</label><input class="form-control ltr" name="db_name" value="<%= form.db_name || '' %>" placeholder="cpuser_school"></div>
-      <div class="col-md-4"><label class="form-label">نام کاربری</label><input class="form-control ltr" name="db_user" value="<%= form.db_user || '' %>" placeholder="cpuser_school"></div>
-      <div class="col-md-4"><label class="form-label">رمز عبور</label><input class="form-control ltr" type="password" name="db_password" value="<%= form.db_password || '' %>"></div>
+      <div class="col-md-8"><label class="form-label" for="f_db_host">میزبان (Host)</label><input class="form-control ltr" name="db_host" value="<%= form.db_host || 'localhost' %>" id="f_db_host"></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_port">پورت</label><input class="form-control ltr" name="db_port" value="<%= form.db_port || '3306' %>" id="f_db_port"></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_name">نام پایگاه داده</label><input class="form-control ltr" name="db_name" value="<%= form.db_name || '' %>" placeholder="cpuser_school" id="f_db_name"></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_user">نام کاربری</label><input class="form-control ltr" name="db_user" value="<%= form.db_user || '' %>" placeholder="cpuser_school" id="f_db_user"></div>
+      <div class="col-md-4"><label class="form-label" for="f_db_password">رمز عبور</label><input class="form-control ltr" type="password" name="db_password" value="<%= form.db_password || '' %>" id="f_db_password"></div>
     </div>
   </div>
   <div class="card-footer bg-transparent d-flex justify-content-between">

@@ -21,11 +21,11 @@
 <div class="modal fade" id="slotModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
   <form method="post" action="/academic/schedule/class/<%= cls.id %>/slot">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="day" id="slotDay"><input type="hidden" name="period" id="slotPeriod">
-  <div class="modal-header"><h6 class="modal-title" id="slotTitle">تنظیم زنگ</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h6 class="modal-title" id="slotTitle">تنظیم زنگ</h6><button type="button" class="btn-close" aria-label="بستن" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
-    <div class="mb-3"><label class="form-label">درس (معلم)</label><select class="form-select" name="class_subject_id" id="slotCs"><option value="">— خالی —</option><% classSubjects.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.teacher_name ? ' — ' + c.teacher_name : '' %></option><% }); %></select>
+    <div class="mb-3"><label class="form-label">درس (معلم)</label><select class="form-select" name="class_subject_id" id="slotCs" aria-label="درس کلاس"><option value="">— خالی —</option><% classSubjects.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.teacher_name ? ' — ' + c.teacher_name : '' %></option><% }); %></select>
       <% if (!classSubjects.length) { %><div class="form-text text-danger">ابتدا در صفحهٔ کلاس، درس‌ها را به کلاس تخصیص دهید.</div><% } %></div>
-    <div class="mb-2"><label class="form-label">اتاق (اختیاری)</label><select class="form-select" name="room_id" id="slotRoom"><option value="">— پیش‌فرض کلاس —</option><% rooms.forEach(function (r) { %><option value="<%= r.id %>"><%= r.title %></option><% }); %></select></div>
+    <div class="mb-2"><label class="form-label">اتاق (اختیاری)</label><select class="form-select" name="room_id" id="slotRoom" aria-label="اتاق"><option value="">— پیش‌فرض کلاس —</option><% rooms.forEach(function (r) { %><option value="<%= r.id %>"><%= r.title %></option><% }); %></select></div>
   </div>
   <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div>
   </form>
@@ -33,7 +33,7 @@
 <div class="card mt-3"><div class="card-body d-flex flex-wrap align-items-center gap-2">
   <form method="post" action="/academic/schedule/class/<%= cls.id %>/copy" class="d-flex gap-2 align-items-center"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <span class="fs-7 text-secondary">کپی برنامه از کلاس دیگر (دروس هم‌نام):</span>
-    <select name="source_id" class="form-select form-select-sm" style="width:auto" required id="copySrc"></select><button class="btn btn-sm btn-outline-primary" data-confirm="برنامهٔ فعلی جایگزین می‌شود. ادامه؟">کپی</button></form>
+    <select name="source_id" class="form-select form-select-sm" style="width:auto" required id="copySrc" aria-label="منبع"></select><button class="btn btn-sm btn-outline-primary" data-confirm="برنامهٔ فعلی جایگزین می‌شود. ادامه؟">کپی</button></form>
 </div></div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {

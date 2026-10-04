@@ -10,8 +10,8 @@
 <div class="card">
   <div class="card-header"><form method="get" class="row g-2 align-items-center">
     <div class="col-md-4"><input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="جست‌وجو: نام، نام پدر، کد رهگیری، کد ملی، موبایل"></div>
-    <div class="col-md-3"><select class="form-select form-select-sm" name="status"><option value="">همهٔ وضعیت‌ها</option><% Object.keys(STATUSES).forEach(function (s) { %><option value="<%= s %>" <%= f.status === s ? 'selected' : '' %>><%= STATUSES[s] %></option><% }); %></select></div>
-    <div class="col-md-3"><select class="form-select form-select-sm" name="grade_level_id"><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
+    <div class="col-md-3"><select class="form-select form-select-sm" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><% Object.keys(STATUSES).forEach(function (s) { %><option value="<%= s %>" <%= f.status === s ? 'selected' : '' %>><%= STATUSES[s] %></option><% }); %></select></div>
+    <div class="col-md-3"><select class="form-select form-select-sm" name="grade_level_id" aria-label="پایه"><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
     <div class="col-md-2 d-flex gap-1"><button class="btn btn-sm btn-primary flex-fill">فیلتر</button><a href="/admissions" class="btn btn-sm btn-light">پاک</a></div>
   </form></div>
   <div class="table-responsive"><table class="table table-hover mb-0 align-middle">

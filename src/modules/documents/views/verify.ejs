@@ -2,7 +2,7 @@
   <div class="card-body">
     <h5 class="mb-1"><i class="bi bi-shield-check me-1"></i>استعلام اصالت سند</h5>
     <p class="text-secondary fs-7 mb-3">کد استعلام چاپ‌شده در پایین سند (گواهی، نامه یا کارنامهٔ رسمی) را وارد کنید.</p>
-    <form method="get" action="/documents/verify" class="d-flex gap-2 mb-3"><input class="form-control ltr text-center" name="code" value="<%= code %>" placeholder="مثال: 3F9A1C27B0" maxlength="40" required autofocus style="letter-spacing:2px"><button class="btn btn-primary"><i class="bi bi-search"></i></button></form>
+    <form method="get" action="/documents/verify" class="d-flex gap-2 mb-3"><input class="form-control ltr text-center" name="code" value="<%= code %>" placeholder="مثال: 3F9A1C27B0" maxlength="40" required autofocus style="letter-spacing:2px"><button class="btn btn-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button></form>
     <% if (code && !doc) { %><div class="alert alert-danger py-2 mb-0"><i class="bi bi-x-circle me-1"></i>سندی با کد <strong class="ltr d-inline-block"><%= code %></strong> در سامانهٔ <%= school('school_name', '') %> یافت نشد. این سند معتبر نیست یا کد اشتباه وارد شده است.</div><% } %>
     <% if (doc) { var t = TYPES[doc.type] || { title: doc.type }; %>
       <div class="alert <%= doc.status === 'revoked' ? 'alert-danger' : 'alert-success' %> py-2">

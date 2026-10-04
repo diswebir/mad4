@@ -13,11 +13,11 @@ if (crud.exportable !== false && (!crud.exportFeature || enabled(crud.exportFeat
       <% if (fields.some(function (f) { return f.search; })) { %>
       <div class="input-group input-group-sm" style="max-width:260px">
         <input type="search" class="form-control" name="q" value="<%= search %>" placeholder="جستجو…">
-        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        <button class="btn btn-outline-secondary" type="submit" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
       </div>
       <% } %>
       <% filterFields.forEach(function (f) { var opts = f._resolved || []; %>
-      <select class="form-select form-select-sm" name="f_<%= f.name %>">
+      <select class="form-select form-select-sm" name="f_<%= f.name %>" aria-label="<%= f.label %>">
         <option value="">همه <%= f.label %></option>
         <% opts.forEach(function (o) { %><option value="<%= o.value %>" <%= String(activeFilters[f.name]) === String(o.value) ? 'selected' : '' %>><%= o.label %></option><% }); %>
       </select>

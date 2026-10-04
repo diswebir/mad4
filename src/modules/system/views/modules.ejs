@@ -18,7 +18,7 @@
           <div class="flex-grow-1 mw-0">
             <div class="d-flex justify-content-between align-items-center gap-2">
               <strong><%= m.name %></strong>
-              <% if (m.core) { %><span class="badge badge-soft-secondary">هسته</span><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" data-module-toggle="<%= m.key %>" <%= m.enabled ? 'checked' : '' %>></div><% } %>
+              <% if (m.core) { %><span class="badge badge-soft-secondary">هسته</span><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="فعال‌سازی ماژول <%= m.name %>" data-module-toggle="<%= m.key %>" <%= m.enabled ? 'checked' : '' %>></div><% } %>
             </div>
             <div class="text-secondary fs-7 mt-1"><%= m.description %></div>
             <% if (m.dependencies.length) { %><div class="fs-7 text-secondary mt-1"><i class="bi bi-link-45deg"></i> وابسته به: <%= m.dependencies.join('، ') %></div><% } %>
@@ -30,7 +30,7 @@
           <% m.features.forEach(function (f) { %>
           <div class="feat">
             <div class="mw-0"><div class="fs-7 fw-500"><%= f.name %></div><% if (f.description) { %><div class="text-secondary" style="font-size:.72rem"><%= f.description %></div><% } %></div>
-            <% if (f.locked) { %><i class="bi bi-lock-fill text-secondary" title="همیشه فعال"></i><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" data-module-toggle="<%= f.fullKey %>" <%= f.enabled ? 'checked' : '' %> <%= m.enabled ? '' : 'disabled' %>></div><% } %>
+            <% if (f.locked) { %><i class="bi bi-lock-fill text-secondary" title="همیشه فعال"></i><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="فعال‌سازی قابلیت <%= f.name %>" data-module-toggle="<%= f.fullKey %>" <%= f.enabled ? 'checked' : '' %> <%= m.enabled ? '' : 'disabled' %>></div><% } %>
           </div>
           <% }); %>
         </div>

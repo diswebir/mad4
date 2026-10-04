@@ -48,7 +48,7 @@
         <thead><tr><th>درس</th><th>معلم</th><th>ساعت</th><% if (isAdmin && enabled('academic.class_subjects')) { %><th></th><% } %></tr></thead>
         <tbody><% subjects.forEach(function (s) { %>
           <tr><td class="fw-semibold"><%= s.subject_title %></td><td><%= s.teacher_name || '<span class="text-danger fs-7">تعیین نشده</span>' %></td><td><%= J.toPersianDigits(s.weekly_hours || 0) %></td>
-            <% if (isAdmin && enabled('academic.class_subjects')) { %><td class="text-end"><button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#csModal" data-subject="<%= s.subject_id %>" data-teacher="<%= s.teacher_id || '' %>" data-hours="<%= s.weekly_hours || '' %>"><i class="bi bi-pencil"></i></button> <a href="#" data-post="/academic/classes/<%= cls.id %>/subjects/<%= s.id %>/delete" data-confirm="این درس از کلاس حذف شود؟" class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></a></td><% } %></tr>
+            <% if (isAdmin && enabled('academic.class_subjects')) { %><td class="text-end"><button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#csModal" data-subject="<%= s.subject_id %>" data-teacher="<%= s.teacher_id || '' %>" data-hours="<%= s.weekly_hours || '' %>" aria-label="ویرایش" title="ویرایش"><i class="bi bi-pencil"></i></button> <a href="#" data-post="/academic/classes/<%= cls.id %>/subjects/<%= s.id %>/delete" data-confirm="این درس از کلاس حذف شود؟" class="btn btn-sm btn-light text-danger" aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></a></td><% } %></tr>
         <% }); if (!subjects.length) { %><tr><td colspan="4" class="text-center text-secondary py-3">درسی تخصیص داده نشده است</td></tr><% } %></tbody>
       </table></div>
       <% if (isAdmin && enabled('academic.class_subjects')) { %><div class="card-footer bg-transparent"><button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#csModal"><i class="bi bi-plus-lg me-1"></i>تخصیص درس / معلم</button></div><% } %>
@@ -63,10 +63,10 @@
 <% if (isAdmin && enabled('academic.class_subjects')) { %>
 <div class="modal fade" id="csModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
   <form method="post" action="/academic/classes/<%= cls.id %>/subjects"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="modal-header"><h6 class="modal-title">تخصیص درس و معلم</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h6 class="modal-title">تخصیص درس و معلم</h6><button type="button" class="btn-close" aria-label="بستن" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
-    <div class="mb-3"><label class="form-label required">درس</label><select class="form-select" name="subject_id" id="csSubject" required><option value="">— انتخاب —</option><% subjectsOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
-    <div class="mb-3"><label class="form-label">معلم</label><select class="form-select" name="teacher_id" id="csTeacher"><option value="">— بعداً تعیین می‌شود —</option><% teachersOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label required">درس</label><select class="form-select" name="subject_id" id="csSubject" required aria-label="درس"><option value="">— انتخاب —</option><% subjectsOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label">معلم</label><select class="form-select" name="teacher_id" id="csTeacher" aria-label="معلم"><option value="">— بعداً تعیین می‌شود —</option><% teachersOpts.forEach(function (o) { %><option value="<%= o.value %>"><%= o.label %></option><% }); %></select></div>
     <div class="mb-2"><label class="form-label">ساعت در هفته</label><input class="form-control en-digits" name="weekly_hours" id="csHours" placeholder="پیش‌فرض درس"></div>
   </div>
   <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button><button class="btn btn-primary">ذخیره</button></div>

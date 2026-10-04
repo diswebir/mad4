@@ -63,6 +63,7 @@ class QueryBuilder {
     if (val === undefined && op !== undefined && !['=', '!=', '<>', '>', '<', '>=', '<=', 'like', 'LIKE', 'not like', 'NOT LIKE', 'in', 'not in', 'is', 'is not'].includes(op)) { val = op; op = '='; }
     if (val === null && (op === '=' || op === 'is')) { this._wheres.push({ bool, sql: ident(col) + ' IS NULL', params: [] }); return this; }
     if (val === null && (op === '!=' || op === '<>' || op === 'is not')) { this._wheres.push({ bool, sql: ident(col) + ' IS NOT NULL', params: [] }); return this; }
+    if (typeof val === 'number' && Number.isNaN(val)) { this._wheres.push({ bool, sql: '1 = 0', params: [] }); return this; } // NaN (ورودی نامعتبر) با هیچ سطری برابر نیست؛ MySQL آن را ستون می‌پندارد
     this._wheres.push({ bool, sql: ident(col) + ' ' + op.toUpperCase() + ' ?', params: [val] });
     return this;
   }
@@ -71,6 +72,7 @@ class QueryBuilder {
   whereRaw(sql, params) { this._wheres.push({ bool: 'AND', sql: '(' + sql + ')', params: params || [] }); return this; }
   orWhereRaw(sql, params) { this._wheres.push({ bool: 'OR', sql: '(' + sql + ')', params: params || [] }); return this; }
   whereIn(col, values) {
+    if (values) values = values.filter((v) => !(typeof v === 'number' && Number.isNaN(v)));
     if (!values || !values.length) { this._wheres.push({ bool: 'AND', sql: '1 = 0', params: [] }); return this; }
     this._wheres.push({ bool: 'AND', sql: ident(col) + ' IN (' + values.map(() => '?').join(',') + ')', params: values });
     return this;

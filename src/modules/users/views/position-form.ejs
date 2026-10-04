@@ -2,14 +2,14 @@
 <form method="post" action="<%= isNew ? '/users/positions' : '/users/positions/' + pos.id %>" class="card" style="max-width:1100px"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="card-body">
     <div class="row g-3 mb-3">
-      <div class="col-md-4"><label class="form-label required">عنوان سمت</label><input class="form-control" name="title" value="<%= pos.title %>" required></div>
-      <div class="col-md-8"><label class="form-label">توضیح</label><input class="form-control" name="description" value="<%= pos.description || '' %>"></div>
+      <div class="col-md-4"><label class="form-label required" for="f_title">عنوان سمت</label><input class="form-control" name="title" value="<%= pos.title %>" required id="f_title"></div>
+      <div class="col-md-8"><label class="form-label" for="f_description">توضیح</label><input class="form-control" name="description" value="<%= pos.description || '' %>" id="f_description"></div>
     </div>
     <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="mb-0">مجوزها</h6><div class="fs-7"><a href="#" onclick="document.querySelectorAll('.pp').forEach(function(c){c.checked=true});return false">انتخاب همه</a> · <a href="#" onclick="document.querySelectorAll('.pp').forEach(function(c){c.checked=false});return false">هیچ‌کدام</a></div></div>
     <div class="row g-3">
       <% GROUPS.forEach(function (g) { %>
       <div class="col-md-6"><div class="border rounded p-3 h-100"><div class="fw-bold mb-2 d-flex justify-content-between"><span><%= g.title %></span><a href="#" class="fs-7 fw-normal" onclick="this.closest('.border').querySelectorAll('.pp').forEach(function(c){c.checked=!c.checked});return false">وارونه</a></div>
-        <% g.items.forEach(function (it) { %><label class="form-check fs-7 mb-1"><input type="checkbox" class="form-check-input pp" name="perms[]" value="<%= it[0] %>" <%= pos.perms.indexOf(it[0]) >= 0 ? 'checked' : '' %>> <%= it[1] %> <code class="text-muted">(<%= it[0] %>)</code></label><% }) %>
+        <% g.items.forEach(function (it) { %><label class="form-check fs-7 mb-1"><input type="checkbox" class="form-check-input pp" name="perms[]" value="<%= it[0] %>" <%= pos.perms.indexOf(it[0]) >= 0 ? 'checked' : '' %> aria-label="مجوز"> <%= it[1] %> <code class="text-muted">(<%= it[0] %>)</code></label><% }) %>
       </div></div>
       <% }) %>
     </div>

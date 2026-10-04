@@ -1,7 +1,7 @@
 <%- include('partials/page-header', { title: 'تحلیل نمرات', icon: 'bi-graph-up', breadcrumbs: [{ title: 'آزمون‌ها', href: '/exams' }, { title: 'تحلیل' }] }) %>
 <form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
-  <select class="form-select form-select-sm w-auto" name="class_id" data-auto-submit><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= c.id === classId ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
-  <select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select>
+  <select class="form-select form-select-sm w-auto" name="class_id" data-auto-submit aria-label="کلاس"><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= c.id === classId ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
+  <select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit aria-label="نوبت"><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select>
   <span class="fs-7 text-secondary ms-auto"><%= J.toPersianDigits(report.examsCount) %> آزمون · <%= J.toPersianDigits(report.rows.length) %> دانش‌آموز · میانگین کلاس: <strong><%= report.classAvg != null ? J.toPersianDigits(report.classAvg) : '—' %></strong></span></div></form>
 <div class="row g-3">
   <div class="col-lg-6"><div class="card h-100"><div class="card-header"><h6>توزیع معدل دانش‌آموزان</h6></div><div class="card-body"><canvas id="cDist" height="170"></canvas></div></div></div>

@@ -3,7 +3,7 @@
   ...(enabled('exams.print') ? [{ href: '/exams/report-card/' + s.id + '?term_id=' + termId + '&print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-light', target: '_blank' }] : []),
   ...(currentUser.role !== 'student' ? [{ href: '/students/' + s.id, label: 'پرونده', icon: 'bi-person-vcard', class: 'btn-light' }] : [])
 ] }) %>
-<form method="get" class="mb-3 d-flex gap-2 align-items-center"><label class="fs-7 text-secondary">نوبت:</label><select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select></form>
+<form method="get" class="mb-3 d-flex gap-2 align-items-center"><label class="fs-7 text-secondary">نوبت:</label><select class="form-select form-select-sm w-auto" name="term_id" data-auto-submit aria-label="نوبت"><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)</option><% }); %></select></form>
 <% } %>
 <div class="card report-card">
   <div class="card-body">

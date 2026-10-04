@@ -4,7 +4,7 @@
   <form method="get" class="row g-2 mb-3">
     <div class="col-md-5"><input class="form-control ltr" name="code" value="<%= code %>" placeholder="AP-1405-00001" required></div>
     <div class="col-md-5"><input class="form-control ltr" name="national_id" value="<%= nid %>" placeholder="کد ملی دانش‌آموز" required inputmode="numeric" data-digits maxlength="10"></div>
-    <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i></button></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button></div>
   </form>
   <% if (notFound) { %><div class="alert alert-danger py-2 mb-0">درخواستی با این مشخصات یافت نشد. کد رهگیری و کد ملی را بررسی کنید.</div><% } %>
   <% if (app) { %>

@@ -8,11 +8,11 @@
 <div class="card table-card">
   <div class="card-header flex-wrap gap-2">
     <form class="d-flex gap-2 flex-wrap" method="get">
-      <select class="form-select form-select-sm w-auto" name="year" onchange="this.form.submit()"><% years.forEach(function (y) { %><option value="<%= y.id %>" <%= y.id === yearId ? 'selected' : '' %>><%= y.title %><%= y.is_current ? ' (جاری)' : '' %></option><% }) %></select>
-      <select class="form-select form-select-sm w-auto" name="status"><option value="">همهٔ وضعیت‌ها</option><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= filters.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select>
-      <select class="form-select form-select-sm w-auto" name="class_id"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(filters.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }) %></select>
+      <select class="form-select form-select-sm w-auto" name="year" onchange="this.form.submit()" aria-label="سال تحصیلی"><% years.forEach(function (y) { %><option value="<%= y.id %>" <%= y.id === yearId ? 'selected' : '' %>><%= y.title %><%= y.is_current ? ' (جاری)' : '' %></option><% }) %></select>
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= filters.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select>
+      <select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(filters.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }) %></select>
       <input class="form-control form-control-sm" name="q" value="<%= filters.q %>" placeholder="نام یا شماره" style="width:160px">
-      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
     </form>
     <div class="d-flex gap-2">
       <% if (enabled('enrollments.export')) { %><a href="?year=<%= yearId %>&status=<%= filters.status %>&class_id=<%= filters.class_id %>&export=1" class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-csv me-1"></i>CSV</a><% } %>
@@ -27,12 +27,12 @@
     <td><span class="badge text-bg-<%= COLORS[r.status] || 'secondary' %>"><%= STATUS[r.status] || r.status %></span></td>
     <td class="fs-7"><%= J.formatDate(r.enrolled_at, true) %></td><td class="fs-7"><%= r.left_at ? J.formatDate(r.left_at, true) : '—' %></td>
     <td class="fs-7 text-muted"><%= r.note || '' %></td>
-    <td><button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#ed<%= r.id %>"><i class="bi bi-pencil"></i></button></td>
+    <td><button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#ed<%= r.id %>" aria-label="ویرایش" title="ویرایش"><i class="bi bi-pencil"></i></button></td>
   </tr>
   <tr class="collapse" id="ed<%= r.id %>"><td colspan="8" class="bg-light"><form method="post" action="/enrollments/<%= r.id %>?back=<%= encodeURIComponent(currentPath + '?year=' + yearId) %>" class="row g-2 align-items-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="col-md-3"><label class="form-label fs-7">وضعیت</label><select class="form-select form-select-sm" name="status"><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= r.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select></div>
-    <div class="col-md-3"><label class="form-label fs-7">تاریخ پایان</label><input class="form-control form-control-sm jdate" name="left_at" value="<%= r.left_at ? J.toJalali(r.left_at) : '' %>" placeholder="۱۴۰۵/۰۳/۳۱"></div>
-    <div class="col-md-4"><label class="form-label fs-7">توضیح</label><input class="form-control form-control-sm" name="note" value="<%= r.note || '' %>"></div>
+    <div class="col-md-3"><label class="form-label fs-7" for="f_status_<%= r.id %>">وضعیت</label><select class="form-select form-select-sm" name="status" id="f_status_<%= r.id %>"><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= r.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select></div>
+    <div class="col-md-3"><label class="form-label fs-7" for="f_left_at_<%= r.id %>">تاریخ پایان</label><input class="form-control form-control-sm jdate" name="left_at" value="<%= r.left_at ? J.toJalali(r.left_at) : '' %>" placeholder="۱۴۰۵/۰۳/۳۱" id="f_left_at_<%= r.id %>"></div>
+    <div class="col-md-4"><label class="form-label fs-7" for="f_note_<%= r.id %>">توضیح</label><input class="form-control form-control-sm" name="note" value="<%= r.note || '' %>" id="f_note_<%= r.id %>"></div>
     <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">ذخیره</button></div></form></td></tr>
   <% }) %>
   </tbody></table></div>

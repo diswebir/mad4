@@ -22,11 +22,11 @@
       <div class="card-header"><h6>ویرایش اطلاعات</h6></div>
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-6"><label class="form-label">نام و نام خانوادگی</label><input class="form-control" name="name" value="<%= currentUser.name %>" <%= currentUser.role === 'student' ? 'readonly' : '' %>></div>
-          <div class="col-md-6"><label class="form-label">ایمیل</label><input class="form-control ltr" type="email" name="email" value="<%= currentUser.email || '' %>"></div>
-          <div class="col-md-6"><label class="form-label">موبایل</label><input class="form-control ltr" type="tel" name="phone" value="<%= currentUser.phone || '' %>"></div>
-          <div class="col-md-6"><label class="form-label">تصویر پروفایل</label><input class="form-control" type="file" name="avatar" accept="image/*"></div>
-          <div class="col-md-6"><label class="form-label">پوستهٔ پیش‌فرض</label><select class="form-select" name="theme"><option value="">پیش‌فرض سامانه</option><option value="light" <%= currentUser.theme === 'light' ? 'selected' : '' %>>روشن</option><option value="dark" <%= currentUser.theme === 'dark' ? 'selected' : '' %>>تاریک</option></select></div>
+          <div class="col-md-6"><label class="form-label" for="f_name">نام و نام خانوادگی</label><input class="form-control" name="name" value="<%= currentUser.name %>" <%= currentUser.role === 'student' ? 'readonly' : '' %> id="f_name"></div>
+          <div class="col-md-6"><label class="form-label" for="f_email">ایمیل</label><input class="form-control ltr" type="email" name="email" value="<%= currentUser.email || '' %>" id="f_email"></div>
+          <div class="col-md-6"><label class="form-label" for="f_phone">موبایل</label><input class="form-control ltr" type="tel" name="phone" value="<%= currentUser.phone || '' %>" id="f_phone"></div>
+          <div class="col-md-6"><label class="form-label" for="f_avatar">تصویر پروفایل</label><input class="form-control" type="file" name="avatar" accept="image/*" id="f_avatar"></div>
+          <div class="col-md-6"><label class="form-label" for="f_theme">پوستهٔ پیش‌فرض</label><select class="form-select" name="theme" id="f_theme"><option value="">پیش‌فرض سامانه</option><option value="light" <%= currentUser.theme === 'light' ? 'selected' : '' %>>روشن</option><option value="dark" <%= currentUser.theme === 'dark' ? 'selected' : '' %>>تاریک</option></select></div>
         </div>
       </div>
       <div class="card-footer bg-transparent text-end"><button class="btn btn-primary px-4">ذخیره</button></div>

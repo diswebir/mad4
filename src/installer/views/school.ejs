@@ -7,22 +7,22 @@
     <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
     <h6 class="text-brand border-bottom pb-2">مدرسه</h6>
     <div class="row g-3 mb-4">
-      <div class="col-md-6"><label class="form-label required">نام مدرسه</label><input class="form-control" name="school_name" value="<%= form.school_name || '' %>" required placeholder="مثال: دبیرستان شهید بهشتی"></div>
-      <div class="col-md-3"><label class="form-label">مقطع</label><select class="form-select" name="school_type"><% ['ابتدایی','متوسطه اول','متوسطه دوم','هنرستان','چند مقطعی'].forEach(function (t) { %><option <%= form.school_type === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
-      <div class="col-md-3"><label class="form-label">جنسیت</label><select class="form-select" name="school_gender"><option value="boys" <%= form.school_gender === 'boys' ? 'selected' : '' %>>پسرانه</option><option value="girls" <%= form.school_gender === 'girls' ? 'selected' : '' %>>دخترانه</option><option value="mixed" <%= !form.school_gender || form.school_gender === 'mixed' ? 'selected' : '' %>>مختلط</option></select></div>
-      <div class="col-md-4"><label class="form-label">تلفن مدرسه</label><input class="form-control ltr" name="school_phone" value="<%= form.school_phone || '' %>"></div>
-      <div class="col-md-8"><label class="form-label">آدرس</label><input class="form-control" name="school_address" value="<%= form.school_address || '' %>"></div>
-      <div class="col-md-4"><label class="form-label">منطقهٔ زمانی</label><select class="form-select ltr" name="timezone_offset"><% ['+03:30','+04:30','+00:00','+01:00','+02:00','+03:00','+04:00','+05:00'].forEach(function (t) { %><option <%= (form.timezone_offset || '+03:30') === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
-      <div class="col-md-8"><label class="form-label">سال تحصیلی جاری</label><input class="form-control" value="<%= J.toPersianDigits(defaultYear) %>" disabled><div class="form-text">به‌صورت خودکار بر اساس تاریخ امروز ساخته می‌شود و بعداً قابل ویرایش است.</div></div>
+      <div class="col-md-6"><label class="form-label required" for="f_school_name">نام مدرسه</label><input class="form-control" name="school_name" value="<%= form.school_name || '' %>" required placeholder="مثال: دبیرستان شهید بهشتی" id="f_school_name"></div>
+      <div class="col-md-3"><label class="form-label" for="f_school_type">مقطع</label><select class="form-select" name="school_type" id="f_school_type"><% ['ابتدایی','متوسطه اول','متوسطه دوم','هنرستان','چند مقطعی'].forEach(function (t) { %><option <%= form.school_type === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
+      <div class="col-md-3"><label class="form-label" for="f_school_gender">جنسیت</label><select class="form-select" name="school_gender" id="f_school_gender"><option value="boys" <%= form.school_gender === 'boys' ? 'selected' : '' %>>پسرانه</option><option value="girls" <%= form.school_gender === 'girls' ? 'selected' : '' %>>دخترانه</option><option value="mixed" <%= !form.school_gender || form.school_gender === 'mixed' ? 'selected' : '' %>>مختلط</option></select></div>
+      <div class="col-md-4"><label class="form-label" for="f_school_phone">تلفن مدرسه</label><input class="form-control ltr" name="school_phone" value="<%= form.school_phone || '' %>" id="f_school_phone"></div>
+      <div class="col-md-8"><label class="form-label" for="f_school_address">آدرس</label><input class="form-control" name="school_address" value="<%= form.school_address || '' %>" id="f_school_address"></div>
+      <div class="col-md-4"><label class="form-label" for="f_timezone_offset">منطقهٔ زمانی</label><select class="form-select ltr" name="timezone_offset" id="f_timezone_offset"><% ['+03:30','+04:30','+00:00','+01:00','+02:00','+03:00','+04:00','+05:00'].forEach(function (t) { %><option <%= (form.timezone_offset || '+03:30') === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
+      <div class="col-md-8"><label class="form-label" for="f_default_year">سال تحصیلی جاری</label><input class="form-control" id="f_default_year" value="<%= J.toPersianDigits(defaultYear) %>" disabled><div class="form-text">به‌صورت خودکار بر اساس تاریخ امروز ساخته می‌شود و بعداً قابل ویرایش است.</div></div>
     </div>
     <h6 class="text-brand border-bottom pb-2">حساب مدیر سامانه</h6>
     <div class="row g-3 mb-4">
-      <div class="col-md-6"><label class="form-label required">نام و نام خانوادگی</label><input class="form-control" name="admin_name" value="<%= form.admin_name || '' %>" required></div>
-      <div class="col-md-6"><label class="form-label required">نام کاربری</label><input class="form-control ltr" name="admin_username" value="<%= form.admin_username || 'admin' %>" required pattern="[a-zA-Z0-9_.]{3,30}"></div>
-      <div class="col-md-6"><label class="form-label required">رمز عبور</label><input class="form-control ltr" type="password" name="admin_password" required minlength="6"></div>
-      <div class="col-md-6"><label class="form-label required">تکرار رمز عبور</label><input class="form-control ltr" type="password" name="admin_password2" required minlength="6"></div>
-      <div class="col-md-6"><label class="form-label">ایمیل</label><input class="form-control ltr" type="email" name="admin_email" value="<%= form.admin_email || '' %>"></div>
-      <div class="col-md-6"><label class="form-label">موبایل</label><input class="form-control ltr" name="admin_phone" value="<%= form.admin_phone || '' %>"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_name">نام و نام خانوادگی</label><input class="form-control" name="admin_name" value="<%= form.admin_name || '' %>" required id="f_admin_name"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_username">نام کاربری</label><input class="form-control ltr" name="admin_username" value="<%= form.admin_username || 'admin' %>" required pattern="[a-zA-Z0-9_.]{3,30}" id="f_admin_username"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_password">رمز عبور</label><input class="form-control ltr" type="password" name="admin_password" required minlength="6" id="f_admin_password"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_password2">تکرار رمز عبور</label><input class="form-control ltr" type="password" name="admin_password2" required minlength="6" id="f_admin_password2"></div>
+      <div class="col-md-6"><label class="form-label" for="f_admin_email">ایمیل</label><input class="form-control ltr" type="email" name="admin_email" value="<%= form.admin_email || '' %>" id="f_admin_email"></div>
+      <div class="col-md-6"><label class="form-label" for="f_admin_phone">موبایل</label><input class="form-control ltr" name="admin_phone" value="<%= form.admin_phone || '' %>" id="f_admin_phone"></div>
     </div>
     <h6 class="text-brand border-bottom pb-2">دادهٔ نمونه</h6>
     <div class="form-check form-switch">

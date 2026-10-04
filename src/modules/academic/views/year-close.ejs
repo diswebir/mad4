@@ -12,12 +12,12 @@
           <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="target_mode" id="tmNew" value="new" <%= f.target_mode !== 'existing' ? 'checked' : '' %>><label class="form-check-label" for="tmNew">ساخت سال جدید</label></div>
           <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="target_mode" id="tmEx" value="existing" <%= f.target_mode === 'existing' ? 'checked' : '' %> <%= ctx.otherYears.length ? '' : 'disabled' %>><label class="form-check-label" for="tmEx">استفاده از سال موجود</label></div>
           <div class="row g-3 mt-1" id="newYearBox">
-            <div class="col-md-4"><label class="form-label">عنوان سال</label><input class="form-control" name="year_title" value="<%= f.year_title || ctx.defaults.title %>"></div>
-            <div class="col-md-4"><label class="form-label">شروع</label><input type="text" class="form-control jdate" name="year_start" value="<%= J.toPersianDigits(f.year_start || J.toJalali(ctx.defaults.start_date)) %>"></div>
-            <div class="col-md-4"><label class="form-label">پایان</label><input type="text" class="form-control jdate" name="year_end" value="<%= J.toPersianDigits(f.year_end || J.toJalali(ctx.defaults.end_date)) %>"></div>
+            <div class="col-md-4"><label class="form-label" for="f_year_title">عنوان سال</label><input class="form-control" name="year_title" value="<%= f.year_title || ctx.defaults.title %>" id="f_year_title"></div>
+            <div class="col-md-4"><label class="form-label" for="f_year_start">شروع</label><input type="text" class="form-control jdate" name="year_start" value="<%= J.toPersianDigits(f.year_start || J.toJalali(ctx.defaults.start_date)) %>" id="f_year_start"></div>
+            <div class="col-md-4"><label class="form-label" for="f_year_end">پایان</label><input type="text" class="form-control jdate" name="year_end" value="<%= J.toPersianDigits(f.year_end || J.toJalali(ctx.defaults.end_date)) %>" id="f_year_end"></div>
           </div>
           <div class="row g-3 mt-1" id="existYearBox" style="display:none">
-            <div class="col-md-6"><label class="form-label">سال موجود</label><select class="form-select" name="target_year_id"><% ctx.otherYears.forEach(function (y) { %><option value="<%= y.id %>" <%= String(f.target_year_id) === String(y.id) ? 'selected' : '' %>><%= y.title %> (<%= J.toJalali(y.start_date) %> تا <%= J.toJalali(y.end_date) %>)</option><% }); %></select></div>
+            <div class="col-md-6"><label class="form-label" for="f_target_year_id">سال موجود</label><select class="form-select" name="target_year_id" id="f_target_year_id"><% ctx.otherYears.forEach(function (y) { %><option value="<%= y.id %>" <%= String(f.target_year_id) === String(y.id) ? 'selected' : '' %>><%= y.title %> (<%= J.toJalali(y.start_date) %> تا <%= J.toJalali(y.end_date) %>)</option><% }); %></select></div>
           </div>
           <div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="copy_terms" value="1" id="copyTerms" <%= f.copy_terms === '1' || !form.target_mode ? 'checked' : '' %>><label class="form-check-label" for="copyTerms">کپی نوبت‌های سال جاری (<%= ctx.terms.map(function (t) { return t.title; }).join('، ') || 'نوبتی تعریف نشده' %>) با تاریخ‌های یک سال بعد — اگر سال مقصد نوبت نداشته باشد</label></div>
         </div></div>
@@ -29,17 +29,17 @@
           <% ctx.classes.forEach(function (c) { const next = ctx.nextGradeOf(c.grade_level_id); const ci = cls['c' + c.id] || {}; const action = ci.action || (next ? 'promote' : 'graduate'); %>
             <tr data-class="<%= c.id %>">
               <td class="fw-bold"><%= c.title %></td><td><%= c.grade_title || '—' %></td><td class="fs-7"><%= c.teacher_name || '—' %></td><td><%= J.toPersianDigits(c.student_count) %></td>
-              <td><select class="form-select form-select-sm yc-action" name="cls[c<%= c.id %>][action]">
+              <td><select class="form-select form-select-sm yc-action" name="cls[c<%= c.id %>][action]" aria-label="عملیات">
                 <option value="promote" <%= action === 'promote' ? 'selected' : '' %>>ارتقا به پایهٔ بالاتر</option>
                 <option value="graduate" <%= action === 'graduate' ? 'selected' : '' %>>فارغ‌التحصیلی</option>
                 <option value="keep" <%= action === 'keep' ? 'selected' : '' %>>بدون تغییر</option></select></td>
               <td class="yc-new">
-                <select class="form-select form-select-sm mb-1" name="cls[c<%= c.id %>][grade_level_id]"><% ctx.grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(ci.grade_level_id || (next ? next.id : '')) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select>
-                <input class="form-control form-control-sm" name="cls[c<%= c.id %>][title]" value="<%= ci.title || '' %>" placeholder="<%= next ? c.title.includes(c.grade_title || '') && c.grade_title ? c.title.replace(c.grade_title, next.title) : (next.title + ' ' + c.title) : '' %>">
+                <select class="form-select form-select-sm mb-1" name="cls[c<%= c.id %>][grade_level_id]" aria-label="پایه"><% ctx.grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(ci.grade_level_id || (next ? next.id : '')) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select>
+                <input class="form-control form-control-sm" name="cls[c<%= c.id %>][title]" aria-label="عنوان کلاس جدید برای <%= c.title %>" value="<%= ci.title || '' %>" placeholder="<%= next ? c.title.includes(c.grade_title || '') && c.grade_title ? c.title.replace(c.grade_title, next.title) : (next.title + ' ' + c.title) : '' %>">
               </td>
               <td class="yc-new fs-7">
-                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][keep_teacher]" value="1" <%= ci.keep_teacher !== '0' ? 'checked' : '' %>><input type="hidden" name="cls[c<%= c.id %>][keep_teacher]" value="0" disabled> معلم‌ها حفظ شوند</label>
-                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][copy_subjects]" value="1" <%= ci.copy_subjects !== '0' ? 'checked' : '' %>> دروس کپی شوند</label>
+                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][keep_teacher]" value="1" <%= ci.keep_teacher !== '0' ? 'checked' : '' %> aria-label="حفظ معلم"><input type="hidden" name="cls[c<%= c.id %>][keep_teacher]" value="0" disabled> معلم‌ها حفظ شوند</label>
+                <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="cls[c<%= c.id %>][copy_subjects]" value="1" <%= ci.copy_subjects !== '0' ? 'checked' : '' %> aria-label="کپی درس‌ها"> دروس کپی شوند</label>
               </td>
               <td><button type="button" class="btn btn-sm btn-outline-secondary yc-retain" data-class="<%= c.id %>" data-title="<%= c.title %>"><i class="bi bi-people"></i> انتخاب</button> <span class="badge bg-warning text-dark yc-retain-count" style="display:none"></span><div class="yc-retain-box" style="display:none"></div></td>
             </tr>
@@ -106,7 +106,7 @@
       fetch('/academic/promote/students/' + cid).then(function (r) { return r.json(); }).then(function (list) {
         box.dataset.loaded = '1';
         if (!list.length) { box.innerHTML = '<span class="text-muted fs-7">دانش‌آموزی نیست</span>'; return; }
-        box.innerHTML = '<div class="border rounded p-2 mt-1 fs-7" style="max-height:180px;overflow:auto;min-width:220px">' + list.map(function (s) { return '<label class="form-check mb-0"><input class="form-check-input yc-retain-cb" type="checkbox" name="retain" value="' + s.id + '"> ' + s.first_name + ' ' + s.last_name + ' <span class="text-muted ltr">' + s.student_number + '</span></label>'; }).join('') + '</div>';
+        box.innerHTML = '<div class="border rounded p-2 mt-1 fs-7" style="max-height:180px;overflow:auto;min-width:220px">' + list.map(function (s) { return '<label class="form-check mb-0"><input class="form-check-input yc-retain-cb" type="checkbox" name="retain" value="' + s.id + '" aria-label="نگه‌داشتن"> ' + s.first_name + ' ' + s.last_name + ' <span class="text-muted ltr">' + s.student_number + '</span></label>'; }).join('') + '</div>';
         box.querySelectorAll('.yc-retain-cb').forEach(function (cb) { cb.addEventListener('change', function () { var n = box.querySelectorAll('.yc-retain-cb:checked').length, badge = tr.querySelector('.yc-retain-count'); badge.textContent = n; badge.style.display = n ? '' : 'none'; }); });
       });
     });

@@ -9,8 +9,8 @@
   <div class="card-header flex-wrap gap-2">
     <form class="d-flex gap-2 flex-wrap" method="get">
       <input class="form-control form-control-sm" name="q" value="<%= q %>" placeholder="نام، موبایل، کد ملی…" style="min-width:220px">
-      <select class="form-select form-select-sm w-auto" name="status"><option value="">همهٔ وضعیت‌ها</option><option value="active" <%= status === 'active' ? 'selected' : '' %>>فعال</option><option value="inactive" <%= status === 'inactive' ? 'selected' : '' %>>غیرفعال</option></select>
-      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><option value="active" <%= status === 'active' ? 'selected' : '' %>>فعال</option><option value="inactive" <%= status === 'inactive' ? 'selected' : '' %>>غیرفعال</option></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
     </form>
     <div class="d-flex gap-2">
       <% if (enabled('parents.export')) { %><a href="/parents/export.csv" class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-csv me-1"></i>CSV</a><% } %>

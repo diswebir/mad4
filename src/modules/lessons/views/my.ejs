@@ -2,7 +2,7 @@
 <% if (!s) { %><div class="card"><div class="card-body"><%- include('partials/empty', { message: 'دانش‌آموزی به حساب شما متصل نیست.' }) %></div></div><% } else { %>
 <div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
   <% if (currentUser.role === 'parent') { %><input type="hidden" name="child" value="<%= s.id %>"><% } %>
-  <div class="col-md-3"><select class="form-select form-select-sm" name="subject_id"><option value="">همهٔ درس‌ها</option><% subjects.forEach(function (x) { %><option value="<%= x.id %>" <%= String(f.subject_id) === String(x.id) ? 'selected' : '' %>><%= x.title %></option><% }); %></select></div>
+  <div class="col-md-3"><select class="form-select form-select-sm" name="subject_id" aria-label="درس"><option value="">همهٔ درس‌ها</option><% subjects.forEach(function (x) { %><option value="<%= x.id %>" <%= String(f.subject_id) === String(x.id) ? 'selected' : '' %>><%= x.title %></option><% }); %></select></div>
   <div class="col-md-2"><input class="form-control form-control-sm jdate" name="from" value="<%= J.toPersianDigits(f.from) %>" placeholder="از تاریخ"></div>
   <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
   <div class="col-md-5 fs-7 text-secondary text-md-end"><%= J.toPersianDigits(total) %> جلسه</div>

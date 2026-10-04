@@ -7,8 +7,8 @@
 <% if (!isTeacher) { %>
 <div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
   <input type="hidden" name="date" value="<%= jdate %>">
-  <div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div>
-  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="date" value="<%= J.toPersianDigits(jdate) %>"></div>
+  <div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id" aria-label="معلم"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div>
+  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="date" value="<%= J.toPersianDigits(jdate) %>" aria-label="تاریخ"></div>
   <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
   <div class="col-md-5 fs-7 text-secondary text-md-end">وضعیت ثبت گزارش تدریس توسط معلمان در این روز</div>
 </form></div></div>
@@ -29,7 +29,7 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="class_subject_id" value="<%= s.class_subject_id %>"><input type="hidden" name="date" value="<%= jdate %>"><input type="hidden" name="period" value="<%= s.period %>">
       <div class="row g-2">
         <div class="col-12"><input class="form-control form-control-sm" name="topic" value="<%= l ? l.topic : '' %>" placeholder="موضوع تدریس این جلسه *" required maxlength="200"></div>
-        <% if (enabled('lessons.syllabus') && syl.length) { %><div class="col-md-6"><select class="form-select form-select-sm" name="syllabus_item_id"><option value="">سرفصل مرتبط…</option><% syl.forEach(function (i) { %><option value="<%= i.id %>" <%= l && l.syllabus_item_id === i.id ? 'selected' : '' %>><%= i.sort_order ? J.toPersianDigits(i.sort_order) + '. ' : '' %><%= i.title %></option><% }); %></select></div><% } %>
+        <% if (enabled('lessons.syllabus') && syl.length) { %><div class="col-md-6"><select class="form-select form-select-sm" name="syllabus_item_id" aria-label="سرفصل"><option value="">سرفصل مرتبط…</option><% syl.forEach(function (i) { %><option value="<%= i.id %>" <%= l && l.syllabus_item_id === i.id ? 'selected' : '' %>><%= i.sort_order ? J.toPersianDigits(i.sort_order) + '. ' : '' %><%= i.title %></option><% }); %></select></div><% } %>
         <div class="<%= enabled('lessons.syllabus') && syl.length ? 'col-md-6' : 'col-12' %>"><input class="form-control form-control-sm" name="homework" value="<%= l ? (l.homework || '') : '' %>" placeholder="تکلیف (اختیاری)" maxlength="1000"></div>
         <div class="col-12"><textarea class="form-control form-control-sm" name="description" rows="1" placeholder="شرح فعالیت‌ها (اختیاری)" maxlength="2000"><%= l ? (l.description || '') : '' %></textarea></div>
       </div>

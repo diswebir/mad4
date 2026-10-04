@@ -17,7 +17,7 @@ class MysqlDriver {
   normalizeParams(params) {
     if (!params) return [];
     return params.map((p) => {
-      if (p === undefined) return null;
+      if (p === undefined || (typeof p === 'number' && Number.isNaN(p))) return null;
       if (typeof p === 'boolean') return p ? 1 : 0;
       if (typeof p === 'object' && p !== null && !(p instanceof Date) && !Buffer.isBuffer(p)) return JSON.stringify(p);
       return p;

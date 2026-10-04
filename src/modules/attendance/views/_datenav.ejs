@@ -1,8 +1,8 @@
 <form method="get" class="d-flex align-items-center gap-2 flex-wrap" data-auto-submit>
   <% Object.keys(typeof extra !== 'undefined' ? extra : {}).forEach(function (k) { %><input type="hidden" name="<%= k %>" value="<%= extra[k] %>"><% }); %>
-  <a class="btn btn-light btn-sm" href="?<%= new URLSearchParams(Object.assign({}, typeof extra !== 'undefined' ? extra : {}, { date: J.addDays(date, -1) })).toString() %>"><i class="bi bi-chevron-right"></i></a>
-  <input class="form-control form-control-sm jdate text-center" style="width:130px" name="date" value="<%= J.formatDate(date) %>">
-  <a class="btn btn-light btn-sm" href="?<%= new URLSearchParams(Object.assign({}, typeof extra !== 'undefined' ? extra : {}, { date: J.addDays(date, 1) })).toString() %>"><i class="bi bi-chevron-left"></i></a>
+  <a class="btn btn-light btn-sm" href="?<%= new URLSearchParams(Object.assign({}, typeof extra !== 'undefined' ? extra : {}, { date: J.addDays(date, -1) })).toString() %>" aria-label="قبلی" title="قبلی"><i class="bi bi-chevron-right"></i></a>
+  <input class="form-control form-control-sm jdate text-center" style="width:130px" name="date" value="<%= J.formatDate(date) %>" aria-label="تاریخ">
+  <a class="btn btn-light btn-sm" href="?<%= new URLSearchParams(Object.assign({}, typeof extra !== 'undefined' ? extra : {}, { date: J.addDays(date, 1) })).toString() %>" aria-label="بعدی" title="بعدی"><i class="bi bi-chevron-left"></i></a>
   <span class="fs-7 text-secondary"><%= J.formatLong(date) %></span>
   <% if (date !== J.todayISO()) { %><a class="btn btn-outline-secondary btn-sm" href="?<%= new URLSearchParams(Object.assign({}, typeof extra !== 'undefined' ? extra : {}, { date: J.todayISO() })).toString() %>">امروز</a><% } %>
 </form>

@@ -2,8 +2,8 @@
 <div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
   <div class="col-md-2"><input class="form-control form-control-sm jdate" name="from" value="<%= J.toPersianDigits(from) %>" placeholder="از"></div>
   <div class="col-md-2"><input class="form-control form-control-sm jdate" name="to" value="<%= J.toPersianDigits(to) %>" placeholder="تا"></div>
-  <% if (!isTeacher) { %><div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div><% } %>
-  <div class="col-md-2"><select class="form-select form-select-sm" name="class_id"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+  <% if (!isTeacher) { %><div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id" aria-label="معلم"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div><% } %>
+  <div class="col-md-2"><select class="form-select form-select-sm" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
   <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
 </form></div></div>
 <div class="row g-3 mb-3">

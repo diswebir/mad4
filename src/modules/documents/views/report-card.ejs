@@ -15,7 +15,7 @@
   </div>
   <div class="col-lg-4">
     <div class="card mb-3"><div class="card-body">
-      <form method="get" class="mb-3"><label class="form-label fs-7">نوبت</label><select class="form-select form-select-sm" name="term_id" data-auto-submit><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' — نهایی' : '' %></option><% }); %></select></form>
+      <form method="get" class="mb-3"><label class="form-label fs-7" for="f_term_id">نوبت</label><select class="form-select form-select-sm" name="term_id" data-auto-submit id="f_term_id"><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' — نهایی' : '' %></option><% }); %></select></form>
       <% if (issued) { %>
         <div class="alert alert-success py-2 fs-7 mb-2"><i class="bi bi-check-circle me-1"></i>برای این نوبت کارنامهٔ رسمی با شمارهٔ <strong class="ltr d-inline-block"><%= J.toPersianDigits(issued.serial) %></strong> در <%= J.formatDate(issued.issued_at) %> صادر شده است.</div>
         <a href="/documents/<%= issued.id %>" target="_blank" class="btn btn-primary w-100 mb-2"><i class="bi bi-printer me-1"></i>چاپ نسخهٔ صادرشده</a>

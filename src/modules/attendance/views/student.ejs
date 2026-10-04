@@ -5,7 +5,7 @@
   <div class="col-lg-7">
     <div class="card mb-3">
       <div class="card-header"><h6><i class="bi bi-calendar3 me-1"></i>تقویم <%= J.MONTHS[jm - 1] %> <%= J.toPersianDigits(jy) %></h6>
-        <div class="d-flex gap-1"><% var pm = jm === 1 ? 12 : jm - 1, py = jm === 1 ? jy - 1 : jy, nm = jm === 12 ? 1 : jm + 1, ny = jm === 12 ? jy + 1 : jy; %><a class="btn btn-sm btn-light" href="?jy=<%= py %>&jm=<%= pm %>"><i class="bi bi-chevron-right"></i></a><a class="btn btn-sm btn-light" href="?jy=<%= ny %>&jm=<%= nm %>"><i class="bi bi-chevron-left"></i></a></div></div>
+        <div class="d-flex gap-1"><% var pm = jm === 1 ? 12 : jm - 1, py = jm === 1 ? jy - 1 : jy, nm = jm === 12 ? 1 : jm + 1, ny = jm === 12 ? jy + 1 : jy; %><a class="btn btn-sm btn-light" href="?jy=<%= py %>&jm=<%= pm %>" aria-label="قبلی" title="قبلی"><i class="bi bi-chevron-right"></i></a><a class="btn btn-sm btn-light" href="?jy=<%= ny %>&jm=<%= nm %>" aria-label="بعدی" title="بعدی"><i class="bi bi-chevron-left"></i></a></div></div>
       <div class="card-body">
         <div class="att-calendar">
           <% J.WEEKDAYS_SHORT.forEach(function (w) { %><div class="cal-head"><%= w %></div><% }); %>

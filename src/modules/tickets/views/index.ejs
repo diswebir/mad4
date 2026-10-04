@@ -26,9 +26,9 @@
 <form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
   <input type="hidden" name="status" value="<%= f.status %>"><input type="hidden" name="mine" value="<%= f.mine %>"><% if (f.sla) { %><input type="hidden" name="sla" value="<%= f.sla %>"><% } %>
   <input class="form-control form-control-sm" style="max-width:260px" name="q" value="<%= f.q %>" placeholder="جستجو: کد، موضوع، نام…">
-  <% if (enabled('tickets.categories')) { %><select class="form-select form-select-sm w-auto" name="category" data-auto-submit><option value="">همهٔ دسته‌ها</option><% Object.keys(CATEGORIES).forEach(function (k) { %><option value="<%= k %>" <%= f.category === k ? 'selected' : '' %>><%= CATEGORIES[k] %></option><% }); %></select><% } %>
-  <% if (enabled('tickets.priority')) { %><select class="form-select form-select-sm w-auto" name="priority" data-auto-submit><option value="">همهٔ اولویت‌ها</option><% Object.keys(utils.PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= f.priority === k ? 'selected' : '' %>><%= utils.PRIORITIES[k] %></option><% }); %></select><% } %>
-  <button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+  <% if (enabled('tickets.categories')) { %><select class="form-select form-select-sm w-auto" name="category" data-auto-submit aria-label="دسته"><option value="">همهٔ دسته‌ها</option><% Object.keys(CATEGORIES).forEach(function (k) { %><option value="<%= k %>" <%= f.category === k ? 'selected' : '' %>><%= CATEGORIES[k] %></option><% }); %></select><% } %>
+  <% if (enabled('tickets.priority')) { %><select class="form-select form-select-sm w-auto" name="priority" data-auto-submit aria-label="اولویت"><option value="">همهٔ اولویت‌ها</option><% Object.keys(utils.PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= f.priority === k ? 'selected' : '' %>><%= utils.PRIORITIES[k] %></option><% }); %></select><% } %>
+  <button class="btn btn-sm btn-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
   <% if (f.q || f.category || f.priority) { %><a href="?status=<%= f.status %>" class="btn btn-sm btn-light">پاک کردن</a><% } %>
 </div></form>
 <div class="card table-card">

@@ -4,17 +4,17 @@
     <h5 class="mb-1"><i class="bi bi-shield-check me-1"></i>تأیید کد و تعیین رمز جدید</h5>
     <p class="text-secondary fs-7 mb-3">اگر اطلاعات وارد شده صحیح باشد، کد ۶ رقمی به <%= channel === 'sms' ? 'شمارهٔ' : 'ایمیل' %> <span class="ltr d-inline-block fw-bold"><%= J.toPersianDigits(hint || '') %></span> ارسال شده است. اعتبار کد <%= J.toPersianDigits(ttl) %> دقیقه است.</p>
     <div class="mb-3">
-      <label class="form-label">کد تأیید</label>
-      <input class="form-control ltr text-center fs-4" name="code" inputmode="numeric" maxlength="6" pattern="[0-9۰-۹]{6}" required autofocus autocomplete="one-time-code" style="letter-spacing:8px">
+      <label class="form-label" for="f_code">کد تأیید</label>
+      <input class="form-control ltr text-center fs-4" name="code" inputmode="numeric" maxlength="6" pattern="[0-9۰-۹]{6}" required autofocus autocomplete="one-time-code" style="letter-spacing:8px" id="f_code">
     </div>
     <div class="mb-3">
-      <label class="form-label">رمز عبور جدید</label>
-      <input class="form-control ltr" type="password" name="password" minlength="<%= minLen %>" required autocomplete="new-password">
+      <label class="form-label" for="f_password">رمز عبور جدید</label>
+      <input class="form-control ltr" type="password" name="password" minlength="<%= minLen %>" required autocomplete="new-password" id="f_password">
       <div class="form-text">حداقل <%= J.toPersianDigits(minLen) %> کاراکتر</div>
     </div>
     <div class="mb-3">
-      <label class="form-label">تکرار رمز عبور جدید</label>
-      <input class="form-control ltr" type="password" name="password2" minlength="<%= minLen %>" required autocomplete="new-password">
+      <label class="form-label" for="f_password2">تکرار رمز عبور جدید</label>
+      <input class="form-control ltr" type="password" name="password2" minlength="<%= minLen %>" required autocomplete="new-password" id="f_password2">
     </div>
     <button class="btn btn-primary w-100 py-2"><i class="bi bi-check2-circle me-1"></i>تغییر رمز عبور</button>
   </form>
