@@ -1,0 +1,4030 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرسه‌یار — سامانه جامع، هوشمند و یکپارچه مدیریت مدارس ایران</title>
+<meta name="description" content="مدرسه‌یار: پلتفرم ابری و ماژولار مدیریت مدرسه با ۳۲ ماژول و ۲۷۶ قابلیت پیشرفته. نسخه لایت با بالاترین کنتراست، تفکیک مزایا برای هر نقش، مدیریت دسترسی‌ها و مدیریت ۳۶۰ درجه تمام بخش‌های مدرسه.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   طراحی پیشرفته سیستم دیزاین، وایت‌اسپیس و تایپوگرافی مدرسه‌یار (UI/UX Mastery)
+   نسخه: 2.0.0
+   ========================================================================== */
+
+:root, [data-theme="light"] {
+  --primary: #4F46E5;
+  --primary-glow: rgba(79, 70, 229, 0.16);
+  --primary-light: #6366F1;
+  --primary-dark: #3730A3;
+  --primary-subtle: #EEF2FF;
+  
+  --secondary: #0891B2;
+  --secondary-glow: rgba(8, 145, 178, 0.14);
+  --secondary-subtle: #ECFEFF;
+  
+  --accent: #D97706;
+  --accent-glow: rgba(217, 119, 6, 0.12);
+  --accent-subtle: #FFFBEB;
+  
+  --success: #059669;
+  --success-glow: rgba(5, 150, 105, 0.14);
+  --success-subtle: #ECFDF5;
+  
+  --danger: #DC2626;
+  --danger-subtle: #FEF2F2;
+  --purple: #9333EA;
+  --purple-subtle: #FAF5FF;
+  
+  /* سطوح و لایه‌ها با بالاترین خوانایی و آرامش بصری */
+  --bg-main: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --bg-glass-strong: rgba(255, 255, 255, 0.98);
+  
+  /* خطوط و کادربندی‌های نرم و چشم‌نواز */
+  --border-glass: #E2E8F0;
+  --border-glass-hover: #CBD5E1;
+  --border-card: #E2E8F0;
+  --border-accent: #C7D2FE;
+  
+  /* متون و عناوین با کنتراست استاندارد WCAG AAA */
+  --text-main: #0F172A;       /* عناوین: تیره و بااقتدار (کنتراست ۱۵:۱) */
+  --text-body: #1E293B;       /* متن‌های اصلی: خوانا و باکنتراست (۱۲:۱) */
+  --text-muted: #475569;      /* توضیحات: آرام‌بخش چشم و خوانا (۶.۲:۱) */
+  --text-dim: #64748B;        /* برچسب‌های فرعی (۴.۸:۱) */
+  
+  /* گرادیانت‌های اختصاصی */
+  --grad-primary: linear-gradient(135deg, #4F46E5 0%, #0891B2 100%);
+  --grad-accent: linear-gradient(135deg, #D97706 0%, #DC2626 100%);
+  --grad-emerald: linear-gradient(135deg, #059669 0%, #0891B2 100%);
+  --grad-hero-bg: radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.07) 0%, transparent 45%),
+                  radial-gradient(circle at 88% 88%, rgba(8, 145, 178, 0.06) 0%, transparent 45%),
+                  radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
+  
+  --shadow-xs: 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 3px 10px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 12px 28px -6px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.02);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.08), 0 8px 20px -4px rgba(15, 23, 42, 0.03);
+  --shadow-glow: 0 0 40px rgba(79, 70, 229, 0.12);
+  
+  --canvas-particle: rgba(79, 70, 229, 0.22);
+  --canvas-line: rgba(79, 70, 229, 0.06);
+}
+
+/* حالت تاریک (Dark Mode) استاندارد با کنتراست عمیق */
+[data-theme="dark"] {
+  --primary: #6366F1;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary-light: #818CF8;
+  --primary-dark: #4338CA;
+  --primary-subtle: rgba(99, 102, 241, 0.14);
+  
+  --secondary: #06B6D4;
+  --secondary-glow: rgba(6, 182, 212, 0.3);
+  --secondary-subtle: rgba(6, 182, 212, 0.14);
+  
+  --accent: #F59E0B;
+  --accent-glow: rgba(245, 158, 11, 0.25);
+  --accent-subtle: rgba(245, 158, 11, 0.14);
+  
+  --success: #10B981;
+  --success-glow: rgba(16, 185, 129, 0.25);
+  --success-subtle: rgba(16, 185, 129, 0.14);
+  
+  --danger: #EF4444;
+  --danger-subtle: rgba(239, 68, 68, 0.14);
+  --purple: #A855F7;
+  --purple-subtle: rgba(168, 85, 247, 0.14);
+  
+  --bg-main: #060913;
+  --bg-card: #0F172A;
+  --bg-card-hover: #1E293B;
+  --bg-elevated: #111C33;
+  --bg-glass: rgba(15, 23, 42, 0.88);
+  --bg-glass-strong: rgba(15, 23, 42, 0.96);
+  
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-hover: rgba(99, 102, 241, 0.4);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(99, 102, 241, 0.25);
+  
+  --text-main: #F8FAFC;
+  --text-body: #E2E8F0;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  
+  --grad-primary: linear-gradient(135deg, #6366F1 0%, #06B6D4 100%);
+  --grad-accent: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+  --grad-emerald: linear-gradient(135deg, #10B981 0%, #06B6D4 100%);
+  --grad-hero-bg: radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                  radial-gradient(circle at 88% 88%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
+  
+  --shadow-xs: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.35);
+  --shadow-md: 0 14px 36px rgba(0,0,0,0.45);
+  --shadow-lg: 0 28px 56px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 45px rgba(99,102,241,0.22);
+  
+  --canvas-particle: rgba(165, 180, 252, 0.45);
+  --canvas-line: rgba(99, 102, 241, 0.14);
+}
+
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 9999px;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-main);
+  background-image: var(--grad-hero-bg);
+  background-attachment: fixed;
+  color: var(--text-body);
+  line-height: 2.0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+/* اسکرول‌بار نرم و شیک */
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 6px; border: 2px solid var(--bg-main); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #334155; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+a { color: inherit; text-decoration: none; transition: all 0.25s var(--ease-smooth); }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+
+/* ترنزیشن‌های ورود به صفحه با اسکرول */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s var(--ease-spring), transform 0.8s var(--ease-spring);
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#bgCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: var(--grad-primary);
+  z-index: 1200;
+  transform-origin: 0% 50%;
+  transform: scaleX(0);
+  transition: transform 0.1s linear;
+}
+
+/* ==========================================================================
+   ۲. ناوبری بالایی شناور و تمیز (Navbar)
+   ========================================================================== */
+.navbar-wrap {
+  position: fixed;
+  top: 18px;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0 1.5rem;
+}
+
+.navbar {
+  max-width: 1240px;
+  margin: 0 auto;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-pill);
+  padding: 0.75rem 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s var(--ease-smooth);
+}
+
+.navbar.scrolled {
+  background: var(--bg-glass-strong);
+  border-color: var(--border-glass-hover);
+  box-shadow: var(--shadow-md);
+  padding: 0.6rem 1.8rem;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--grad-primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px var(--primary-glow);
+  font-size: 1.4rem;
+  color: white;
+}
+
+.brand-name {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+}
+
+.brand-tag {
+  font-size:0.86rem;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--border-accent);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.35rem;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.nav-link {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  position: relative;
+  padding: 0.35rem 0;
+  white-space: nowrap;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--primary);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0%;
+  height: 2.5px;
+  background: var(--grad-primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after { width: 100%; }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.25s ease;
+}
+.theme-toggle-btn:hover {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.75rem 1.6rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.94rem;
+  transition: all 0.28s var(--ease-spring);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--grad-primary);
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.32);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(79, 70, 229, 0.45);
+  filter: brightness(1.05);
+}
+
+.btn-glass {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  box-shadow: var(--shadow-xs);
+}
+.btn-glass:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-accent {
+  background: var(--grad-accent);
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 18px rgba(217, 119, 6, 0.32);
+}
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(217, 119, 6, 0.45);
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  color: var(--text-main);
+  font-size: 1.6rem;
+  padding: 8px;
+}
+
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  right: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.6rem;
+  z-index: 999;
+  flex-direction: column;
+  gap: 1.1rem;
+  box-shadow: var(--shadow-lg);
+}
+.mobile-nav.open { display: flex; }
+.mobile-nav a { padding: 0.6rem 0; border-bottom: 1px solid var(--border-glass); font-weight: 600; }
+
+/* ==========================================================================
+   ۳. بخش هیرو لایت و باشکوه (Hero Section)
+   ========================================================================== */
+.hero-section {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10.5rem 1.5rem 6.5rem;
+}
+
+.hero-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--primary-subtle);
+  border: 1px solid var(--border-accent);
+  padding: 0.55rem 1.4rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.pulsing-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--success);
+  border-radius: 50%;
+  position: relative;
+}
+.pulsing-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: var(--success);
+  opacity: 0.4;
+  animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.hero-title {
+  font-size: clamp(2.4rem, 5.2vw, 4.2rem);
+  font-weight: 900;
+  line-height: 1.35;
+  color: var(--text-main);
+  margin-bottom: 1.8rem;
+  letter-spacing: -1px;
+}
+
+.hero-title .gradient-text {
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.hero-subtitle {
+  font-size: clamp(1.08rem, 1.8vw, 1.25rem);
+  color: var(--text-muted);
+  max-width: 820px;
+  margin: 0 auto 3.2rem;
+  line-height: 2.25;
+  font-weight: 400;
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 4.5rem;
+}
+
+.hero-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.2rem 2.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-stat-item {
+  text-align: center;
+  position: relative;
+}
+.hero-stat-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: var(--border-glass);
+}
+
+.hero-stat-number {
+  font-size: clamp(2.2rem, 3.5vw, 2.9rem);
+  font-weight: 900;
+  color: var(--text-main);
+  display: block;
+  line-height: 1.2;
+}
+
+.hero-stat-label {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   سربرگ استاندارد سکشن‌ها (Section Heads with Breathing Room)
+   ========================================================================== */
+.section-head {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 4.2rem;
+}
+
+.badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--border-accent);
+  padding: 0.4rem 1.15rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+}
+
+.section-title {
+  font-size: clamp(1.85rem, 3.2vw, 2.7rem);
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.38;
+  margin-bottom: 1rem;
+  letter-spacing: -0.5px;
+  word-break: keep-all;
+}
+
+.section-desc {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  line-height: 2.15;
+  font-weight: 400;
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   ۴. بخش نوآورانه: تفکیک منافع برای هر نقش (Role Benefits Pavilion)
+   ========================================================================== */
+.role-benefits-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.role-tabs-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 3.5rem;
+}
+
+.role-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.85rem 1.6rem;
+  white-space: nowrap;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-glass);
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.96rem;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.25s var(--ease-smooth);
+}
+
+.role-tab-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+}
+
+.role-tab-btn.active {
+  background: var(--grad-primary);
+  color: #FFFFFF !important;
+  border-color: transparent;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.38);
+}
+
+/* فریم محتوای هر نقش */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.role-benefit-pane {
+  display: none;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+.role-benefit-pane.active {
+  display: block;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* نوار تحول دغدغه قبلی vs راهکار مدرسه‌یار */
+.role-transformation-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem 2.6rem;
+  margin-bottom: 2.8rem;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.trans-col {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.trans-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.trans-col.before .trans-icon-badge {
+  background: var(--danger-subtle);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+.trans-col.after .trans-icon-badge {
+  background: var(--success-subtle);
+  color: var(--success);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.trans-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.trans-col.before .trans-label { color: var(--danger); }
+.trans-col.after .trans-label { color: var(--success); }
+
+.trans-title {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.trans-desc {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 2.05;
+  font-weight: 400;
+}
+
+/* شبکه کارت‌های مزیت با چیدمان جادار و خوانا (۲ ستونه با وایت‌اسپیس عالی) */
+.role-benefit-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 3.2rem;
+}
+
+.role-b-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 2.4rem 2.2rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s var(--ease-spring);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.role-b-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.rb-icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  margin-bottom: 1.4rem;
+}
+
+.rb-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 0.8rem;
+  line-height: 1.45;
+}
+.rb-desc {
+  font-size: 0.96rem;
+  color: var(--text-muted);
+  line-height: 2.1;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+}
+.rb-kpi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-pill);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--primary);
+  align-self: flex-start;
+}
+
+/* فریم ماک‌آپ تعاملی با حاشیه و بالشتک استاندارد */
+.mockup-showcase-divider {
+  text-align: center;
+  margin: 3.8rem auto 2.2rem;
+  max-width: 720px;
+}
+
+.mockup-showcase-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin-bottom: 0.6rem;
+}
+
+.mockup-showcase-desc {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 2.05;
+  font-weight: 400;
+}
+
+.role-mockup-frame {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  margin-top: 1rem;
+}
+
+.mockup-header-bar {
+  background: var(--bg-elevated);
+  padding: 1rem 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-glass);
+}
+.mockup-dots { display: flex; gap: 7px; }
+.mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+.mockup-dot.red { background: #EF4444; }
+.mockup-dot.yellow { background: #F59E0B; }
+.mockup-dot.green { background: #10B981; }
+
+.mockup-url-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  padding: 0.4rem 1.6rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  direction: ltr;
+  font-family: monospace;
+}
+
+.mockup-inner-padding {
+  padding: 2.5rem;
+}
+
+.sim-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.4rem;
+  margin-bottom: 1.8rem;
+}
+.sim-grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.8rem;
+}
+
+.sim-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.6rem;
+  position: relative;
+}
+
+.sim-card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sim-card-val {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.sim-tag {
+  display: inline-block;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  font-size:0.86rem;
+  font-weight: 700;
+}
+.sim-tag.green { background: var(--success-subtle); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.2); }
+.sim-tag.amber { background: var(--accent-subtle); color: var(--accent); border: 1px solid rgba(217, 119, 6, 0.2); }
+.sim-tag.indigo { background: var(--primary-subtle); color: var(--primary); border: 1px solid rgba(79, 70, 229, 0.2); }
+
+.sim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+.sim-table th, .sim-table td {
+  padding: 1rem 0.8rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border-glass);
+}
+.sim-table th { color: var(--text-muted); font-weight: 700; }
+.sim-table td { color: var(--text-body); }
+
+/* ==========================================================================
+   ۵. نقاط عطف حیاتی و تمایزهای رقابتی (Killer Features Showcase - 8 Cards)
+   ========================================================================== */
+.killer-features-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.killer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.6rem;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.killer-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  padding: 2.8rem 2.6rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.35s var(--ease-spring);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.killer-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.killer-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--primary-subtle);
+  border: 1px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  margin-bottom: 1.4rem;
+  color: var(--primary);
+}
+
+.killer-title {
+  font-size: 1.38rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.killer-desc {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 2.15;
+  margin-bottom: 1.8rem;
+  font-weight: 400;
+}
+
+.killer-specs-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.killer-specs-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: var(--text-body);
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.check-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--success-subtle);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.card-live-preview {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.4rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* کارت دانش‌آموز نمونه */
+.id-card-demo {
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  border: 1px solid #C7D2FE;
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: var(--text-main);
+  display: flex;
+  gap: 1.4rem;
+  align-items: center;
+}
+.id-photo-placeholder {
+  width: 78px;
+  height: 94px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  box-shadow: var(--shadow-xs);
+}
+
+/* ==========================================================================
+   ۶. موتور جستجوی آنی تمام ۲۷۶ قابلیت و ۳۲ ماژول (Live Feature Explorer)
+   ========================================================================== */
+.feature-search-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.search-box-wrap {
+  max-width: 880px;
+  margin: 0 auto 2.2rem;
+  position: relative;
+}
+
+.search-input-field {
+  width: 100%;
+  padding: 1.35rem 4.4rem 1.35rem 3.8rem;
+  background: var(--bg-card);
+  border: 2px solid var(--border-glass);
+  border-radius: var(--radius-pill);
+  color: var(--text-main);
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.search-input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.16);
+  outline: none;
+}
+
+.search-icon-btn {
+  position: absolute;
+  right: 1.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-clear-btn {
+  position: absolute;
+  left: 1.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-elevated);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+.search-clear-btn:hover {
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.quick-filter-pills {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 1060px;
+  margin: 0 auto 2.6rem;
+}
+
+.filter-pill {
+  padding: 0.55rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-pill);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.25s var(--ease-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.filter-pill:hover, .filter-pill.active {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-size:0.86rem;
+  font-weight: 800;
+  transition: all 0.25s ease;
+}
+
+.filter-pill.active .pill-count {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.search-meta-bar {
+  max-width: 1260px;
+  margin: 0 auto 2rem;
+  padding: 1.1rem 1.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.search-counter-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pulse-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseDotAnim 2s infinite;
+}
+
+@keyframes pulseDotAnim {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 9px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.search-legend-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.legend-dot.locked { background: #10B981; }
+.legend-dot.custom { background: #F59E0B; }
+
+.features-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+  gap: 1.8rem;
+  max-width: 1260px;
+  margin: 0 auto;
+}
+
+.feature-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem 2rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-item-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.fic-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.fic-cat-tag {
+  font-size:0.86rem;
+  font-weight: 800;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fic-status-badge {
+  font-size:0.86rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fic-status-badge.locked {
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+body.dark-mode .fic-status-badge.locked {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34D399;
+}
+
+.fic-status-badge.custom {
+  background: rgba(245, 158, 11, 0.1);
+  color: #B45309;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+body.dark-mode .fic-status-badge.custom {
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
+}
+
+.fic-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0.85rem;
+}
+
+.fic-title {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.fic-module-badge {
+  font-size:0.86rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fic-desc {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 2.05;
+  font-weight: 400;
+}
+
+.search-highlight {
+  background: #FEF08A;
+  color: #713F12;
+  font-weight: 800;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+body.dark-mode .search-highlight {
+  background: rgba(234, 179, 8, 0.35);
+  color: #FDE047;
+}
+
+.features-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 3.2rem;
+  flex-wrap: wrap;
+}
+
+.load-more-features-btn {
+  padding: 1rem 2.4rem;
+  background: linear-gradient(135deg, var(--primary) 0%, #4338CA 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: 0.98rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: inherit;
+}
+
+.load-more-features-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  filter: brightness(1.08);
+}
+
+.remaining-count-pill {
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.show-all-features-btn {
+  padding: 1rem 2rem;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.show-all-features-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+/* ==========================================================================
+   ۷. ماشین حساب هوشمند بازگشت سرمایه و صرفه‌جویی (School ROI Calculator)
+   ========================================================================== */
+.calculator-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.calc-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #EEF2FF 0%, #F0FDFA 100%);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-xl);
+  padding: 3.8rem 3.5rem;
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.8rem;
+  align-items: center;
+}
+[data-theme="dark"] .calc-wrap {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+
+.calc-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+}
+
+.calc-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.calc-slider-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.calc-slider {
+  width: 100%;
+  accent-color: var(--primary);
+  height: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.calc-results-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 2.6rem 2.4rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+.calc-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 1.3rem;
+}
+
+.calc-res-num {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: var(--success);
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   ۸. کاتالوگ جامع ۸ ستون عملیاتی و ۳۲ ماژول (32 Modules Master List)
+   ========================================================================== */
+.modules-catalog-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 2rem;
+  max-width: 1260px;
+  margin: 0 auto;
+}
+
+.pillar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem 2rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.pillar-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.pillar-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 1.6rem;
+}
+
+.pillar-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--primary-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--primary);
+}
+
+.pillar-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.module-chips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mod-chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-body);
+}
+
+.mod-chip-count {
+  font-size:0.86rem;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border-glass);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   ۹. شاخص‌ها و جدول مقایسه سرنوشت‌ساز با واقعیت‌های عملیاتی مدرسه
+   ========================================================================== */
+.comparison-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.comp-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 1240px;
+  margin: 0 auto 3.5rem;
+}
+
+.comp-impact-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem 2.2rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  transition: all 0.3s ease;
+}
+.comp-impact-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.cic-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  flex-shrink: 0;
+}
+.cic-icon.blue { background: var(--primary-subtle); color: var(--primary); border: 1px solid var(--border-accent); }
+.cic-icon.green { background: var(--success-subtle); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.2); }
+.cic-icon.amber { background: var(--accent-subtle); color: var(--accent); border: 1px solid rgba(217, 119, 6, 0.2); }
+
+.cic-val {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.cic-desc {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 2.05;
+  font-weight: 400;
+}
+
+.comp-table-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  overflow-x: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  font-size: 0.95rem;
+}
+
+.comp-table th, .comp-table td {
+  padding: 1.4rem 1.6rem;
+  border-bottom: 1px solid var(--border-glass);
+  vertical-align: top;
+  line-height: 2.0;
+}
+
+.comp-table thead th {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.comp-table thead th.featured-col {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border-top: 4px solid var(--primary);
+  font-size: 1.1rem;
+}
+
+.comp-table tbody td.featured-col {
+  background: rgba(79, 70, 229, 0.04);
+  font-weight: 700;
+  color: var(--text-main);
+  border-left: 1px solid var(--border-accent);
+  border-right: 1px solid var(--border-accent);
+}
+[data-theme="dark"] .comp-table tbody td.featured-col {
+  color: #F8FAFC;
+}
+
+.comp-table tbody tr:hover {
+  background: var(--bg-elevated);
+}
+
+.comp-feature-name {
+  font-weight: 900;
+  color: var(--text-main);
+  font-size: 1.05rem;
+  display: block;
+  margin-bottom: 4px;
+}
+.comp-feature-sub {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  line-height: 1.8;
+}
+
+.badge-yes {
+  color: var(--success);
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.9;
+}
+.badge-no {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.9;
+}
+.badge-neutral {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.9;
+}
+
+/* ==========================================================================
+   ۱۰. پرسش‌های متداول (FAQ Accordion)
+   ========================================================================== */
+.faq-section {
+  padding: 7.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.faq-container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.faq-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.3s ease;
+}
+
+.faq-item.active {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.faq-question-btn {
+  width: 100%;
+  padding: 1.6rem 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 1.12rem;
+  font-weight: 800;
+  text-align: right;
+  cursor: pointer;
+}
+
+.faq-icon-arrow {
+  transition: transform 0.3s ease;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+.faq-item.active .faq-icon-arrow {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+.faq-answer-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 2.2rem;
+  color: var(--text-body);
+  font-size: 1rem;
+  line-height: 2.2;
+}
+.faq-item.active .faq-answer-body {
+  max-height: 420px;
+  padding: 0 2.2rem 1.8rem;
+}
+
+/* ==========================================================================
+   ۱۱. فرم نهایی و فراخوان اقدام (CTA Box)
+   ========================================================================== */
+.cta-section {
+  padding: 8.5rem 1.5rem 6.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-box-glow {
+  max-width: 1040px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%);
+  border: 2px solid var(--border-accent);
+  border-radius: var(--radius-xl);
+  padding: 5rem 3.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+[data-theme="dark"] .cta-box-glow {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%);
+}
+
+.cta-box-glow h2 {
+  font-size: clamp(2.2rem, 4.4vw, 3.2rem);
+  font-weight: 900;
+  margin-bottom: 1.4rem;
+  color: var(--text-main);
+  line-height: 1.35;
+}
+
+.cta-box-glow p {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin: 0 auto 3rem;
+  line-height: 2.25;
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   ۱۲. پنجره‌های مدال تعاملی (Modals)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 600px;
+  padding: 2.8rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+.modal-overlay.open .modal-card { transform: translateY(0); }
+
+.modal-close-btn {
+  position: absolute;
+  top: 1.4rem;
+  left: 1.4rem;
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.form-group {
+  margin-bottom: 1.4rem;
+  text-align: right;
+}
+.form-label {
+  display: block;
+  font-size: 0.94rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.form-input {
+  width: 100%;
+  padding: 0.95rem 1.15rem;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 1rem;
+}
+.form-input:focus {
+  border-color: var(--primary);
+  background: #FFFFFF;
+  outline: none;
+}
+
+/* ==========================================================================
+   ۱۳. فوتر لایت (Footer)
+   ========================================================================== */
+.footer {
+  border-top: 1px solid var(--border-card);
+  background: var(--bg-card);
+  padding: 5rem 1.5rem 2.8rem;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3.5rem;
+  margin-bottom: 4rem;
+}
+
+.footer-desc {
+  color: var(--text-muted);
+  font-size: 0.96rem;
+  line-height: 2.2;
+  margin-top: 1.2rem;
+  max-width: 380px;
+  font-weight: 400;
+}
+
+.footer-col-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 1.4rem;
+  color: var(--text-main);
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.footer-links a {
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  font-weight: 500;
+}
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+.footer-bottom {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-top: 2.2rem;
+  border-top: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+}
+
+.floating-quick-action {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fab-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s ease;
+}
+.fab-btn:hover { transform: scale(1.1); }
+.fab-demo { background: var(--grad-primary); }
+.fab-top {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  color: var(--text-main);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fab-top.visible { opacity: 1; pointer-events: all; }
+
+/* ==========================================================================
+   ۱۴. رسپانسیو و بهینه‌سازی تبلت و موبایل (Responsive Excellence)
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .role-benefit-cards-grid { grid-template-columns: 1fr; }
+  .killer-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .features-results-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .hero-stats-row { grid-template-columns: repeat(2, 1fr); gap: 1.8rem; padding: 2rem; }
+  .hero-stat-item:not(:last-child)::after { display: none; }
+  .role-transformation-banner { grid-template-columns: 1fr; gap: 1.8rem; padding: 2rem; }
+  .comp-impact-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .calc-wrap { grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem; }
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+}
+
+@media (max-width: 768px) {
+  .nav-menu, .nav-actions .btn-primary { display: none; }
+  .menu-toggle { display: block; }
+  .role-benefit-cards-grid { grid-template-columns: 1fr; }
+  .sim-grid-4 { grid-template-columns: 1fr 1fr; }
+  .sim-grid-2 { grid-template-columns: 1fr; }
+  .hero-section { padding-top: 8.5rem; padding-bottom: 4rem; }
+  .hero-stats-row { grid-template-columns: 1fr 1fr; gap: 1.2rem; padding: 1.4rem; }
+  .features-results-grid { grid-template-columns: 1fr; }
+  .search-meta-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 1rem 1.2rem;
+  }
+  .search-legend-wrap { flex-wrap: wrap; gap: 12px; }
+  .quick-filter-pills { gap: 8px; }
+  .filter-pill { padding: 0.45rem 0.95rem; font-size: 0.84rem; }
+  .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .floating-quick-action { bottom: 18px; left: 18px; }
+  .calc-wrap { padding: 1.8rem; }
+  .calc-results-box { padding: 1.8rem; }
+  .cta-box-glow { padding: 3rem 1.5rem; }
+  .modal-card { padding: 2rem 1.5rem; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- نوار پیشرفت اسکرول -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- کانواس پس‌زمینه ستاره‌ها و ذرات تعاملی -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- ==========================================================================
+     ناوبری بالایی شناور لایت (Glass Navbar)
+     ========================================================================== -->
+<div class="navbar-wrap">
+  <nav class="navbar" id="mainNavbar">
+    <div class="nav-brand" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+      <div class="brand-icon">🎓</div>
+      <div>
+        <span class="brand-name">مدرسه‌یار</span>
+        <span class="brand-tag">نسخه ۱.۲.۲</span>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li><a href="#benefits" class="nav-link">مزایا</a></li>
+      <li><a href="#killer" class="nav-link">ویژگی‌ها</a></li>
+      <li><a href="#search" class="nav-link">قابلیت‌ها</a></li>
+      <li><a href="#calculator" class="nav-link">صرفه‌جویی</a></li>
+      <li><a href="#modules" class="nav-link">ماژول‌ها</a></li>
+      <li><a href="#comparison" class="nav-link">مقایسه</a></li>
+      <li><a href="#faq" class="nav-link">سوالات</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <!-- دکمه تغییر تم لایت / دارک -->
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="تغییر حالت روز و شب">
+        <span id="themeIcon">☀️</span>
+      </button>
+
+      <button class="btn btn-primary" onclick="openDemoModal()">
+        <span>درخواست دمو</span>
+        <span>←</span>
+      </button>
+    </div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="منو">☰</button>
+  </nav>
+
+  <!-- منوی ریسپانسیو موبایل -->
+  <div class="mobile-nav" id="mobileNav">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass);">
+      <span style="font-weight:800;color:var(--text-main);">تغییر تم:</span>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">☀️ / 🌙</button>
+    </div>
+    <a href="#benefits" onclick="toggleMenu()">مزایای هر نقش</a>
+    <a href="#killer" onclick="toggleMenu()">نقاط عطف سامانه</a>
+    <a href="#search" onclick="toggleMenu()">جستجو در ۲۷۶ قابلیت</a>
+    <a href="#calculator" onclick="toggleMenu()">محاسبه سودآوری</a>
+    <a href="#modules" onclick="toggleMenu()">فهرست ۳۲ ماژول</a>
+    <a href="#comparison" onclick="toggleMenu()">جدول مقایسه</a>
+    <a href="#faq" onclick="toggleMenu()">سوالات متداول</a>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="openDemoModal(); toggleMenu();">درخواست دمو رایگان</button>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     بخش هیرو نسخه لایت (Hero Section)
+     ========================================================================== -->
+<section class="hero-section" id="hero">
+  <div class="hero-container">
+    <div class="hero-pill reveal">
+      <span class="pulsing-dot"></span>
+      <span>سامانه هوشمند و یکپارچه مدیریت مدارس</span>
+    </div>
+
+    <h1 class="hero-title reveal">
+      مدیریت هوشمند مدرسه با <span class="gradient-text">«مدرسه‌یار»</span>
+    </h1>
+
+    <p class="hero-subtitle reveal">
+      پلتفرم یکپارچه مدیریت آموزشی، مالی و اداری مدارس. بدون نیاز به سرور اختصاصی، با نصب آسان روی هاست اشتراکی cPanel و دسترسی اختصاصی برای مدیر، معلمان، اولیا و دانش‌آموزان.
+    </p>
+
+    <div class="hero-cta-group reveal">
+      <button class="btn btn-primary" onclick="openDemoModal()">
+        <span>🚀 رزرو دمو و مشاوره رایگان</span>
+      </button>
+      <a href="#benefits" class="btn btn-glass">
+        <span>🎯 مزایای اختصاصی</span>
+      </a>
+      <a href="#search" class="btn btn-glass">
+        <span>⚡ جستجوی ۲۷۶ قابلیت</span>
+      </a>
+    </div>
+
+    <div class="hero-stats-row reveal">
+      <div class="hero-stat-item">
+        <span class="hero-stat-number">۳۲</span>
+        <span class="hero-stat-label">ماژول تخصصی</span>
+      </div>
+      <div class="hero-stat-item">
+        <span class="hero-stat-number">۲۷۶</span>
+        <span class="hero-stat-label">قابلیت فعال</span>
+      </div>
+      <div class="hero-stat-item">
+        <span class="hero-stat-number">۵+۱</span>
+        <span class="hero-stat-label">سطح دسترسی</span>
+      </div>
+      <div class="hero-stat-item">
+        <span class="hero-stat-number">۱۰۰٪</span>
+        <span class="hero-stat-label">تحت وب و PWA</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     بخش نوآورانه: تفکیک دقیق مزایا برای هریک از ارکان مدرسه (Role Benefits)
+     ========================================================================== -->
+<section class="role-benefits-section" id="benefits">
+  <div class="section-head reveal">
+    <span class="badge-tag">مزایای اختصاصی</span>
+    <h2 class="section-title">مزایای «مدرسه‌یار» برای ارکان مدرسه</h2>
+    <p class="section-desc">
+      هریک از ارکان مدرسه با مدرسه‌یار به بالاترین بازدهی می‌رسند. نقش مورد نظر را انتخاب کنید:
+    </p>
+  </div>
+
+  <!-- تب‌های انتخاب نقش -->
+  <div class="role-tabs-wrap reveal">
+    <button class="role-tab-btn active" onclick="switchRoleBenefit('principal', this)">
+      <span>👔</span><span>مدیران مدرسه</span>
+    </button>
+    <button class="role-tab-btn" onclick="switchRoleBenefit('teacher', this)">
+      <span>👨‍🏫</span><span>معلمان و دبیران</span>
+    </button>
+    <button class="role-tab-btn" onclick="switchRoleBenefit('staff', this)">
+      <span>💼</span><span>معاونان و کادر</span>
+    </button>
+    <button class="role-tab-btn" onclick="switchRoleBenefit('parents', this)">
+      <span>👨‍👩‍👧</span><span>والدین و اولیا</span>
+    </button>
+    <button class="role-tab-btn" onclick="switchRoleBenefit('student', this)">
+      <span>🎒</span><span>دانش‌آموزان</span>
+    </button>
+  </div>
+
+  <!-- ۱. مزایای اختصاصی مدیران -->
+  <div class="role-benefit-pane active" id="pane-principal">
+    <div class="role-transformation-banner">
+      <div class="trans-col before">
+        <div class="trans-icon-badge">❌</div>
+        <div>
+          <div class="trans-label">دغدغه و مشکل قبلی مدیر</div>
+          <div class="trans-title">سردرگمی بین چند نرم‌افزار ناهماهنگ و هزینه‌های میلیونی</div>
+          <p class="trans-desc">خرید جداگانه نرم‌افزار حسابداری، سامانه پیامک، پنل حضور و غیاب و سایت مدرسه با هزینه‌های سنگین سرور و عدم هماهنگی اطلاعات بین دفاتر.</p>
+        </div>
+      </div>
+      <div class="trans-col after">
+        <div class="trans-icon-badge">✨</div>
+        <div>
+          <div class="trans-label">تحول مدرسه‌یار</div>
+          <div class="trans-title">تسلط ۳۶۰ درجه و مدیریت تمام ارکان مدرسه در یک پنجره واحد</div>
+          <p class="trans-desc">یکپارچگی خودکار تمام بخش‌های آموزشی، مالی، پرسنلی، ارتباطی و اسناد در یک پلتفرم بدون نیاز به سرور اختصاصی و با پشتیبان‌گیری ابری.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-benefit-cards-grid">
+      <div class="role-b-card">
+        <div class="rb-icon-box">🏛️</div>
+        <h4 class="rb-title">مدیریت تمام بخش‌های مدرسه</h4>
+        <p class="rb-desc">آموزش، شهریه، معلمان، اولیا، انضباط، سلامت، کتابخانه و سرویس — همه در یک داشبورد مرکزی با جریان خودکار داده‌ها.</p>
+        <span class="rb-kpi-pill">حذف ۵ نرم‌افزار مجزا</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">🔑</div>
+        <h4 class="rb-title">کنترل ریز تمام دسترسی‌ها</h4>
+        <p class="rb-desc">بیش از ۴۰ کلید مجوز در ۶ گروه تخصصی؛ تعریف سمت‌های سفارشی (معاون، دفتردار، حسابدار) با امنیت قطعی اطلاعات.</p>
+        <span class="rb-kpi-pill">تفکیک ۱۰۰٪ وظایف کادر</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">🔒</div>
+        <h4 class="rb-title">اسناد رسمی ضدجعل و قفل نمرات</h4>
+        <p class="rb-desc">صدور گواهی اشتغال با شماره سریال و QR استعلام آنلاین + قفل نمرات نوبت و ثبت ردپای تغییرات در لاگ حسابرسی قانونی.</p>
+        <span class="rb-kpi-pill">اعتبار تام آموزش و پرورش</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📊</div>
+        <h4 class="rb-title">تصمیم‌گیری بر پایه آمار زنده</h4>
+        <p class="rb-desc">نمودارهای مقایسه میانگین نمرات کلاس‌ها، نرخ غیبت روزانه، گزارش پیشرفت بودجه‌بندی دروس و وصولی مطالبات مالی.</p>
+        <span class="rb-kpi-pill">آمار لحظه‌ای و دقیق</span>
+      </div>
+    </div>
+
+    <!-- ماک‌آپ تعاملی مدیر -->
+    
+    <div class="mockup-showcase-divider reveal">
+      <span class="badge-tag">💻 پیش‌نمایش تعاملی رابط کاربری</span>
+      <h3 class="mockup-showcase-title">پیش‌نمایش پنل مدیریت</h3>
+      <p class="mockup-showcase-desc">تسلط کامل بر فرآیندها، آمار لحظه‌ای و کارتابل تاییدات مدرسه</p>
+    </div>
+  
+    <div class="role-mockup-frame">
+      <div class="mockup-header-bar">
+        <div class="mockup-dots"><div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div></div>
+        <div class="mockup-url-bar">https://school.madresehyar.ir/admin/dashboard</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">پنل اختصاصی مدیریت مدرسه</div>
+      </div>
+      <div class="mockup-inner-padding">
+        <div class="sim-grid-4">
+          <div class="sim-card"><div class="sim-card-title"><span>کل دانش‌آموزان</span><span class="sim-tag green">فعال</span></div><div class="sim-card-val">۳۴۸ نفر</div><div style="font-size:0.86rem;color:var(--text-muted);margin-top:6px;font-weight:600;">۱۲ کلاس در ۳ پایه تحصیلی</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>حضور امروز</span><span class="sim-tag green">۹۷.۲٪</span></div><div class="sim-card-val">۳۳۸ حاضر</div><div style="font-size:0.86rem;color:var(--danger);margin-top:6px;font-weight:600;">۱۰ غایب (پیامک غیبت رفت)</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>وصولی شهریه</span><span class="sim-tag indigo">زرین‌پال</span></div><div class="sim-card-val">۸۸٪</div><div style="font-size:0.86rem;color:var(--secondary);margin-top:6px;font-weight:600;">تسویه اتوماتیک بدون کسری</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>تیکت‌های باز (SLA)</span><span class="sim-tag amber">۲ فوری</span></div><div class="sim-card-val">۴ مورد</div><div style="font-size:0.86rem;color:var(--text-muted);margin-top:6px;font-weight:600;">پاسخگویی میانگین: ۱.۴ ساعت</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+          <button class="btn btn-primary" onclick="alert('شبیه‌سازی: نوبت اول قفل شد و نمرات نهایی گردیدند.')">🔒 قفل نمرات ترم با ثبت دلیل</button>
+          <button class="btn btn-glass" onclick="openVerificationModal()">📜 صدور و استعلام زنده گواهی اشتغال</button>
+          <button class="btn btn-glass" onclick="alert('شبیه‌سازی: بکاپ رمزگذاری‌شده به WebDAV، FTP و ایمیل ارسال گردید.')">☁️ ارسال آنی بکاپ به ۳ مقصد ابری</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ۲. مزایای اختصاصی معلمان -->
+  <div class="role-benefit-pane" id="pane-teacher">
+    <div class="role-transformation-banner">
+      <div class="trans-col before">
+        <div class="trans-icon-badge">❌</div>
+        <div>
+          <div class="trans-label">دغدغه و مشکل قبلی معلم</div>
+          <div class="trans-title">اتلاف وقت با دفاتر دست‌نویس و تصحیح دستی تکالیف</div>
+          <p class="trans-desc">صرف ۲۰ دقیقه از وقت باارزش هر زنگ برای حضور و غیاب کاغذی، تصحیح برگه در منزل و تماس‌های بی‌موقع اولیا در پیام‌رسان‌های شخصی.</p>
+        </div>
+      </div>
+      <div class="trans-col after">
+        <div class="trans-icon-badge">✨</div>
+        <div>
+          <div class="trans-label">تحول مدرسه‌یار</div>
+          <div class="trans-title">حضور و غیاب در ۳ ثانیه و اتوماسیون کامل دفتر کلاسی</div>
+          <p class="trans-desc">ثبت سریع با یک کلیک «همه حاضر»، بودجه‌بندی خودکار سرفصل‌ها، ارسال پیام فقط در سامانه و تصحیح آسان تکالیف در چند دقیقه.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-benefit-cards-grid">
+      <div class="role-b-card">
+        <div class="rb-icon-box">⚡</div>
+        <h4 class="rb-title">ثبت حضور در ۳ ثانیه</h4>
+        <p class="rb-desc">دکمه جادویی «همه حاضر»؛ فقط غایب‌ها را لمس کنید! پیامک غیبت خودکار به خانواده فرستاده می‌شود و وقت کلاس حفظ می‌گردد.</p>
+        <span class="rb-kpi-pill">صرفه‌جویی ۱۵ دقیقه در هر زنگ</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📖</div>
+        <h4 class="rb-title">دفتر کلاسی و بودجه‌بندی</h4>
+        <p class="rb-desc">مشاهده جلسات امروز بر اساس برنامه هفتگی؛ ثبت سرفصل و تکلیف با یک کلیک بدون نیاز به نوشتن دستی دفاتر قطور کلاسی.</p>
+        <span class="rb-kpi-pill">حذف ۱۰۰٪ دفاتر کاغذی</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">🕒</div>
+        <h4 class="rb-title">احترام به وقت آزاد معلم</h4>
+        <p class="rb-desc">اعلام عدم‌دسترسی هفتگی برای جلوگیری از تداخل برنامه با دانشگاه یا مدارس دیگر؛ برنامه هفتگی اتوماتیک این ساعات را رعایت می‌کند.</p>
+        <span class="rb-kpi-pill">صفر درصد تداخل برنامه</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📝</div>
+        <h4 class="rb-title">کارتابل تکالیف و نمرات</h4>
+        <p class="rb-desc">دریافت فایل پاسخ‌های دانش‌آموزان، نمره‌دهی توصیفی یا نمره‌ای با ثبت بازخورد تشویقی و محاسبه خودکار نمرات مستمر کلاس.</p>
+        <span class="rb-kpi-pill">تصحیح سریع و منظم</span>
+      </div>
+    </div>
+
+    <!-- ماک‌آپ تعاملی معلم -->
+    
+    <div class="mockup-showcase-divider reveal">
+      <span class="badge-tag">💻 پیش‌نمایش تعاملی رابط کاربری</span>
+      <h3 class="mockup-showcase-title">پیش‌نمایش پنل معلمان</h3>
+      <p class="mockup-showcase-desc">ثبت سریع نمرات، بودجه‌بندی تدریس و حضور و غیاب کلاسی</p>
+    </div>
+  
+    <div class="role-mockup-frame">
+      <div class="mockup-header-bar">
+        <div class="mockup-dots"><div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div></div>
+        <div class="mockup-url-bar">https://school.madresehyar.ir/teacher/today-classes</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">پنل اختصاصی دبیران</div>
+      </div>
+      <div class="mockup-inner-padding">
+        <div style="background:var(--bg-elevated);border:1px solid var(--border-glass);padding:1.4rem;border-radius:12px;margin-bottom:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <span style="font-weight:900;color:var(--text-main);font-size:1.1rem;">تدریس امروز: جلسه دهم شیمی ۱ (کلاس دهم تجربی الف)</span>
+            <button class="btn btn-primary" onclick="alert('حضور همه ۲۸ دانش‌آموز در ۳ ثانیه ثبت شد!')">⚡ کلیک ثبت «همه حاضر»</button>
+          </div>
+          <p style="font-size:0.9rem;color:var(--text-muted);">سرفصل فعال: واکنش‌های اکسایش-کاهش و موازنه‌سازی معادلات شیمیایی • تکلیف: حل مسائل صفحه ۴۸</p>
+        </div>
+        <div class="sim-grid-4">
+          <div class="sim-card"><div class="sim-card-title"><span>ساعات تدریس</span></div><div class="sim-card-val">۲۲ ساعت</div><div style="font-size:0.86rem;color:var(--success);font-weight:700;">بدون زنگ خالی نامناسب</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>تکالیف جدید</span></div><div class="sim-card-val">۱۴ پاسخ</div><div style="font-size:0.86rem;color:var(--accent);font-weight:700;">در انتظار تایید و نمره</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>پیشرفت بودجه‌بندی</span></div><div class="sim-card-val">۸۴٪</div><div style="font-size:0.86rem;color:var(--secondary);font-weight:700;">مطابق با تقویم آموزشی</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>هشدار سلامت کلاس</span></div><div class="sim-card-val">۲ دانش‌آموز</div><div style="font-size:0.86rem;color:var(--danger);font-weight:700;">حساسیت به گرد گچ و داروی خاص</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ۳. مزایای اختصاصی معاونان و کادر اجرایی -->
+  <div class="role-benefit-pane" id="pane-staff">
+    <div class="role-transformation-banner">
+      <div class="trans-col before">
+        <div class="trans-icon-badge">❌</div>
+        <div>
+          <div class="trans-label">دغدغه و مشکل قبلی معاون</div>
+          <div class="trans-title">ترافیک شدید ثبت‌نام تابستان و گم شدن پرونده‌ها</div>
+          <p class="trans-desc">صف‌های طولانی اولیا در مدرسه، پیگیری دستی گواهی‌های غیبت، صدور دستی کارنامه‌ها و چالش ثبت تاخیرهای صبحگاهی.</p>
+        </div>
+      </div>
+      <div class="trans-col after">
+        <div class="trans-icon-badge">✨</div>
+        <div>
+          <div class="trans-label">تحول مدرسه‌یار</div>
+          <div class="trans-title">اتوماسیون کامل جذب، انضباط و صدور آنی مدارک رسمی</div>
+          <p class="trans-desc">پیش‌ثبت‌نام آنلاین اینترنتی، محاسبه خودکار نمرات انضباطی، صدور کارت بارکددار و رسیدگی سریع به پرونده‌ها با تفکیک دقیق وظایف شغلی.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-benefit-cards-grid">
+      <div class="role-b-card">
+        <div class="rb-icon-box">📋</div>
+        <h4 class="rb-title">پیش‌ثبت‌نام اینترنتی (/apply)</h4>
+        <p class="rb-desc">خانواده‌ها مدارک را آنلاین بارگذاری کرده و کد رهگیری پیامکی دریافت می‌کنند؛ معاون با ۱ کلیک پرونده را پذیرش و کلاس‌بندی می‌کند.</p>
+        <span class="rb-kpi-pill">حذف ۹۰٪ مراجعات حضوری</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">⚖️</div>
+        <h4 class="rb-title">انضباط و تشویق با پیامک</h4>
+        <p class="rb-desc">ثبت تاخیر و موارد انضباطی با نمره منفی/مثبت؛ ارسال پیامک آنی به والدین و استخراج رتبه انضباطی ماهانه کلاس در یک ثانیه.</p>
+        <span class="rb-kpi-pill">کنترل ۱۰۰٪ نظم مدرسه</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">🪪</div>
+        <h4 class="rb-title">کارت هوشمند و اسکن بارکد</h4>
+        <p class="rb-desc">چاپ آنی کارت شناسایی دانش‌آموز مجهز به بارکد Code 128 استاندارد و QR استعلام اصالت جهت استفاده در کتابخانه و ورود/خروج.</p>
+        <span class="rb-kpi-pill">شناسایی فوری دانش‌آموز</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📅</div>
+        <h4 class="rb-title">کارتابل مرخصی پرسنل</h4>
+        <p class="rb-desc">ثبت آنلاین درخواست مرخصی ساعتی و روزانه توسط دبیران و کادر اداری، محاسبه مانده سقف سالانه و گردش کار تایید سیستمی.</p>
+        <span class="rb-kpi-pill">حذف مکاتبات کاغذی</span>
+      </div>
+    </div>
+
+    <!-- ماک‌آپ تعاملی معاون -->
+    
+    <div class="mockup-showcase-divider reveal">
+      <span class="badge-tag">💻 پیش‌نمایش تعاملی رابط کاربری</span>
+      <h3 class="mockup-showcase-title">پیش‌نمایش پنل معاونت</h3>
+      <p class="mockup-showcase-desc">پایش غیبت‌ها، موارد انضباطی و ارسال تجمیعی پیامک به اولیا</p>
+    </div>
+  
+    <div class="role-mockup-frame">
+      <div class="mockup-header-bar">
+        <div class="mockup-dots"><div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div></div>
+        <div class="mockup-url-bar">https://school.madresehyar.ir/staff/admissions-queue</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">پنل معاونت آموزشی و اجرایی</div>
+      </div>
+      <div class="mockup-inner-padding">
+        <div class="sim-grid-4">
+          <div class="sim-card"><div class="sim-card-title"><span>پیش‌ثبت‌نام جدید</span><span class="sim-tag indigo">اینترنتی</span></div><div class="sim-card-val">۲۶ مورد</div><div style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">مدارک و شناسنامه ضمیمه شد</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>درخواست‌های موجه‌سازی</span></div><div class="sim-card-val">۵ گواهی</div><div style="font-size:0.86rem;color:var(--accent);font-weight:600;">پیوست گواهی پزشک ارسال شد</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>اسناد صادرشده</span></div><div class="sim-card-val">۱۴۲ سند</div><div style="font-size:0.86rem;color:var(--success);font-weight:600;">سریال‌دار و مجهز به QR</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>سرویس مدرسه</span></div><div class="sim-card-val">۶ مسیر</div><div style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">لیست سرنشینان تکمیل است</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ۴. مزایای اختصاصی اولیا و والدین -->
+  <div class="role-benefit-pane" id="pane-parents">
+    <div class="role-transformation-banner">
+      <div class="trans-col before">
+        <div class="trans-icon-badge">❌</div>
+        <div>
+          <div class="trans-label">دغدغه و مشکل قبلی والدین</div>
+          <div class="trans-title">بی‌خبری از وضعیت فرزند و دغدغه حضور و شهریه</div>
+          <p class="trans-desc">اطلاع نیافتن به موقع از غیبت فرزند، غافلگیر شدن در پایان ترم با نمرات ضعیف، مراجعه حضوری مکرر برای پرداخت اقساط شهریه و سردرگمی والدینی که ۲ فرزند دارند.</p>
+        </div>
+      </div>
+      <div class="trans-col after">
+        <div class="trans-icon-badge">✨</div>
+        <div>
+          <div class="trans-label">تحول مدرسه‌یار</div>
+          <div class="trans-title">شفافیت کامل، پیامک آنی و پرداخت آنلاین با یک کلیک</div>
+          <p class="trans-desc">سوئیچ آسان چندفرزندی با یک شماره، پیامک لحظه‌ای غیبت، پرداخت امن اقساط با درگاه زرین‌پال و اطلاع هر روزه از تکالیف و کارنامه فرزند.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-benefit-cards-grid">
+      <div class="role-b-card">
+        <div class="rb-icon-box">👨‍👧‍👦</div>
+        <h4 class="rb-title">پنل چندفرزندی هوشمند</h4>
+        <p class="rb-desc">با همان یک شماره موبایل وارد شوید و به راحتی با یک لمس بین پرونده «علی در دهم» و «سارا در دبستان» جابجا شوید.</p>
+        <span class="rb-kpi-pill">۱ حساب برای تمام فرزندان</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📱</div>
+        <h4 class="rb-title">پیامک آنی غیبت و انضباط</h4>
+        <p class="rb-desc">به محض غیبت یا تاخیر فرزند در هر زنگ، سیستم پیامک اطلاع‌رسانی می‌فرستد تا خیال خانواده از سلامت فرزند آسوده باشد.</p>
+        <span class="rb-kpi-pill">آگاهی فوری خانواده</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">💳</div>
+        <h4 class="rb-title">پرداخت آنلاین شهریه (زرین‌پال)</h4>
+        <p class="rb-desc">مشاهده اقساط، مانده حساب و پرداخت امن با کارت بانکی در ۲۴ ساعت شبانه‌روز با صدور آنی رسید چاپی و کسر از بدهی.</p>
+        <span class="rb-kpi-pill">بدون مراجعه به بانک</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📈</div>
+        <h4 class="rb-title">کارنامه ماهانه و تکالیف فردا</h4>
+        <p class="rb-desc">مشاهده پیشرفت درسی، نمرات آزمون‌ها، تکالیف تعیین‌شده برای فردا و ارسال پیام مستقیم به کادر مدرسه بدون وقت‌گذرانی در شلوغی.</p>
+        <span class="rb-kpi-pill">نظارت مداوم والدین</span>
+      </div>
+    </div>
+
+    <!-- ماک‌آپ تعاملی اولیا -->
+    
+    <div class="mockup-showcase-divider reveal">
+      <span class="badge-tag">💻 پیش‌نمایش تعاملی رابط کاربری</span>
+      <h3 class="mockup-showcase-title">پیش‌نمایش پنل اولیا</h3>
+      <p class="mockup-showcase-desc">مشاهده وضعیت درسی، پرداخت شهریه و ارتباط مستقیم با مدرسه</p>
+    </div>
+  
+    <div class="role-mockup-frame">
+      <div class="mockup-header-bar">
+        <div class="mockup-dots"><div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div></div>
+        <div class="mockup-url-bar">https://school.madresehyar.ir/parent/portal</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">پنل اختصاصی خانواده‌ها</div>
+      </div>
+      <div class="mockup-inner-padding">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);padding:1rem 1.4rem;border-radius:12px;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:900;color:var(--text-main);">آقای حسینی عزیز، فرزند خود را انتخاب کنید:</div>
+            <div style="font-size:0.82rem;color:var(--text-muted);">جابجایی سریع بین فرزندان بدون نیاز به خروج از حساب</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" style="padding:0.45rem 1.1rem;font-size:0.85rem;">علی حسینی (دهم ریاضی)</button>
+            <button class="btn btn-glass" style="padding:0.45rem 1.1rem;font-size:0.85rem;">نازنین حسینی (ششم دبستان)</button>
+          </div>
+        </div>
+        <div class="sim-grid-4">
+          <div class="sim-card"><div class="sim-card-title"><span>حضور امروز علی</span></div><div class="sim-card-val" style="color:var(--success);">حاضر سر کلاس</div><div style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">ورود به مدرسه: ۰۷:۳۲</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>معدل نوبت</span></div><div class="sim-card-val">۱۹.۴۵</div><div style="font-size:0.86rem;color:var(--secondary);font-weight:700;">رتبه ۲ کلاس ۳۰ نفره</div></div>
+          <div class="sim-card"><div class="sim-card-title"><span>مانده قسط شهریه</span></div><div class="sim-card-val">۳,۲۰۰,۰۰۰</div><div style="font-size:0.86rem;color:var(--accent);font-weight:700;">سررسید: ۳۰ اردیبهشت</div></div>
+          <div class="sim-card" style="display:flex;align-items:center;justify-content:center;">
+            <button class="btn btn-accent" style="width:100%;font-size:0.92rem;" onclick="alert('اتصال به درگاه زرین‌پال: پرداخت با موفقیت انجام شد!')">💳 پرداخت آنلاین زرین‌پال</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ۵. مزایای اختصاصی دانش‌آموزان -->
+  <div class="role-benefit-pane" id="pane-student">
+    <div class="role-transformation-banner">
+      <div class="trans-col before">
+        <div class="trans-icon-badge">❌</div>
+        <div>
+          <div class="trans-label">دغدغه و مشکل قبلی دانش‌آموز</div>
+          <div class="trans-title">فراموشی تکالیف، گم شدن کارت شناسایی و استرس نمرات</div>
+          <p class="trans-desc">بی‌خبری از مهلت ارسال تکالیف، گم شدن کارت فیزیکی برای کتابخانه، عدم دسترسی به نمرات و خجالت از بیان مشکلات با مشاور حضوری.</p>
+        </div>
+      </div>
+      <div class="trans-col after">
+        <div class="trans-icon-badge">✨</div>
+        <div>
+          <div class="trans-label">تحول مدرسه‌یار</div>
+          <div class="trans-title">کارت هوشمند دیجیتال، تایمر تکالیف و ارتباط امن با مشاور</div>
+          <p class="trans-desc">کارت شناسایی با بارکد و QR همیشه در گوشی، لیست مرتب تکالیف با مهلت دقیق، کارنامه آنلاین و ثبت وقت مشاوره کاملاً محرمانه.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-benefit-cards-grid">
+      <div class="role-b-card">
+        <div class="rb-icon-box">🪪</div>
+        <h4 class="rb-title">کارت هوشمند در گوشی</h4>
+        <p class="rb-desc">کارت دیجیتال دانش‌آموز مجهز به بارکد Code 128 برای تحویل کتاب در کتابخانه و QR استعلام هویت بدون نیاز به همراه داشتن کارت پلاستیکی.</p>
+        <span class="rb-kpi-pill">همیشه در دسترس روی موبایل</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">⏳</div>
+        <h4 class="rb-title">مهلت تکالیف با تایمر</h4>
+        <p class="rb-desc">مشاهده تکالیف جدید، زمان تحویل معکوس، آپلود مستقیم عکس یا PDF تکالیف و دریافت سریع نمره و بازخورد معلم در پنل شخصی.</p>
+        <span class="rb-kpi-pill">فراموشی تکالیف = صفر</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">📚</div>
+        <h4 class="rb-title">کتابخانه و تمدید آنلاین</h4>
+        <p class="rb-desc">جستجوی کتب در کتابخانه مدرسه، مشاهده کتاب‌های امانتی در دست و تاریخ تحویل به همراه قابلیت تمدید یک‌کلیکی بدون مراجعه.</p>
+        <span class="rb-kpi-pill">دسترسی به صدها کتاب</span>
+      </div>
+
+      <div class="role-b-card">
+        <div class="rb-icon-box">🧠</div>
+        <h4 class="rb-title">مشاوره کاملاً محرمانه</h4>
+        <p class="rb-desc">دانش‌آموز می‌تواند دغدغه‌های تحصیلی یا روحی خود را با مشاور مدرسه در میان بگذارد؛ پیام‌ها فقط برای مشاور و مدیر قابل خواندن است.</p>
+        <span class="rb-kpi-pill">امنیت و آرامش روحی</span>
+      </div>
+    </div>
+
+    <!-- ماک‌آپ تعاملی دانش‌آموز -->
+    
+    <div class="mockup-showcase-divider reveal">
+      <span class="badge-tag">💻 پیش‌نمایش تعاملی رابط کاربری</span>
+      <h3 class="mockup-showcase-title">پیش‌نمایش پنل دانش‌آموز</h3>
+      <p class="mockup-showcase-desc">مشاهده کارنامه، ارسال آنلاین تکالیف و کارت دیجیتال مدرسه</p>
+    </div>
+  
+    <div class="role-mockup-frame">
+      <div class="mockup-header-bar">
+        <div class="mockup-dots"><div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div></div>
+        <div class="mockup-url-bar">https://school.madresehyar.ir/student/app</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);font-weight:700;">پنل هوشمند دانش‌آموزی</div>
+      </div>
+      <div class="mockup-inner-padding">
+        <div class="sim-grid-2">
+          <div class="sim-card id-card-demo">
+            <div class="id-photo-placeholder">🧑‍🎓</div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                  <div style="font-size:1.15rem;font-weight:900;color:var(--text-main);">آریا احمدی</div>
+                  <div style="font-size:0.82rem;color:var(--primary);font-weight:700;">شماره دانش‌آموزی: ۴۰۴۱۰۲۲۸ | پایه دهم ریاضی الف</div>
+                </div>
+                <span class="sim-tag green">کارت هوشمند معتبر</span>
+              </div>
+              <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--border-glass);padding:8px 14px;border-radius:10px;">
+                <div>
+                  <div style="font-size:0.86rem;color:var(--text-muted);font-weight:700;">بارکد Code 128 (امانت کتابخانه)</div>
+                  <div style="font-family:monospace;letter-spacing:4px;font-size:0.95rem;color:var(--text-main);font-weight:900;">||||||||||||||||||||||||</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="width:36px;height:36px;background:var(--bg-elevated);border:1px solid var(--border-glass);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-main);font-weight:900;font-size:0.82rem;">QR</div>
+                  <div style="font-size:0.82rem;color:var(--text-muted);margin-top:2px;">استعلام اصالت</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sim-card">
+            <div class="sim-card-title"><span>امانت‌های جاری کتابخانه</span><span class="sim-tag indigo">۲ جلد</span></div>
+            <div style="font-size:0.9rem;color:var(--text-body);line-height:2;">
+              📖 فیزیک شگفت‌انگیز هالیدی (مهلت: ۴ روز دیگر)<br>
+              📖 داستان دو شهر - چارلز دیکنز (تمدید خودکار با یک کلیک)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     بخش نقاط عطف و قابلیت‌های کلیدی فروش (Killer Features Showcase - 8 Cards)
+     ========================================================================== -->
+<section class="killer-features-section" id="killer">
+  <div class="section-head reveal">
+    <span class="badge-tag">مزایای کلیدی</span>
+    <h2 class="section-title">چرا مدیران «مدرسه‌یار» را انتخاب می‌کنند؟</h2>
+    <p class="section-desc">
+      قابلیت‌های کاربردی و مدرنی که مدرسه را از سرورهای گران‌قیمت و نرم‌افزارهای متعدد بی‌نیاز می‌سازد.
+    </p>
+  </div>
+
+  <div class="killer-grid">
+    <!-- نقطه عطف ۱: بدون نیاز به سرور اختصاصی -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">☁️</div>
+        <h3 class="killer-title">۱۰۰٪ سازگار با هاست اشتراکی cPanel</h3>
+        <p class="killer-desc">
+          برخلاف اکثر سامانه‌های مدرن که نیازمند سرور لینوکسی گران‌قیمت (VPS) و پشتیبان شبکه هستند، مدرسه‌یار با معماری فوق‌سبک Node.js به راحتی روی هاست اشتراکی با ماژول Phusion Passenger اجرا می‌شود.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>صرفه‌جویی سالانه ده‌ها میلیون تومان در هزینه‌های سرور مدرسه</li>
+          <li><span class="check-dot">✓</span>پشتیبانی خودکار از دیتابیس SQLite فوق‌سریع (حالت WAL) و MySQL</li>
+          <li><span class="check-dot">✓</span>مکانیسم سه‌گانه Cron برای اجرای بی‌وقفه وظایف شبانه روی هاست اشتراکی</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag green">تست‌شده روی هاست‌های اشتراکی ایران</span>
+        <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;font-weight:600;">مصرف رم: زیر ۱۲۰ مگابایت</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۲: مدیریت تمام بخش‌های مدرسه در یک پنجره واحد (اضافه شده طبق درخواست) -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">🌐</div>
+        <h3 class="killer-title">مدیریت ۳۶۰ درجه تمام بخش‌های مدرسه در یک پنجره واحد</h3>
+        <p class="killer-desc">
+          مدیر مدرسه به جای سر و کله زدن با ۵ نرم‌افزار متفرقه (مالی، پیامک، کارنامه، حضور و غیاب، سایت)، تمام ارکان آموزشی، معلمان، کادر، اولیا، شهریه، انضباط، سلامت، کتابخانه، سرویس و اسناد را در یک پلتفرم منسجم مدیریت می‌کند.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>حذف کامل هزینه‌های خرید و نگهداری نرم‌افزارهای جداگانه</li>
+          <li><span class="check-dot">✓</span>جریان هماهنگ داده‌ها: نمره به کارنامه، غیبت به پیامک، شهریه به زرین‌پال</li>
+          <li><span class="check-dot">✓</span>داشبورد مدیریتی یکپارچه با گزارش‌های تحلیلی و تصمیم‌گیری داده‌محور</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag indigo">۳۲ ماژول منسجم در ۱ پلتفرم واحد</span>
+        <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;font-weight:600;">مدیریت یکپارچه بدون ناهماهنگی</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۳: مدیریت پیشرفته تمام دسترسی‌ها و مجوزهای ریز (اضافه شده طبق درخواست) -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">🔑</div>
+        <h3 class="killer-title">سیستم پیشرفته مدیریت دسترسی‌ها و مجوزهای ریز سازمانی</h3>
+        <p class="killer-desc">
+          مدیر مدرسه با کنترل ریز بر بیش از ۴۰ کلید مجوز، می‌تواند سمت‌های سازمانی دلخواه (معاون آموزشی، معاون پرورشی، مسئول ثبت‌نام، حسابدار، مشاور و کتابدار) تعریف کرده و وظایف را با امنیت کامل تفکیک کند.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>بیش از ۴۰ مجوز ریز در ۶ گروه (افراد، آموزش، مالی، ارتباطات، دانش‌آموزی، سیستم)</li>
+          <li><span class="check-dot">✓</span>اعطای مجوز اختصاصی به هر کاربر فراتر از سمت برای انعطاف اداری کامل</li>
+          <li><span class="check-dot">✓</span>امکان ورود به جای هر کاربر (Impersonation) توسط مدیر جهت عیب‌یابی و پشتیبانی</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag green">Granular RBAC System</span>
+        <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;font-weight:600;">امنیت ۱۰۰٪ و محرمانگی داده‌ها</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۴: پیش‌ثبت‌نام آنلاین اینترنتی -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">📝</div>
+        <h3 class="killer-title">پیش‌ثبت‌نام آنلاین بدون لاگین (/apply)</h3>
+        <p class="killer-desc">
+          خانواده‌ها بدون نیاز به نام کاربری یا مراجعه به مدرسه، در صفحه عمومی فرم ثبت‌نام را پر کرده، مدارک را آپلود نموده و کد رهگیری پیامکی دریافت می‌کنند. مدیر با ۱ کلیک متقاضی پذیرفته‌شده را به پرونده واقعی تبدیل می‌کند!
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>تولید آنی کد رهگیری و ارسال پیامک به پدر و مادر</li>
+          <li><span class="check-dot">✓</span>پیگیری لحظه‌ای وضعیت بدون مراجعه حضوری در `/apply/track`</li>
+          <li><span class="check-dot">✓</span>تبدیل اتوماتیک پذیرفته‌شدگان به پرونده رسمی و ساخت خودکار حساب</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag indigo">فرمت کد رهگیری: AP-1405-00124</span>
+        <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;font-weight:600;">کاهش ۹۰٪ شلوغی و ترافیک ثبت‌نام تابستان</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۵: اسناد رسمی ضدجعل با QR استعلام -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">📜</div>
+        <h3 class="killer-title">اسناد رسمی، سربرگ قانونی و QR استعلام برخط</h3>
+        <p class="killer-desc">
+          صدور گواهی اشتغال به تحصیل، معرفی‌نامه و کارنامه با آرم آموزش و پرورش، شماره سریال استاندارد (`گ-۱۴۰۵-۰۰۰۱`)، مهر و امضای مدیر. هر ارگانی با اسکن QR روی برگه، فوراً اصالت مدرک را بدون لاگین استعلام می‌کند!
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>صفحه استعلام عمومی اینترنتی در `/documents/verify/:code`</li>
+          <li><span class="check-dot">✓</span>کارنامه رسمی Snapshot — مصون از هرگونه تغییرات بعدی نمرات</li>
+          <li><span class="check-dot">✓</span>ابطال سند با یک کلیک با درج خودکار واترمارک قرمز «باطل شد»</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <button class="btn btn-glass" style="width:100%;font-size:0.9rem;" onclick="openVerificationModal()">
+          🔍 تست استعلام زنده نمونه گواهی اشتغال به تحصیل
+        </button>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۶: چیدمان هوشمند برنامه هفتگی -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">⚡</div>
+        <h3 class="killer-title">هوش مصنوعی چیدمان خودکار برنامه هفتگی</h3>
+        <p class="killer-desc">
+          چیدن برنامه هفتگی مدرسه روزها وقت مدیران را می‌گرفت! موتور هوشمند مدرسه‌یار با حل هوشمند محدودیت‌ها، برنامه کل کلاس‌ها را بدون تداخل معلمان، با رعایت روزهای عدم‌حضور دبیران و توزیع متوازن زنگ‌ها می‌چیند.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>چیدمان خودکار کل مدرسه در چند ثانیه همراه با پیش‌نمایش</li>
+          <li><span class="check-dot">✓</span>جلوگیری قطعی از تداخل هم‌زمان دبیر در چند کلاس یا آزمایشگاه</li>
+          <li><span class="check-dot">✓</span>بهینه‌سازی زنگ‌های دوتایی و کاهش ساعات خالی معلمان</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag green">صرفه‌جویی بیش از ۴۰ ساعت کار دستی مدیر در آغاز سال</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۷: قفل نمرات و ردیابی تغییرات -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">🔒</div>
+        <h3 class="killer-title">قفل نمرات نوبت + تاریخچه ممیزی تغییر نمره</h3>
+        <p class="killer-desc">
+          پس از اتمام امتحانات، مدیر نوبت را قفل می‌کند؛ معلمان دیگر قادر به دستکاری نمرات نیستند و هرگونه ویرایش مدیریتی مستلزم ثبت دلیل رسمی است که در لاگ حسابرسی (Audit Trail) ذخیره می‌شود.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>ثبت دقیق: نمره قبلی، نمره جدید، شخص تغییردهنده و دلیل موجه</li>
+          <li><span class="check-dot">✓</span>ارزشیابی هم‌زمان نمره‌ای (۰ تا ۲۰) و توصیفی (خیلی خوب، خوب، ...)</li>
+          <li><span class="check-dot">✓</span>محاسبه خودکار معدل وزنی، انحراف معیار و رتبه در کلاس</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag amber">استاندارد امنیتی بازرسی آموزش و پرورش</span>
+      </div>
+    </div>
+
+    <!-- نقطه عطف ۸: پشتیبان‌گیری چندمقصده ابری بیرونی -->
+    <div class="killer-card reveal">
+      <div>
+        <div class="killer-icon-box">🛡️</div>
+        <h3 class="killer-title">بکاپ خودکار و ارسال به ۳ مقصد بیرونی</h3>
+        <p class="killer-desc">
+          حتی اگر کل هاست یا سرور مدرسه آتش بگیرد یا بسوزد، داده‌های شما در امان است! مدرسه‌یار هر شب نسخه فشرده بکاپ را رمزنگاری کرده و اتوماتیک به ایمیل، سرورهای FTPS و فضاهای ابری WebDAV (مثل Nextcloud) می‌فرستد.
+        </p>
+        <ul class="killer-specs-list">
+          <li><span class="check-dot">✓</span>ارسال خودکار فایل رمزدار Gzip پس از پشتیبان‌گیری شبانه</li>
+          <li><span class="check-dot">✓</span>پایش فضای دیسک هاست و هشدار به مدیر قبل از پر شدن حافظه</li>
+          <li><span class="check-dot">✓</span>کنسول سازنده نامرئی برای رفع خطاها و پشتیبانی ۲۴ ساعته</li>
+        </ul>
+      </div>
+      <div class="card-live-preview">
+        <span class="sim-tag green">ضمانت ۱۰۰٪ عدم از دست رفتن اطلاعات تحصیلی</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     بخش موتور جستجوی آنی تمام ۲۷۶ قابلیت و ۳۲ ماژول (Live Feature Search)
+     ========================================================================== -->
+<section class="feature-search-section" id="search">
+  <div class="section-head reveal">
+    <span class="badge-tag">جستجوی زنده</span>
+    <h2 class="section-title">جستجو در ۲۷۶ قابلیت سامانه</h2>
+    <p class="section-desc">
+      نام فرآیند، درس، آزمون، پیامک، کارنامه یا شهریه را برای مشاهده آنی جستجو کنید:
+    </p>
+  </div>
+
+  <div class="search-box-wrap reveal">
+    <input type="text" class="search-input-field" id="featureSearchInput" placeholder="مثلاً: حضور و غیاب، کارنامه، زرین‌پال، پیامک غیبت، بارکد، ارتقای پایه، تقویم شمسی...">
+    <span class="search-icon-btn">🔍</span>
+    <button class="search-clear-btn" id="searchClearBtn" onclick="clearFeatureSearch()" title="پاک کردن جستجو">✕</button>
+  </div>
+
+  <div class="quick-filter-pills reveal">
+    <button class="filter-pill active" onclick="filterFeaturesByCategory('all', this)">
+      <span>همه قابلیت‌ها</span>
+      <span class="pill-count">۲۷۶</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('academic', this)">
+      <span>آموزش و آزمون</span>
+      <span class="pill-count">۵۳</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('communication', this)">
+      <span>ارتباطات و پیامک</span>
+      <span class="pill-count">۴۶</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('students', this)">
+      <span>دانش‌آموزان و اولیا</span>
+      <span class="pill-count">۴۳</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('attendance', this)">
+      <span>حضور و انضباط</span>
+      <span class="pill-count">۳۲</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('official', this)">
+      <span>اسناد و خدمات</span>
+      <span class="pill-count">۲۲</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('finance', this)">
+      <span>مالی و شهریه</span>
+      <span class="pill-count">۱۱</span>
+    </button>
+    <button class="filter-pill" onclick="filterFeaturesByCategory('system', this)">
+      <span>سیستم و امنیت</span>
+      <span class="pill-count">۶۹</span>
+    </button>
+  </div>
+
+  <div class="search-meta-bar reveal">
+    <div class="search-counter-badge">
+      <span class="pulse-dot"></span>
+      <span>نمایش <strong id="showingCount" style="color:var(--primary);font-size:1.05rem;">۲۴</strong> از <strong id="totalMatchingCount" style="color:var(--text-main);font-size:1.05rem;">۲۷۶</strong> قابلیت</span>
+      <span id="activeFilterDesc" style="color:var(--text-muted);font-weight:600;font-size:0.85rem;margin-right:6px;">(تمام ۳۲ ماژول)</span>
+    </div>
+    <div class="search-legend-wrap">
+      <span class="legend-item"><span class="legend-dot locked"></span> ماژول پایه (همیشه فعال)</span>
+      <span class="legend-item"><span class="legend-dot custom"></span> ماژول افزونه (قابل فعال‌سازی)</span>
+    </div>
+  </div>
+
+  <div class="features-results-grid" id="featuresResultsContainer">
+    <!-- نتایج با جاوااسکریپت به صورت زنده رندر می‌شوند -->
+  </div>
+
+  <div class="features-pagination-wrap" id="featuresPaginationWrap">
+    <button id="loadMoreFeaturesBtn" class="load-more-features-btn" onclick="loadMoreFeatures()">
+      <span>نمایش ۲۴ قابلیت دیگر (+)</span>
+      <span class="remaining-count-pill" id="remainingCountPill">۲۵۲ مورد دیگر</span>
+    </button>
+    <button id="showAllFeaturesBtn" class="show-all-features-btn" onclick="showAllFeatures()">
+      مشاهده یکجای همه ۲۷۶ قابلیت
+    </button>
+  </div>
+</section>
+
+<section class="calculator-section" id="calculator">
+  <div class="section-head reveal">
+    <span class="badge-tag">صرفه‌جویی و بهره‌وری</span>
+    <h2 class="section-title">محاسبه صرفه‌جویی زمان و هزینه</h2>
+    <p class="section-desc">
+      تعداد دانش‌آموزان و معلمان را تغییر دهید تا میزان بازدهی ماهانه را ببینید:
+    </p>
+  </div>
+
+  <div class="calc-wrap reveal">
+    <div class="calc-controls">
+      <div class="calc-slider-group">
+        <div class="calc-slider-head">
+          <span>تعداد دانش‌آموزان مدرسه:</span>
+          <span id="studentCountLabel" style="color:var(--primary);font-weight:900;">۳۵۰ نفر</span>
+        </div>
+        <input type="range" min="50" max="1500" step="25" value="350" class="calc-slider" id="studentsRange" oninput="updateCalculator()">
+      </div>
+
+      <div class="calc-slider-group">
+        <div class="calc-slider-head">
+          <span>تعداد کادر اداری و معلمان:</span>
+          <span id="teacherCountLabel" style="color:var(--primary);font-weight:900;">۲۴ نفر</span>
+        </div>
+        <input type="range" min="5" max="80" step="1" value="24" class="calc-slider" id="teachersRange" oninput="updateCalculator()">
+      </div>
+
+      <p style="font-size:0.92rem;color:var(--text-muted);line-height:2;">
+        محاسبات بر مبنای خودکارسازی فرآیندهای حضور و غیاب، صدور کارنامه‌ها، ثبت‌نام حضوری، پیامک‌های تجمیعی و حذف کامل هزینه‌های سرور اختصاصی انجام شده است.
+      </p>
+    </div>
+
+    <div class="calc-results-box">
+      <div class="calc-result-row">
+        <div>
+          <div style="font-weight:800;color:var(--text-main);font-size:1.05rem;">صرفه‌جویی زمان در هر ماه</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">آزادسازی وقت ارزشمند مدیر و معلمان</div>
+        </div>
+        <span class="calc-res-num" id="savedHours">۱۲۵ ساعت</span>
+      </div>
+
+      <div class="calc-result-row">
+        <div>
+          <div style="font-weight:800;color:var(--text-main);font-size:1.05rem;">صرفه‌جویی کاغذ و چاپ در سال</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">کارنامه‌ها، فرم‌ها و دفاتر کلاسی</div>
+        </div>
+        <span class="calc-res-num" id="savedPaper">۴,۲۰۰ برگ</span>
+      </div>
+
+      <div class="calc-result-row">
+        <div>
+          <div style="font-weight:800;color:var(--text-main);font-size:1.05rem;">کاهش تماس و مراجعات اولیا</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">به واسطه پنل و پیامک خودکار</div>
+        </div>
+        <span class="calc-res-num" id="reducedCalls">۸۵٪</span>
+      </div>
+
+      <div style="text-align:center;padding-top:0.5rem;">
+        <button class="btn btn-primary" style="width:100%;font-size:1rem;" onclick="openDemoModal()">دریافت پیش‌فاکتور و آغاز دوره آزمایشی</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     کاتالوگ جامع ۸ ستون عملیاتی و ۳۲ ماژول (32 Modules Master List)
+     ========================================================================== -->
+<section class="modules-catalog-section" id="modules">
+  <div class="section-head reveal">
+    <span class="badge-tag">معماری سیستم</span>
+    <h2 class="section-title">فهرست ۳۲ ماژول در ۸ ستون عملیاتی</h2>
+    <p class="section-desc">
+      هر ماژول به صورت مستقل فعال است و در صورت عدم نیاز، بدون اختلال خاموش می‌شود.
+    </p>
+  </div>
+
+  <div class="pillars-grid reveal">
+    <!-- ستون ۱ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">📊</div>
+        <div>
+          <h3 class="pillar-title">۱. داشبورد و کنترل</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">مدیریت لحظه‌ای مدرسه</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>داشبورد اختصاصی نقش‌ها</span><span class="mod-chip-count">۷ قابلیت</span></div>
+        <div class="mod-chip"><span>جستجوی سراسری ایجکس</span><span class="mod-chip-count">۲ قابلیت</span></div>
+        <div class="mod-chip"><span>تقویم شمسی و رویدادها</span><span class="mod-chip-count">۷ قابلیت</span></div>
+        <div class="mod-chip"><span>اطلاعیه‌ها و اعلانات رسمی</span><span class="mod-chip-count">۷ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۲ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">🎒</div>
+        <div>
+          <h3 class="pillar-title">۲. امور دانش‌آموزی</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">پرونده و جذب دانش‌آموز</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>پرونده جامع دانش‌آموزان</span><span class="mod-chip-count">۲۲ قابلیت</span></div>
+        <div class="mod-chip"><span>پنل اولیا (چندفرزندی)</span><span class="mod-chip-count">۸ قابلیت</span></div>
+        <div class="mod-chip"><span>پیش‌ثبت‌نام آنلاین (/apply)</span><span class="mod-chip-count">۸ قابلیت</span></div>
+        <div class="mod-chip"><span>سوابق تحصیلی و ارتقا</span><span class="mod-chip-count">۵ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۳ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">📚</div>
+        <div>
+          <h3 class="pillar-title">۳. آموزش و ارزشیابی</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">برنامه و امتحانات</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>ساختار و چیدمان برنامه</span><span class="mod-chip-count">۱۳ قابلیت</span></div>
+        <div class="mod-chip"><span>دفتر کلاسی و گزارش تدریس</span><span class="mod-chip-count">۹ قابلیت</span></div>
+        <div class="mod-chip"><span>آزمون‌ها و کارنامه هوشمند</span><span class="mod-chip-count">۱۶ قابلیت</span></div>
+        <div class="mod-chip"><span>تکالیف و مخزن آموزشی</span><span class="mod-chip-count">۸ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۴ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">✅</div>
+        <div>
+          <h3 class="pillar-title">۴. حضور و پرورش</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">نظم و سلامت مدرسه</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>حضور و غیاب زنگ‌به‌زنگ</span><span class="mod-chip-count">۱۷ قابلیت</span></div>
+        <div class="mod-chip"><span>انضباط و تشویق امتیازدار</span><span class="mod-chip-count">۷ قابلیت</span></div>
+        <div class="mod-chip"><span>سلامت و بهداشت مدارس</span><span class="mod-chip-count">۴ قابلیت</span></div>
+        <div class="mod-chip"><span>مشاوره و جلسات محرمانه</span><span class="mod-chip-count">۴ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۵ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">🎫</div>
+        <div>
+          <h3 class="pillar-title">۵. ارتباطات و تیکتینگ</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">مکاتبات با اولیا و کادر</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>تیکت پشتیبانی و مهلت SLA</span><span class="mod-chip-count">۱۵ قابلیت</span></div>
+        <div class="mod-chip"><span>پیام‌های خصوصی و گروهی</span><span class="mod-chip-count">۶ قابلیت</span></div>
+        <div class="mod-chip"><span>اعلان‌ها و صف ارسال پیامک</span><span class="mod-chip-count">۶ قابلیت</span></div>
+        <div class="mod-chip"><span>نظرسنجی و آرای آنلاین</span><span class="mod-chip-count">۵ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۶ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">💰</div>
+        <div>
+          <h3 class="pillar-title">۶. امور مالی و رفاهی</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">شهریه و خدمات جانبی</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>امور مالی، شهریه و اقساط</span><span class="mod-chip-count">۱۱ قابلیت</span></div>
+        <div class="mod-chip"><span>درگاه پرداخت زرین‌پال</span><span class="mod-chip-count">تسویه خودکار</span></div>
+        <div class="mod-chip"><span>کتابخانه مجهز به بارکدخوان</span><span class="mod-chip-count">۸ قابلیت</span></div>
+        <div class="mod-chip"><span>سرویس مدرسه و مسیرها</span><span class="mod-chip-count">۴ قابلیت</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۷ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">📜</div>
+        <div>
+          <h3 class="pillar-title">۷. اسناد و اعتبار</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">گواهی‌ها و کارت‌ها</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>اسناد رسمی و سریال یکتا</span><span class="mod-chip-count">۱۰ قابلیت</span></div>
+        <div class="mod-chip"><span>استعلام اصالت عمومی QR</span><span class="mod-chip-count">بدون لاگین</span></div>
+        <div class="mod-chip"><span>کارت دانش‌آموزی و بارکد</span><span class="mod-chip-count">Code 128</span></div>
+        <div class="mod-chip"><span>گواهی اشتغال به تحصیل هوشمند</span><span class="mod-chip-count">قالب پویا</span></div>
+      </div>
+    </div>
+
+    <!-- ستون ۸ -->
+    <div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-icon">⚙️</div>
+        <div>
+          <h3 class="pillar-title">۸. زیرساخت و امنیت</h3>
+          <span style="font-size:0.86rem;color:var(--text-muted);font-weight:600;">پشتیبانی و بکاپ ابری</span>
+        </div>
+      </div>
+      <div class="module-chips-list">
+        <div class="mod-chip"><span>تنظیمات سیستم و شخصی‌سازی</span><span class="mod-chip-count">۲۵ قابلیت</span></div>
+        <div class="mod-chip"><span>کاربران و مجوزهای ریز</span><span class="mod-chip-count">۷ قابلیت</span></div>
+        <div class="mod-chip"><span>احراز هویت و امنیت دیتابیس</span><span class="mod-chip-count">۹ قابلیت</span></div>
+        <div class="mod-chip"><span>کنسول سازنده و ۲FA</span><span class="mod-chip-count">مخفی / TOTP</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="comparison-section" id="comparison">
+  <div class="section-head reveal">
+    <span class="badge-tag">مقایسه شفاف</span>
+    <h2 class="section-title">مقایسه مدرسه‌یار با روش‌های سنتی و رقبا</h2>
+    <p class="section-desc">
+      تفاوت روزمره مدیریت مدرسه با مدرسه‌یار در مقایسه با دفاتر کاغذی و نرم‌افزارهای قدیمی:
+    </p>
+  </div>
+
+  <!-- کارت‌های شاخص عملیاتی و ملموس -->
+  <div class="comp-impact-grid reveal">
+    <div class="comp-impact-card">
+      <div class="cic-icon blue">📞</div>
+      <div>
+        <div class="cic-val">کاهش ۸۵٪ تماس‌های تلفنی و پیگیری‌ها</div>
+        <p class="cic-desc">حذف تماس‌های روزانه اولیا بابت حضور فرزند، مانده شهریه و برنامه فردا؛ همه اطلاعات به صورت لحظه‌ای در گوشی خانواده است.</p>
+      </div>
+    </div>
+
+    <div class="comp-impact-card">
+      <div class="cic-icon green">📉</div>
+      <div>
+        <div class="cic-val">حذف کامل خطاهای انسانی در نمرات و حسابداری</div>
+        <p class="cic-desc">پایان اشتباهات فاحش در محاسبه معدل، مغایرت فیش‌های واریزی و دستکاری نمرات؛ نمرات قفل می‌شوند و پرداخت‌ها اتوماتیک تسویه می‌گردند.</p>
+      </div>
+    </div>
+
+    <div class="comp-impact-card">
+      <div class="cic-icon amber">⏱️</div>
+      <div>
+        <div class="cic-val">صرفه‌جویی بیش از ۱۲۰ ساعت وقت کادر در ماه</div>
+        <p class="cic-desc">آزادسازی زمان مدیر، معاون و معلمان از دفاتر دست‌نویس و پرونده‌های کاغذی و تمرکز ۱۰۰٪ روی رشد تحصیلی دانش‌آموزان.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-table-wrap reveal">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th style="width:25%;">چالش و فرآیند روزمره مدرسه</th>
+          <th class="featured-col" style="width:33%;">🚀 سامانه هوشمند «مدرسه‌یار»</th>
+          <th style="width:22%;">روش‌های سنتی، اکسل و دفاتر کاغذی</th>
+          <th style="width:20%;">نرم‌افزارهای قدیمی ویندوزی / تک‌کاره</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- سطر ۱: ارتباط و پیگیری با اولیا -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">ارتباط با اولیا و پاسخ‌گویی به سوالات</span>
+            <span class="comp-feature-sub">پیگیری روزمره و رضایت خانواده‌ها</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>تیکتینگ سازمانی با مهلت پاسخ (SLA):</strong> پیام‌رسان رسمی درون‌برنامه‌ای با رسید خوانده‌شدن، بدون درز شماره شخصی معلمان و کاهش ۸۵٪ تماس‌های تلفنی مدرسه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>ده‌ها تماس تلفنی روزانه، درگیری در گروه‌های شلوغ شاد و واتساپ، گم شدن پیام‌ها و گلایه مداوم اولیا از بی‌خبری.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>فاقد درگاه ارتباطی آنلاین؛ اولیا مجبور به مراجعه حضوری و تماس مکرر هستند.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۲: حضور و غیاب و اطلاع غیبت -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">حضور و غیاب و هشدار غیبت به خانواده</span>
+            <span class="comp-feature-sub">انضباط و امنیت دانش‌آموز</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>ثبت زنگ‌به‌زنگ در ۳ ثانیه:</strong> ارسال خودکار پیامک غیبت همان زنگ + ارسال آنلاین گواهی پزشک توسط ولی بدون مراجعه به مدرسه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>دفاتر کاغذی که آخر وقت جمع می‌شود؛ مدرسه تا ظهر از غیبت‌ها بی‌خبر است و تماس دستی با تک‌تک والدین تا عصر طول می‌کشد.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>وابسته به دستگاه کارت‌خوان یا ورود دستی دیرهنگام؛ پیامک خودکار زنگ‌به‌زنگ ندارد.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۳: شهریه، اقساط و وصول مطالبات -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">شهریه، اقساط و وصول مطالبات مالی</span>
+            <span class="comp-feature-sub">مدیریت درآمد و تنش با والدین</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>پرداخت آنلاین با زرین‌پال در پنل اولیا:</strong> تسویه خودکار، صدور آنی رسید و یادآوری محترمانه پیامکی اقساط قبل از سررسید بدون تنش.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>دریافت فیش‌های کاغذی، خطاهای مکرر مغایرت حسابداری و تماس‌های تلفنی معذب‌کننده با اولیا برای پیگیری بدهی معوقه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>فقط در کامپیوتر حسابدار ثبت می‌شود؛ خانواده امکان پرداخت آنلاین با کارت خود را ندارد.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۴: پیش‌ثبت‌نام تابستان -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">پیش‌ثبت‌نام، پذیرش و جذب دانش‌آموز</span>
+            <span class="comp-feature-sub">مدیریت شلوغی تابستان</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>فرم عمومی اینترنتی در (/apply):</strong> ثبت‌نام از خانه بدون نیاز به لاگین، آپلود مدارک، کد رهگیری پیامکی و تبدیل ۱ کلیکی به پرونده رسمی.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>صف‌های کلافه‌کننده والدین در گرمای تابستان، پر کردن فرم‌های کاغذی تکراری و گم شدن کپی شناسنامه‌ها در زونکن‌ها.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>امکان ثبت‌نام اینترنتی از خانه ندارد؛ حضور خانواده در مدرسه اجباری است.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۵: نمرات و کارنامه -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">ثبت نمرات، محاسبه معدل و کارنامه</span>
+            <span class="comp-feature-sub">ارزشیابی توصیفی و کمی</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>ثبت مستقیم توسط دبیر با قفل رسمی:</strong> محاسبه آنی معدل وزنی و رتبه، کارنامه دیجیتال با مهر، امضا و QR استعلام بدون ۱ برگ کاغذ.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>رونویسی دستی نمرات معلمان در اکسل، خطاهای مکرر تایپی، صرف روزها برای پرینت و مهر دستی و گم شدن کارنامه توسط دانش‌آموز.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>قالب‌های چاپی ثابت و غیرقابل ویرایش، عدم دسترسی اولیا از روی گوشی و امکان تغییر نمره بدون ثبت سابقه.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۶: گواهی‌ها و اسناد رسمی -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">گواهی اشتغال به تحصیل و اسناد اداری</span>
+            <span class="comp-feature-sub">اعتبار قانونی و جلوگیری از جعل</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>شماره سریال یکتا (`گ-۱۴۰۵-۰۰۲۴`) و سربرگ رسمی:</strong> صفحه استعلام عمومی QR با دوربین موبایل برای ارگان‌ها بدون نیاز به لاگین.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>تایپ با ورد و پرینت ساده روی کاغذ معمولی؛ امکان جعل فوق‌العاده بالا و ریسک آبروریزی قانونی برای مدرسه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>فاقد هرگونه صفحه استعلام عمومی با کد QR بدون نیاز به نام کاربری.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۷: برنامه هفتگی -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">چیدمان برنامه هفتگی و تداخل ساعات</span>
+            <span class="comp-feature-sub">شروع منظم سال تحصیلی</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>هوش مصنوعی حل تداخل برنامه:</strong> رعایت ساعات عدم‌حضور دبیران و چیدمان بدون تداخل کل مدرسه در چند ثانیه همراه با پیش‌نمایش.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>اتلاف وقت چندروزه مدیر و معاون پای تخته وایت‌برد با کاغذهای رنگی و خطاهای مکرر تداخل زنگ‌ها در مهرماه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>تنظیمات بسیار پیچیده و عدم اتصال به اطلاعات واقعی کادر و کلاس‌های مدرسه.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۸: دفتر کلاسی و بودجه‌بندی -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">دفتر کلاسی و بودجه‌بندی تدریس</span>
+            <span class="comp-feature-sub">کنترل پیشرفت آموزشی</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>ثبت دیجیتال تدریس امروز در ۱ کلیک:</strong> هشدار جلسات ثبت‌نشده دبیران و نمایش درصد پیشرفت سرفصل‌های کتاب به مدیر مدرسه.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>دفاتر کاغذی حجیم که آخر سال چک می‌شوند؛ مدیر تا شب امتحان از عقب‌ماندگی درسی کلاس‌ها بی‌خبر می‌ماند.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>عدم ارتباط بین تقویم آموزشی، برنامه هفتگی و کتاب‌های درسی.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۹: تکالیف روزانه -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">تکالیف روزانه و برنامه فردای دانش‌آموز</span>
+            <span class="comp-feature-sub">نظارت خانواده و حل تمرین</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>مشاهده برخط در گوشی با تایمر معکوس:</strong> آپلود تصویر پاسخ تکالیف توسط دانش‌آموز و ثبت سریع نمره و بازخورد تشویقی معلم.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>یادداشت در دفترچه کاغذی (که اغلب فراموش یا گم می‌شود) و بی‌اطلاعی کامل والدین تا شب امتحان.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>فاقد اپلیکیشن و امکان ارسال و تصحیح آنلاین تکالیف روی موبایل.</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- سطر ۱۰: امنیت و پشتیبان‌گیری -->
+        <tr>
+          <td>
+            <span class="comp-feature-name">امنیت داده‌ها و خطر نابودی اطلاعات</span>
+            <span class="comp-feature-sub">آرامش خاطر مدیر</span>
+          </td>
+          <td class="featured-col">
+            <span class="badge-yes">
+              <span>✓</span>
+              <span><strong>اجرا روی هاست ارزان cPanel (بدون هزینه سرور)</strong> + ارسال شبانه نسخه فشرده به ۳ مقصد بیرونی ایمیل، FTPS و کلود WebDAV.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-no">
+              <span>✗</span>
+              <span>وابسته به هارد یک کامپیوتر در دفتر؛ با نوسان برق، سرقت یا باج‌افزار، سوابق چندساله مدرسه برای همیشه نابود می‌شود.</span>
+            </span>
+          </td>
+          <td>
+            <span class="badge-neutral">
+              <span>–</span>
+              <span>بکاپ دستی روی فلش دیسک که معمولاً ماه‌ها فراموش می‌شود و پشتیبانی هزینه میلیونی دارد.</span>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     پرسش‌های متداول مدیران مدارس (FAQ Accordion)
+     ========================================================================== -->
+<section class="faq-section" id="faq">
+  <div class="section-head reveal">
+    <span class="badge-tag">پاسخ به سوالات شما</span>
+    <h2 class="section-title">پرسش‌های متداول</h2>
+    <p class="section-desc">
+      هر آنچه قبل از راه‌اندازی و انتخاب «مدرسه‌یار» باید بدانید.
+    </p>
+  </div>
+
+  <div class="faq-container reveal">
+    <div class="faq-item">
+      <button class="faq-question-btn" onclick="toggleFaq(this)">
+        <span>آیا برای اجرای مدرسه‌یار واقعاً نیازی به سرور اختصاصی نداریم؟</span>
+        <span class="faq-icon-arrow">▼</span>
+      </button>
+      <div class="faq-answer-body">
+        خیر، هیچ نیازی به سرور اختصاصی گران‌قیمت یا VPS لینوکسی ندارید. این سامانه به طور شگفت‌انگیزی مهندسی شده تا روی هاست‌های اشتراکی معمولی cPanel با ماژول Setup Node.js App (Phusion Passenger) با کمترین مصرف حافظه رم (زیر ۱۲۰ مگابایت) و با دیتابیس بومی SQLite با شتاب‌دهنده WAL بدون هیچ مشکلی برای صدها دانش‌آموز کار کند.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question-btn" onclick="toggleFaq(this)">
+        <span>آیا اولیا و دانش‌آموزان می‌توانند آن را مانند اپلیکیشن روی گوشی نصب کنند؟</span>
+        <span class="faq-icon-arrow">▼</span>
+      </button>
+      <div class="faq-answer-body">
+        بله! مدرسه‌یار یک وب‌اپلیکیشن پیشرونده استاندارد (PWA) است. کاربران اندروید با گوگل کروم و کاربران آیفون با سافاری می‌توانند با زدن دکمه Add to Home Screen آن را مانند یک اپلیکیشن واقعی با آیکون و نام مدرسه نصب کنند؛ بدون نیاز به پرداخت هزینه اپ‌استور یا نگرانی از بلاک شدن برنامه‌ها.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question-btn" onclick="toggleFaq(this)">
+        <span>اطلاعات دانش‌آموزان و امنیت داده‌ها چگونه تضمین می‌شود؟</span>
+        <span class="faq-icon-arrow">▼</span>
+      </button>
+      <div class="faq-answer-body">
+        تمام داده‌ها منحصراً روی هاست اختصاصی متعلق به مدرسه شما ذخیره می‌شوند و به هیچ سرور واسطه‌ای فرستاده نمی‌شوند. تمام رمزها با الگوریتم bcrypt هش شده‌اند، درخواست‌ها با توکن‌های CSRF و هدرهای Helmet محافظت می‌شوند و بکاپ‌های رمزگذاری‌شده هر شب خودکار به ۳ مقصد ایمیل، FTP و WebDAV ابری ارسال می‌شوند.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question-btn" onclick="toggleFaq(this)">
+        <span>چگونه اطلاعات دانش‌آموزان را از فایل اکسل به سامانه منتقل کنیم؟</span>
+        <span class="faq-icon-arrow">▼</span>
+      </button>
+      <div class="faq-answer-body">
+        ماژول دانش‌آموزان دارای قابلیت «ورود گروهی از اکسل» است. شما کافیست فایل اکسل خروجی از سامانه سیدا یا سناد را در سامانه آپلود کنید؛ سیستم ظرف چند ثانیه پرونده تمام دانش‌آموزان، اطلاعات اولیا و حساب‌های کاربری را می‌سازد.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question-btn" onclick="toggleFaq(this)">
+        <span>کنسول سازنده (Superadmin) چیست و چه کاربردی دارد؟</span>
+        <span class="faq-icon-arrow">▼</span>
+      </button>
+      <div class="faq-answer-body">
+        کنسول سازنده یک پنل نامرئی برای پشتیبان یا ارائه‌دهنده سامانه در آدرس `/console/login` است که دارای ورود دومرحله‌ای (TOTP Google Authenticator) و محدودیت IP است. از طریق این پنل، پشتیبان فنی می‌تواند ماژول‌های درخواستی را برای مدرسه فعال کند، گزارش‌های خطای کاربران با اسکرین‌شات را بررسی کند و بدون داشتن رمز کاربران، مشکلات آنها را رفع نماید.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     بخش فراخوان اقدام (CTA Box)
+     ========================================================================== -->
+<section class="cta-section" id="cta">
+  <div class="cta-box-glow reveal">
+    <h2>آماده هوشمندسازی مدرسه‌تان هستید؟</h2>
+    <p>
+      همین حالا با دریافت دمو رایگان، پلتفرم را آزمایش کنید و با مشاوران ما گفتگو نمایید.
+    </p>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="padding:1rem 2.6rem;font-size:1.05rem;" onclick="openDemoModal()">
+        <span>درخواست دمو و مشاوره رایگان</span>
+        <span>←</span>
+      </button>
+      <button class="btn btn-glass" style="padding:1rem 2rem;font-size:1.05rem;" onclick="openVerificationModal()">
+        <span>استعلام آنلاین نمونه گواهی</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     فوتر لایت مدرن (Footer)
+     ========================================================================== -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="nav-brand" style="margin-bottom:10px;">
+        <div class="brand-icon">🎓</div>
+        <span class="brand-name">مدرسه‌یار</span>
+      </div>
+      <p class="footer-desc">
+        مدرسه‌یار، پلتفرم یکپارچه مدیریت مدارس ایران. طراحی‌شده برای مدیران آینده‌نگر، دبیران پرتلاش و والدینی که نگران پیشرفت تحصیلی فرزندان خود هستند.
+      </p>
+    </div>
+
+    <div>
+      <h4 class="footer-col-title">ماژول‌های کلیدی</h4>
+      <ul class="footer-links">
+        <li><a href="#benefits">حضور و غیاب زنگ‌به‌زنگ</a></li>
+        <li><a href="#killer">پیش‌ثبت‌نام اینترنتی</a></li>
+        <li><a href="#killer">کارنامه هوشمند نوبت</a></li>
+        <li><a href="#killer">اسناد رسمی با QR</a></li>
+        <li><a href="#modules">درگاه پرداخت زرین‌پال</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-col-title">دسترسی سریع</h4>
+      <ul class="footer-links">
+        <li><a href="#benefits">مزایای هر نقش</a></li>
+        <li><a href="#killer">نقاط عطف سامانه</a></li>
+        <li><a href="#search">جستجوی ۲۷۶ قابلیت</a></li>
+        <li><a href="#calculator">محاسبه صرفه‌جویی</a></li>
+        <li><a href="#comparison">جدول مقایسه</a></li>
+        <li><a href="#faq">سوالات متداول</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-col-title">ارتباط با پشتیبانی</h4>
+      <p style="font-size:0.9rem;color:var(--text-muted);line-height:2.05;">
+        جهت مشاوره خرید و دریافت راهنمای نصب روی هاست مدرسه، با کارشناسان ما در تماس باشید.
+      </p>
+      <button class="btn btn-primary" style="margin-top:12px;width:100%;font-size:0.88rem;" onclick="openDemoModal()">
+        ثبت درخواست تماس
+      </button>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© ۱۴۰۵ تمامی حقوق برای سامانه مدیریت مدارس «مدرسه‌یار» محفوظ است. توسعه‌یافته با بالاترین استانداردهای وب.</div>
+    <div>سازگار با استانداردهای آموزش و پرورش کشور • نسخه ۱.۲.۲</div>
+  </div>
+</footer>
+
+<!-- دکمه‌های شناور دسترسی سریع -->
+<div class="floating-quick-action">
+  <button class="fab-btn fab-top" id="backToTopBtn" onclick="window.scrollTo({top:0, behavior:'smooth'})" aria-label="بالای صفحه">↑</button>
+  <button class="fab-btn fab-demo" onclick="openDemoModal()" title="درخواست دمو">🚀</button>
+</div>
+
+<!-- ==========================================================================
+     مدال درخواست دمو رایگان (Demo Request Modal)
+     ========================================================================== -->
+<div class="modal-overlay" id="demoModal">
+  <div class="modal-card">
+    <button class="modal-close-btn" onclick="closeDemoModal()">✕</button>
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <span style="font-size:2.5rem;">🎓</span>
+      <h3 style="font-size:1.4rem;font-weight:900;color:var(--text-main);margin-top:8px;">درخواست دمو آنلاین و مشاوره رایگان «مدرسه‌یار»</h3>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-top:4px;">مشخصات مدرسه خود را وارد کنید تا اطلاعات ورود آزمایشی برای شما پیامک شود.</p>
+    </div>
+
+    <form onsubmit="handleDemoSubmit(event)">
+      <div class="form-group">
+        <label class="form-label">نام و نام خانوادگی مدیر یا متقاضی:</label>
+        <input type="text" required class="form-input" placeholder="مثال: دکتر علی رضایی">
+      </div>
+      <div class="form-group">
+        <label class="form-label">نام مدرسه یا مجتمع آموزشی:</label>
+        <input type="text" required class="form-input" placeholder="مثال: دبیرستان نمونه البرز">
+      </div>
+      <div class="form-group">
+        <label class="form-label">شماره تلفن همراه (جهت ارسال مشخصات دمو):</label>
+        <input type="tel" required class="form-input" placeholder="۰۹۱۲۳۴۵۶۷۸۹" style="direction:ltr;text-align:right;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">مقطع تحصیلی مدرسه:</label>
+        <select class="form-input">
+          <option>متوسطه دوم (دبیرستان نظری / هنرستان)</option>
+          <option>متوسطه اول (راهنمایی)</option>
+          <option>دبستان (ابتدایی)</option>
+          <option>مجتمع آموزشی چندمقطعی</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:0.95rem;margin-top:10px;font-size:1rem;">
+        ارسال اطلاعات و دریافت دسترسی دمو
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     مدال شبیه‌ساز استعلام اصالت سند رسمی با QR (QR Verification Demo)
+     ========================================================================== -->
+<div class="modal-overlay" id="verifyModal">
+  <div class="modal-card">
+    <button class="modal-close-btn" onclick="closeVerificationModal()">✕</button>
+    <div style="text-align:center;margin-bottom:1.2rem;">
+      <span class="sim-tag green" style="font-size:0.85rem;padding:4px 14px;">استعلام برخط سند رسمی در سامانه</span>
+      <h3 style="font-size:1.35rem;font-weight:900;color:var(--text-main);margin-top:10px;">جمهوری اسلامی ایران — وزارت آموزش و پرورش</h3>
+      <p style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">گواهی اشتغال به تحصیل دانش‌آموز</p>
+    </div>
+
+    <div style="background:var(--bg-elevated);border:1px solid var(--border-glass);border-radius:12px;padding:1.4rem;font-size:0.92rem;line-height:2.1;color:var(--text-body);">
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border-glass);padding-bottom:8px;margin-bottom:8px;font-size:0.82rem;">
+        <span>شماره سریال رسمی: <strong style="color:var(--primary);">گ-۱۴۰۵-۰۰۲۴</strong></span>
+        <span>تاریخ صدور: <strong>۱۴۰۵/۰۲/۱۵</strong></span>
+      </div>
+      بدینوسیله گواهی می‌شود که دانش‌آموز <strong style="color:var(--text-main);">آریا احمدی</strong> فرزند مهدی، با شماره دانش‌آموزی <strong style="color:var(--text-main);">۴۰۴۱۰۲۲۸</strong> و کد ملی <strong style="color:var(--text-main);">۰۰۱۸۷۴۵۶۱۲</strong>، در سال تحصیلی ۱۴۰۴-۱۴۰۵ در پایه <strong style="color:var(--text-main);">دهم ریاضی فیزیک</strong> در این دبیرستان مشغول به تحصیل می‌باشد.
+      <div style="margin-top:1.2rem;display:flex;align-items:center;justify-content:space-between;background:var(--success-subtle);padding:10px 14px;border-radius:8px;border:1px solid rgba(5, 150, 105, 0.25);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.4rem;">✅</span>
+          <span style="font-weight:800;color:var(--success);font-size:0.88rem;">اصالت سند مورد تأیید است (سند معتبر و فعال)</span>
+        </div>
+        <span style="font-size:0.86rem;color:var(--text-muted);font-weight:700;">مهر دیجیتال مدرسه</span>
+      </div>
+    </div>
+
+    <button class="btn btn-glass" style="width:100%;margin-top:1.2rem;" onclick="closeVerificationModal()">بستن پیش‌نمایش</button>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     اسکریپت‌های تعاملی و مدیریت تب‌های نقش‌ها (Interactive Core JavaScript)
+     ========================================================================== -->
+<script>
+/* ۱. مدیریت تغییر پوسته لایت و دارک (Theme Switcher) */
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeIcon(newTheme);
+}
+
+function updateThemeIcon(theme) {
+  const iconEl = document.getElementById('themeIcon');
+  if (iconEl) {
+    iconEl.textContent = theme === 'light' ? '☀️' : '🌙';
+  }
+}
+initTheme();
+
+/* ۲. مدیریت تب‌های تعاملی مزایای نقش‌ها (Role Benefits Switcher) */
+function switchRoleBenefit(roleKey, btnEl) {
+  // به‌روزرسانی وضعیت دکمه‌های تب
+  document.querySelectorAll('.role-tab-btn').forEach(btn => btn.classList.remove('active'));
+  btnEl.classList.add('active');
+  
+  // پنهان‌سازی همه پنل‌ها و نمایش پنل فعال با انیمیشن
+  document.querySelectorAll('.role-benefit-pane').forEach(pane => pane.classList.remove('active'));
+  const activePane = document.getElementById(`pane-${roleKey}`);
+  if (activePane) {
+    activePane.classList.add('active');
+  }
+}
+
+/* ۳. پایگاه داده ۲۷۶ قابلیت و ۳۲ ماژول برای موتور جستجوی آنی */
+const FEATURES_DB = [{"t":"داشبورد مدیر با آمار کلی","d":"تعداد دانش‌آموزان، معلمان، کلاس‌ها و حضور امروز","m":"داشبورد","c":"system","l":1},{"t":"داشبورد معلم","d":"کلاس‌های من، برنامهٔ امروز و کارهای در انتظار","m":"داشبورد","c":"system","l":1},{"t":"پنل دانش‌آموز","d":"خلاصهٔ حضور، نمرات، تکالیف و اطلاعیه‌ها","m":"داشبورد","c":"system","l":1},{"t":"نمودارهای تحلیلی","d":"روند حضور، توزیع پایه‌ها و جنسیت (Chart.js)","m":"داشبورد","c":"system","l":0},{"t":"دسترسی سریع","d":"میانبرهای پرکاربرد بر اساس نقش","m":"داشبورد","c":"system","l":0},{"t":"کارهای در انتظار اقدام","d":"تیکت‌های باز، درخواست‌های موجه‌سازی، مرخصی‌ها","m":"داشبورد","c":"system","l":0},{"t":"تولدهای امروز و این هفته","d":"یادآوری تولد دانش‌آموزان","m":"داشبورد","c":"system","l":0},{"t":"سال تحصیلی و نوبت‌ها (ترم‌ها)","d":"تعریف سال جاری و نوبت اول/دوم","m":"ساختار آموزشی","c":"academic","l":1},{"t":"پایه‌های تحصیلی","d":"ابتدایی تا متوسطه با نوع ارزشیابی","m":"ساختار آموزشی","c":"academic","l":1},{"t":"دروس","d":"تعریف درس با کد و ساعت هفتگی","m":"ساختار آموزشی","c":"academic","l":1},{"t":"کلاس‌ها و معلم راهنما","d":"ایجاد کلاس، ظرفیت، شیفت و معلم سرپرست","m":"ساختار آموزشی","c":"academic","l":1},{"t":"تخصیص درس و معلم به کلاس","d":"هر درس کلاس به یک معلم","m":"ساختار آموزشی","c":"academic","l":0},{"t":"اتاق‌ها و فضاهای آموزشی","d":"کلاس فیزیکی، آزمایشگاه، سالن","m":"ساختار آموزشی","c":"academic","l":0},{"t":"برنامهٔ هفتگی کلاس و معلم","d":"جدول زنگ‌ها به تفکیک روز","m":"ساختار آموزشی","c":"academic","l":0},{"t":"چاپ برنامهٔ هفتگی","d":"نسخهٔ قابل چاپ","m":"ساختار آموزشی","c":"academic","l":0},{"t":"ساعات در دسترس‌نبودن معلم","d":"علامت‌گذاری زنگ‌هایی که معلم حضور ندارد؛ در چیدن دستی و خودکار برنامه رعایت می‌شود و معلم می‌تواند از برنامهٔ خود آن را اعلام کند","m":"ساختار آموزشی","c":"academic","l":0},{"t":"تولید خودکار برنامهٔ هفتگی","d":"چیدن خودکار دروس بر اساس ساعت هفتگی، بدون تداخل معلمان، با رعایت ساعات در دسترس‌نبودن، پخش در روزها، زنگ‌های دوتایی و کمینه‌کردن ساعت خالی معلمان؛ برای یک کلاس یا همهٔ کلاس‌ها با پیش‌نمایش","m":"ساختار آموزشی","c":"academic","l":0},{"t":"آمار و نمای کلی کلاس","d":"تعداد، جنسیت، میانگین حضور و نمرات در صفحهٔ کلاس","m":"ساختار آموزشی","c":"academic","l":0},{"t":"ارتقای گروهی دانش‌آموزان","d":"انتقال همهٔ دانش‌آموزان یک کلاس به کلاس دیگر (پایان سال)","m":"ساختار آموزشی","c":"academic","l":0},{"t":"پایان سال تحصیلی و ارتقای پایه","d":"ویزارد بستن سال: ساخت سال و نوبت‌های جدید، کلاس‌های پایهٔ بالاتر، ارتقا/تکرار پایه/فارغ‌التحصیلی دانش‌آموزان با پیش‌نمایش و قابلیت بازگردانی","m":"ساختار آموزشی","c":"academic","l":0},{"t":"مدیریت معلمان","d":"ثبت معلم همراه با ساخت خودکار حساب کاربری","m":"معلمان و کادر آموزشی","c":"academic","l":1},{"t":"پروندهٔ معلم","d":"اطلاعات شخصی، استخدامی و تحصیلی","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"کلاس‌های من (پنل معلم)","d":"فهرست کلاس‌ها و دروس معلم با دسترسی سریع","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"بار کاری و ساعت تدریس","d":"جمع ساعات هفتگی هر معلم","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"مدارک و فایل‌های معلم","d":"بارگذاری حکم، مدرک تحصیلی و…","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"خروجی CSV معلمان","d":"دانلود فهرست معلمان","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"دفترچهٔ تماس همکاران","d":"نمایش شمارهٔ همکاران به معلمان","m":"معلمان و کادر آموزشی","c":"academic","l":0},{"t":"تاریخچهٔ تحصیلی","d":"ردیف سال/پایه/کلاس/وضعیت برای هر دانش‌آموز (زبانهٔ «سوابق تحصیلی» در پرونده)","m":"سوابق تحصیلی و ارتقای پایه","c":"students","l":1},{"t":"ثبت خودکار","d":"ایجاد/به‌روزرسانی ردیف سال جاری هنگام ثبت‌نام، تغییر کلاس و تغییر وضعیت","m":"سوابق تحصیلی و ارتقای پایه","c":"students","l":0},{"t":"ارتقای پایان سال","d":"ارتقا، تکرار پایه یا فارغ‌التحصیلی گروهی با انتخاب کلاس مقصد","m":"سوابق تحصیلی و ارتقای پایه","c":"students","l":0},{"t":"پر کردن سوابق","d":"ساخت ردیف سال جاری برای دانش‌آموزان فعال بدون سابقه","m":"سوابق تحصیلی و ارتقای پایه","c":"students","l":0},{"t":"خروجی CSV","d":"سوابق تحصیلی با فیلتر سال/وضعیت","m":"سوابق تحصیلی و ارتقای پایه","c":"students","l":0},{"t":"گزارش تدریس","d":"ثبت موضوع، شرح و تکلیف هر جلسه (کلاس، درس، تاریخ، زنگ)","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":1},{"t":"تدریس امروز","d":"جلسات امروز معلم بر اساس برنامهٔ هفتگی با ثبت سریع؛ پایش وضعیت ثبت برای مدیر","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"سرفصل‌ها و بودجه‌بندی","d":"تعریف سرفصل هر درس با ساعت و بازهٔ زمانی برنامه‌ریزی‌شده","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"پیشرفت تدریس","d":"درصد سرفصل‌های تدریس‌شده و مقایسه با بودجه‌بندی برای هر کلاس/درس","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"جلسات ثبت‌نشده","d":"مقایسهٔ برنامهٔ هفتگی با گزارش‌های ثبت‌شده و فهرست جلسات بدون گزارش به تفکیک معلم","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"مهلت ویرایش معلم","d":"ویرایش/حذف گزارش توسط معلم فقط تا چند روز پس از جلسه (تنظیمات آموزشی)","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"درس‌های من","d":"نمایش آنچه در کلاس تدریس شده و تکلیف هر جلسه برای دانش‌آموز و ولی","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"دفتر کلاسی ماهانه","d":"دفتر کلاسی هر کلاس در یک ماه (روز × زنگ) با قابلیت چاپ","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"خروجی CSV","d":"دانلود گزارش‌های تدریس با فیلتر","m":"دفتر کلاسی و گزارش تدریس","c":"academic","l":0},{"t":"مدیریت دانش‌آموزان","d":"ثبت‌نام، ویرایش، حذف","m":"دانش‌آموزان و پرونده","c":"students","l":1},{"t":"ساخت خودکار حساب کاربری","d":"نام کاربری = شماره دانش‌آموزی با رمز پیش‌فرض","m":"دانش‌آموزان و پرونده","c":"students","l":1},{"t":"شماره دانش‌آموزی خودکار","d":"تولید شمارهٔ یکتا هنگام ثبت‌نام","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"اطلاعات اولیا (پدر، مادر، سرپرست)","d":"نام، کد ملی، شغل، تحصیلات و تماس","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"تماس اضطراری","d":"فرد و شمارهٔ تماس در مواقع اضطراری","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"اطلاعات پزشکی","d":"گروه خونی، حساسیت‌ها، بیماری‌ها، داروها، بیمه","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"عکس دانش‌آموز","d":"بارگذاری و نمایش عکس در پرونده و کارت","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"مدارک و فایل‌های پرونده","d":"شناسنامه، کارت ملی، کارنامهٔ قبلی و…","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"یادداشت‌های پرونده","d":"یادداشت‌های مدیر/معلم (خصوصی یا قابل مشاهده برای دانش‌آموز)","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"انتقال بین کلاس‌ها","d":"جابه‌جایی با ثبت تاریخچه","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"وضعیت تحصیلی","d":"فعال، فارغ‌التحصیل، انتقالی، ترک تحصیل، تعلیق","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"ورود گروهی از CSV/اکسل","d":"ثبت‌نام دسته‌جمعی با فایل نمونه","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"خروجی CSV","d":"دانلود فهرست با فیلترهای فعال","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"کارت دانش‌آموزی","d":"چاپ کارت شناسایی با عکس و بارکد Code 128 شمارهٔ دانش‌آموزی (قابل اسکن با بارکدخوان)","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"کارت هوشمند: QR استعلام اصالت","d":"کد QR روی کارت که به صفحهٔ عمومی استعلام کارت (/students/verify/کد) می‌رود: نام، کلاس، وضعیت و اعتبار کارت؛ هر کارت یک کد یکتا دارد و با «ابطال و صدور مجدد» کارت‌های قبلی بی‌اعتبار می‌شوند","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"چاپ پروندهٔ کامل","d":"نسخهٔ چاپی پرونده","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"جستجوی پیشرفته","d":"بر اساس نام، شماره، کد ملی، نام پدر، تلفن","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"پنل دانش‌آموز","d":"مشاهدهٔ پروندهٔ شخصی توسط دانش‌آموز","m":"دانش‌آموزان و پرونده","c":"students","l":1},{"t":"خط زمانی پرونده","d":"آخرین رویدادها: غیبت، نمره، انضباطی، تیکت در یک نگاه","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"عملیات گروهی","d":"انتخاب چند دانش‌آموز (یا همهٔ نتایج فیلتر) و انجام یک‌جا: انتقال کلاس، تغییر وضعیت، اعلان، پیامک به اولیا، خروجی CSV، چاپ کارت و بازنشانی رمز","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"تشخیص خواهر/برادر","d":"نمایش دانش‌آموزان با کد ملی پدر/مادر مشترک","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"تولد دانش‌آموزان","d":"فهرست تولدها بر اساس تقویم شمسی، نمایش در تقویم و داشبورد، شمارش معکوس در پنل دانش‌آموز و اطلاع‌رسانی خودکار با الگوی جداگانه برای مدیر، معلم، دانش‌آموز و اولیا","m":"دانش‌آموزان و پرونده","c":"students","l":0},{"t":"ثبت مورد انضباطی","d":"تخلف، تأخیر، بی‌نظمی و… با امتیاز منفی","m":"انضباط و تشویق","c":"attendance","l":1},{"t":"ثبت تشویق","d":"امتیاز مثبت برای رفتار و عملکرد خوب","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"امتیاز انضباطی","d":"جمع امتیاز مثبت و منفی هر دانش‌آموز","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"اطلاع به اولیا","d":"علامت‌گذاری اطلاع‌رسانی به والدین و ارسال پیامک در صورت فعال‌بودن","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"گزارش انضباطی","d":"رتبه‌بندی کلاس و خلاصهٔ موارد در بازهٔ زمانی","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"نمایش به دانش‌آموز","d":"دانش‌آموز سوابق انضباطی و تشویقی خود را می‌بیند","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"ثبت توسط معلم","d":"معلمان برای دانش‌آموزان کلاس خود مورد ثبت می‌کنند","m":"انضباط و تشویق","c":"attendance","l":0},{"t":"حساب کاربری اولیا","d":"ساخت/پیوند حساب ولی از پروندهٔ دانش‌آموز (نام کاربری = موبایل)","m":"پنل اولیا","c":"students","l":1},{"t":"پنل ولی","d":"داشبورد اختصاصی ولی با خلاصهٔ وضعیت فرزند و میان‌برها","m":"پنل اولیا","c":"students","l":1},{"t":"چند فرزند","d":"سوئیچ بین فرزندان در یک حساب (خواهر/برادر با شمارهٔ موبایل مشترک)","m":"پنل اولیا","c":"students","l":0},{"t":"ساخت گروهی حساب","d":"ساخت حساب برای همهٔ دانش‌آموزان بدون ولی بر اساس شمارهٔ پدر/مادر","m":"پنل اولیا","c":"students","l":0},{"t":"پیامک اطلاعات ورود","d":"ارسال نام کاربری و رمز به موبایل ولی","m":"پنل اولیا","c":"students","l":0},{"t":"پیامک غیبت به ولی","d":"اطلاع‌رسانی خودکار غیبت روزانه به اولیا (کار زمان‌بندی‌شده)","m":"پنل اولیا","c":"students","l":0},{"t":"پیام و تیکت اولیا","d":"ارسال پیام به معلمان فرزند و ثبت تیکت از طرف ولی","m":"پنل اولیا","c":"students","l":0},{"t":"خروجی CSV اولیا","d":"فهرست اولیا با فرزندان","m":"پنل اولیا","c":"students","l":0},{"t":"سوابق سلامت","d":"ثبت معاینه، بیماری، حادثه و واکسن برای هر دانش‌آموز","m":"سلامت و بهداشت","c":"attendance","l":1},{"t":"هشدار حساسیت و بیماری","d":"نمایش دانش‌آموزان دارای حساسیت/بیماری خاص به معلمان کلاس","m":"سلامت و بهداشت","c":"attendance","l":0},{"t":"نمایش به دانش‌آموز","d":"دانش‌آموز سوابق سلامت خود را می‌بیند","m":"سلامت و بهداشت","c":"attendance","l":0},{"t":"ارجاع به مراکز درمانی","d":"علامت‌گذاری موارد ارجاع‌شده و پیگیری","m":"سلامت و بهداشت","c":"attendance","l":0},{"t":"فرم عمومی پیش‌ثبت‌نام","d":"صفحهٔ /apply برای اولیا با اعتبارسنجی کد ملی، شمارهٔ موبایل و تاریخ شمسی","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":1},{"t":"پیگیری با کد رهگیری","d":"استعلام وضعیت درخواست با کد و کد ملی (بدون ورود)","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"بارگذاری مدارک","d":"پیوست تصویر شناسنامه/کارنامه (تصویر یا PDF تا ۵ مگابایت)","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"بررسی و پذیرش","d":"تغییر وضعیت (در حال بررسی، نیازمند مدارک، پذیرفته، رد) با یادداشت داخلی و پیام به خانواده","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":1},{"t":"ثبت‌نام قطعی","d":"تبدیل درخواست پذیرفته‌شده به پروندهٔ دانش‌آموز با انتخاب کلاس و ساخت حساب کاربری","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"پیامک نتیجه","d":"ارسال پیامک کد رهگیری هنگام ثبت و اطلاع‌رسانی تغییر وضعیت به شمارهٔ پدر","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"خروجی CSV","d":"دانلود فهرست درخواست‌ها با فیلتر","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"لینک در صفحهٔ ورود","d":"نمایش دکمهٔ پیش‌ثبت‌نام در صفحهٔ ورود هنگام باز بودن ثبت‌نام","m":"پیش‌ثبت‌نام و پذیرش","c":"students","l":0},{"t":"جلسات مشاوره","d":"ثبت جلسه با موضوع، خلاصه و تاریخ پیگیری","m":"مشاوره","c":"attendance","l":1},{"t":"جلسات محرمانه","d":"فقط مشاور ثبت‌کننده و مدیر می‌بینند","m":"مشاوره","c":"attendance","l":0},{"t":"پیگیری","d":"فهرست پیگیری‌های سررسیدشده در صفحهٔ اصلی ماژول","m":"مشاوره","c":"attendance","l":0},{"t":"درخواست مشاوره توسط دانش‌آموز","d":"دانش‌آموز از پنل خود درخواست جلسه ثبت می‌کند (از طریق تیکت با دستهٔ مشاوره)","m":"مشاوره","c":"attendance","l":0},{"t":"درخواست مرخصی","d":"ثبت درخواست مرخصی توسط معلم/کارمند","m":"امور اداری و مرخصی","c":"system","l":1},{"t":"تأیید مرخصی","d":"گردش کار تأیید/رد با یادداشت مدیر","m":"امور اداری و مرخصی","c":"system","l":0},{"t":"اعلان نتیجه","d":"اطلاع به درخواست‌کننده پس از بررسی","m":"امور اداری و مرخصی","c":"system","l":0},{"t":"ماندهٔ مرخصی","d":"محاسبهٔ روزهای استفاده‌شده از سقف سالانه (تنظیمات)","m":"امور اداری و مرخصی","c":"system","l":0},{"t":"مدارک پرسنلی","d":"پیوند به پروندهٔ معلم و مدارک","m":"امور اداری و مرخصی","c":"system","l":0},{"t":"حضور و غیاب روزانه","d":"ثبت یک‌بار در روز توسط معلم راهنما/مدیر","m":"حضور و غیاب","c":"attendance","l":0},{"t":"حضور و غیاب زنگ‌به‌زنگ","d":"ثبت به تفکیک درس توسط معلم همان درس","m":"حضور و غیاب","c":"attendance","l":0},{"t":"وضعیت‌های تکمیلی (تأخیر، موجه، مرخصی)","d":"علاوه بر حاضر/غایب با ثبت دقیقهٔ تأخیر","m":"حضور و غیاب","c":"attendance","l":0},{"t":"ثبت سریع «همه حاضر»","d":"یک کلیک برای پیش‌فرض حاضر","m":"حضور و غیاب","c":"attendance","l":0},{"t":"محدودیت ویرایش برای معلمان","d":"معلم فقط تا ۳ روز پس از تاریخ می‌تواند ویرایش کند","m":"حضور و غیاب","c":"attendance","l":0},{"t":"گزارش دانش‌آموز","d":"کارنامهٔ حضور با نمودار ماهانه","m":"حضور و غیاب","c":"attendance","l":0},{"t":"گزارش کلاس","d":"آمار هر دانش‌آموز در بازهٔ دلخواه","m":"حضور و غیاب","c":"attendance","l":0},{"t":"گزارش روزانهٔ مدرسه","d":"وضعیت همهٔ کلاس‌ها در یک روز","m":"حضور و غیاب","c":"attendance","l":0},{"t":"دفتر حضور ماهانه","d":"جدول دانش‌آموز × روز برای یک ماه شمسی","m":"حضور و غیاب","c":"attendance","l":0},{"t":"درخواست موجه‌شدن غیبت","d":"ارسال توضیح و مدرک توسط دانش‌آموز و تأیید مدیر","m":"حضور و غیاب","c":"attendance","l":0},{"t":"اعلان غیبت به دانش‌آموز/ولی","d":"اعلان درون‌برنامه‌ای و پیامک (در صورت فعال‌بودن)","m":"حضور و غیاب","c":"attendance","l":0},{"t":"هشدار غیبت‌های مکرر","d":"فهرست دانش‌آموزان با غیبت بیش از آستانه در ۳۰ روز اخیر","m":"حضور و غیاب","c":"attendance","l":0},{"t":"خروجی CSV","d":"دانلود رکوردهای حضور و غیاب","m":"حضور و غیاب","c":"attendance","l":0},{"t":"آمار حضور در داشبورد","d":"نرخ حضور امروز و روند هفتگی","m":"حضور و غیاب","c":"attendance","l":0},{"t":"حضور و غیاب کارکنان","d":"ثبت حضور معلمان و کادر با ساعت ورود/خروج","m":"حضور و غیاب","c":"attendance","l":0},{"t":"لحاظ‌کردن تعطیلات رسمی","d":"روزهای تعطیل تقویم در حضور و غیاب: هشدار و منع ثبت برای معلم، علامت‌گذاری در دفتر ماهانه و حذف از روزهای آموزشی گزارش‌ها","m":"حضور و غیاب","c":"attendance","l":0},{"t":"مشاهدهٔ حضور توسط دانش‌آموز","d":"تقویم ماهانهٔ حضور در پنل دانش‌آموز","m":"حضور و غیاب","c":"attendance","l":0},{"t":"تعریف آزمون","d":"کوئیز، میان‌ترم، پایان‌ترم، شفاهی، عملی با بارم و ضریب","m":"آزمون‌ها و نمرات","c":"academic","l":1},{"t":"ثبت نمرات","d":"برگهٔ ورود نمره برای کل کلاس با ذخیرهٔ یکجا","m":"آزمون‌ها و نمرات","c":"academic","l":1},{"t":"انتشار نمرات","d":"نمرات تا زمان انتشار برای دانش‌آموز نمایش داده نمی‌شود","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"ارزشیابی توصیفی","d":"خیلی خوب / خوب / قابل قبول / نیاز به تلاش برای پایه‌های توصیفی","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"کارنامه","d":"کارنامهٔ هر نوبت با معدل، رتبه و نظر معلم","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"معدل و رتبه‌بندی","d":"محاسبهٔ معدل وزنی و رتبهٔ دانش‌آموز در کلاس","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"چاپ کارنامه","d":"نسخهٔ چاپی کارنامه برای تحویل به اولیا","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"ریزنمرات کلاس","d":"جدول نمرات همهٔ دانش‌آموزان × دروس","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"برنامهٔ آزمون‌ها","d":"فهرست آزمون‌های پیش رو برای دانش‌آموز، معلم و مدیر","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"مشاهدهٔ نمرات توسط دانش‌آموز","d":"پنل نمرات و کارنامهٔ شخصی","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"تحلیل نمرات","d":"نمودار توزیع نمرات، میانگین دروس و مقایسهٔ کلاس‌ها","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"نظر معلم در کارنامه","d":"توضیح معلم راهنما برای هر نوبت","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"اعلان ثبت نمره","d":"اطلاع‌رسانی به دانش‌آموز هنگام انتشار نمرات","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"خروجی CSV نمرات","d":"دانلود ریزنمرات","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"قفل نمرات نوبت","d":"پس از نهایی شدن نوبت، نمرات فقط با مجوز «قفل نمرات» و ثبت دلیل قابل تغییرند","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"تاریخچهٔ تغییر نمرات","d":"ثبت هر تغییر نمره با مقدار قبلی/جدید، کاربر، زمان و دلیل","m":"آزمون‌ها و نمرات","c":"academic","l":0},{"t":"تعریف تکلیف","d":"عنوان، شرح، مهلت، فایل پیوست و بارم","m":"تکالیف و محتوای آموزشی","c":"academic","l":1},{"t":"ارسال پاسخ توسط دانش‌آموز","d":"ارسال متن یا فایل از پنل دانش‌آموز","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"پذیرش ارسال با تأخیر","d":"ارسال پس از مهلت با برچسب «با تأخیر» (طبق تنظیمات)","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"نمره و بازخورد","d":"نمره‌دهی به پاسخ‌ها همراه با بازخورد متنی","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"محتوای آموزشی","d":"اشتراک جزوه، فایل و لینک برای هر کلاس/درس","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"اعلان تکلیف","d":"اطلاع به دانش‌آموزان هنگام تعریف تکلیف و ثبت نمره","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"یادآوری مهلت","d":"نمایش تکالیف نزدیک به مهلت در داشبورد دانش‌آموز","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"آمار تحویل","d":"درصد ارسال و میانگین نمره برای هر تکلیف","m":"تکالیف و محتوای آموزشی","c":"academic","l":0},{"t":"ثبت تیکت توسط دانش‌آموز","d":"دانش‌آموز می‌تواند برای مدیریت یا معلم کلاس خود تیکت ثبت کند","m":"تیکت و پشتیبانی","c":"communication","l":1},{"t":"ثبت تیکت توسط معلم","d":"معلمان می‌توانند با مدیریت مکاتبه کنند","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"گفتگوی رشته‌ای","d":"پاسخ‌های متوالی با تاریخچهٔ کامل","m":"تیکت و پشتیبانی","c":"communication","l":1},{"t":"چرخهٔ وضعیت","d":"باز، پاسخ داده شده، در انتظار کاربر، بسته","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"اولویت","d":"کم، عادی، زیاد، فوری","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"دسته‌بندی موضوعی","d":"آموزشی، حضور و غیاب، مالی، فنی و…","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"پیوست فایل","d":"ارسال تصویر یا PDF همراه پیام","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"ارجاع به کاربر","d":"مدیر می‌تواند تیکت را به معلم یا کارمند ارجاع دهد","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"یادداشت داخلی","d":"پیام‌های محرمانهٔ کارکنان که دانش‌آموز نمی‌بیند","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"امتیاز به پاسخ","d":"دانش‌آموز پس از بسته‌شدن تیکت به پاسخ امتیاز می‌دهد","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"پاسخ‌های آماده","d":"الگوهای پاسخ برای کارکنان","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"مهلت پاسخ (SLA)","d":"مهلت پاسخ اول بر اساس اولویت و مهلت حل نهایی: نشان وضعیت در فهرست و تیکت، فیلتر خارج از مهلت/نزدیک مهلت، گزارش رعایت SLA و اعلان خودکار به مسئول","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"آمار و گزارش تیکت‌ها","d":"به تفکیک وضعیت، دسته، زمان پاسخ","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"اعلان تیکت","d":"اعلان درون‌برنامه‌ای برای پاسخ و ارجاع","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"خروجی CSV","d":"دانلود فهرست تیکت‌ها","m":"تیکت و پشتیبانی","c":"communication","l":0},{"t":"پیام خصوصی","d":"ارسال و دریافت پیام بین کاربران مجاز","m":"پیام‌های داخلی","c":"communication","l":1},{"t":"ارسال توسط دانش‌آموز","d":"دانش‌آموز می‌تواند به معلمان کلاس خود و مدیریت پیام بدهد","m":"پیام‌های داخلی","c":"communication","l":0},{"t":"ارسال گروهی","d":"ارسال یک پیام به همهٔ دانش‌آموزان یک کلاس یا یک نقش","m":"پیام‌های داخلی","c":"communication","l":0},{"t":"پاسخ رشته‌ای","d":"نمایش گفتگو به‌صورت زنجیرهٔ پیام‌ها","m":"پیام‌های داخلی","c":"communication","l":0},{"t":"رسید خواندن","d":"نمایش زمان خوانده‌شدن پیام برای فرستنده","m":"پیام‌های داخلی","c":"communication","l":0},{"t":"اعلان پیام جدید","d":"اعلان درون‌برنامه‌ای هنگام دریافت پیام","m":"پیام‌های داخلی","c":"communication","l":0},{"t":"مدیریت اطلاعیه","d":"ایجاد، ویرایش و حذف اطلاعیه توسط مدیر و معلمان","m":"اطلاعیه‌ها","c":"communication","l":1},{"t":"تعیین مخاطب","d":"همه، دانش‌آموزان، معلمان، کارکنان یا یک کلاس خاص","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"سنجاق‌کردن","d":"نمایش اطلاعیه‌های مهم در بالای فهرست و داشبورد","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"زمان‌بندی انتشار و انقضا","d":"انتشار در تاریخ آینده و حذف خودکار پس از انقضا","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"شمارش بازدید","d":"تعداد مشاهدهٔ هر اطلاعیه","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"اطلاعیهٔ معلم برای کلاس","d":"معلم می‌تواند برای کلاس‌های خود اطلاعیه بگذارد","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"اعلان انتشار","d":"ارسال اعلان درون‌برنامه‌ای به مخاطبان هنگام انتشار","m":"اطلاعیه‌ها","c":"communication","l":0},{"t":"سربرگ، امضا و مهر","d":"سربرگ رسمی (آرم، عنوان اداره، نام مدرسه) و تصویر امضا/مهر مدیر در پایین اسناد","m":"اسناد رسمی و گواهی‌ها","c":"official","l":1},{"t":"شماره‌گذاری خودکار","d":"سریال یکتا به‌ازای نوع سند و سال تحصیلی (مثل گ-۱۴۰۵-۰۰۰۱) و بایگانی اسناد صادرشده","m":"اسناد رسمی و گواهی‌ها","c":"official","l":1},{"t":"گواهی اشتغال به تحصیل","d":"صدور گواهی با قالب قابل ویرایش و متغیرهای خودکار از پروندهٔ دانش‌آموز","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"نامه و معرفی‌نامه","d":"نامهٔ رسمی با سربرگ برای دانش‌آموز یا مکاتبات عمومی","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"کارنامهٔ رسمی","d":"کارنامهٔ نوبت با سربرگ، سریال و ثبت نسخهٔ ثابت (snapshot) در زمان صدور","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"ریزنمرات رسمی درس","d":"جدول نمرات همهٔ آزمون‌های یک درس برای کلاس با سربرگ","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"دفتر حضور و غیاب ماهانه","d":"جدول چاپی حضور و غیاب روزانهٔ کلاس برای یک ماه","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"استعلام اصالت سند","d":"صفحهٔ عمومی بررسی اصالت با کد چاپ‌شده روی سند","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"ابطال سند","d":"ابطال سند صادرشده با ثبت دلیل؛ در استعلام «باطل» نمایش داده می‌شود","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"مشاهدهٔ اسناد توسط دانش‌آموز/ولی","d":"فهرست و چاپ مجدد اسناد صادرشدهٔ خود","m":"اسناد رسمی و گواهی‌ها","c":"official","l":0},{"t":"اعلان درون‌برنامه‌ای","d":"زنگولهٔ اعلان در نوار بالا و صفحهٔ فهرست اعلان‌ها","m":"اعلان‌ها","c":"communication","l":1},{"t":"ارسال اعلان دستی","d":"مدیر می‌تواند به نقش، کلاس یا کاربر خاص اعلان بفرستد","m":"اعلان‌ها","c":"communication","l":0},{"t":"پیامک","d":"ارسال پیامک از طریق درگاه (کاوه‌نگار / وب‌هوک) — نیازمند تنظیم کلید API","m":"اعلان‌ها","c":"communication","l":0},{"t":"ایمیل","d":"ارسال ایمیل از طریق SMTP","m":"اعلان‌ها","c":"communication","l":0},{"t":"پاک‌سازی خودکار","d":"حذف اعلان‌های خوانده‌شدهٔ قدیمی‌تر از ۶۰ روز","m":"اعلان‌ها","c":"communication","l":0},{"t":"صف تلاش مجدد پیامک/ایمیل","d":"ارسال‌های ناموفق (خطای شبکه یا درگاه) در صف می‌مانند و با فاصلهٔ افزایشی (۲ دقیقه تا ۶ ساعت) دوباره ارسال می‌شوند؛ پس از سقف تلاش به مدیر اطلاع داده می‌شود","m":"اعلان‌ها","c":"communication","l":0},{"t":"رویدادها","d":"تعریف رویداد با نوع، رنگ، مخاطب و بازهٔ زمانی","m":"تقویم و رویدادها","c":"communication","l":1},{"t":"تعطیلات","d":"ثبت روزهای تعطیل (در حضور و غیاب نیز لحاظ می‌شود)","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"نمایش آزمون‌ها","d":"آزمون‌های ثبت‌شده در تقویم نمایش داده می‌شوند","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"نمایش مهلت تکالیف","d":"سررسید تکالیف در تقویم دانش‌آموز","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"نمایش تولدها","d":"تولد دانش‌آموزان در تقویم (مدیر: همه، معلم: کلاس‌های خود، دانش‌آموز/ولی: خودش) و کادر «این هفته / هفتهٔ آینده»","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"نمای ماهانه","d":"جدول ماه شمسی با رویدادها","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"خروجی iCal","d":"دانلود رویدادها برای تقویم گوشی","m":"تقویم و رویدادها","c":"communication","l":0},{"t":"مدیریت نظرسنجی","d":"ایجاد نظرسنجی با گزینه‌های دلخواه، مخاطب و مهلت","m":"نظرسنجی","c":"communication","l":1},{"t":"شرکت در نظرسنجی","d":"کاربران مخاطب یک‌بار رأی می‌دهند","m":"نظرسنجی","c":"communication","l":1},{"t":"چندگزینه‌ای","d":"امکان انتخاب چند گزینه در یک نظرسنجی","m":"نظرسنجی","c":"communication","l":0},{"t":"نمایش نتایج به رأی‌دهندگان","d":"پس از رأی‌دادن، نتایج نمایش داده می‌شود","m":"نظرسنجی","c":"communication","l":0},{"t":"ایجاد توسط معلم","d":"معلم برای کلاس خود نظرسنجی می‌سازد","m":"نظرسنجی","c":"communication","l":0},{"t":"تعریف شهریه و هزینه","d":"شهریه، سرویس، کتاب و… به تفکیک پایه/کلاس","m":"امور مالی و شهریه","c":"finance","l":1},{"t":"صورت‌حساب","d":"صدور صورت‌حساب برای دانش‌آموز","m":"امور مالی و شهریه","c":"finance","l":1},{"t":"صدور گروهی","d":"صدور صورت‌حساب برای همهٔ دانش‌آموزان یک پایه/کلاس با یک کلیک","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"ثبت پرداخت","d":"نقدی، کارت، انتقال، آنلاین؛ پرداخت جزئی و اقساط","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"تخفیف","d":"اعمال تخفیف روی صورت‌حساب","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"رسید چاپی","d":"چاپ رسید پرداخت و صورت‌حساب","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"گزارش مالی","d":"وصولی، معوقات، به تفکیک کلاس و نوع هزینه با نمودار","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"یادآوری بدهی","d":"ارسال اعلان/پیامک به بدهکاران","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"نمایش به دانش‌آموز/اولیا","d":"مشاهدهٔ صورت‌حساب‌ها و پرداخت‌ها در پنل دانش‌آموز","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"خروجی CSV","d":"دانلود صورت‌حساب‌ها و پرداخت‌ها","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"پرداخت آنلاین (زرین‌پال)","d":"پرداخت صورت‌حساب از پنل دانش‌آموز/اولیا از طریق درگاه زرین‌پال، ثبت خودکار پرداخت موفق، استعلام تراکنش‌های تأییدنشده و فهرست تراکنش‌ها برای مدیر","m":"امور مالی و شهریه","c":"finance","l":0},{"t":"مدیریت کتاب‌ها","d":"ثبت کتاب با نویسنده، ناشر، شابک، قفسه و تعداد نسخه","m":"کتابخانه","c":"official","l":1},{"t":"امانت و بازگشت","d":"ثبت امانت به دانش‌آموز یا همکار و بازگشت","m":"کتابخانه","c":"official","l":1},{"t":"پیگیری دیرکرد","d":"فهرست امانت‌های سررسیدگذشته و ارسال یادآوری","m":"کتابخانه","c":"official","l":0},{"t":"سقف امانت","d":"محدودیت تعداد کتاب هم‌زمان برای هر نفر (تنظیمات)","m":"کتابخانه","c":"official","l":0},{"t":"امانت‌های من","d":"دانش‌آموز کتاب‌های امانتی و تاریخ بازگشت خود را می‌بیند","m":"کتابخانه","c":"official","l":0},{"t":"جستجوی کتاب برای دانش‌آموز","d":"مشاهدهٔ فهرست کتاب‌ها و موجودی","m":"کتابخانه","c":"official","l":0},{"t":"خروجی CSV","d":"دانلود فهرست کتاب‌ها و امانت‌ها","m":"کتابخانه","c":"official","l":0},{"t":"امانت سریع با اسکن بارکد","d":"در فرم امانت، با اسکن بارکد کارت دانش‌آموزی (یا تایپ شمارهٔ دانش‌آموزی/شابک کتاب + Enter) امانت‌گیرنده و کتاب خودکار انتخاب می‌شوند","m":"کتابخانه","c":"official","l":0},{"t":"دکمهٔ شناور گزارش خطا","d":"پایین-چپ همهٔ صفحات برای همهٔ کاربران: نوع (خطا/پیشنهاد/سؤال)، عنوان، شرح، یک تصویر تا ۵ مگابایت و اطلاعات فنی صفحه به‌صورت خودکار","m":"پشتیبانی و گزارش خطا","c":"system","l":0},{"t":"پیگیری گزارش‌های من","d":"فهرست گزارش‌های ارسالی کاربر با وضعیت و پاسخ سازنده","m":"پشتیبانی و گزارش خطا","c":"system","l":0},{"t":"درخواست فعال‌سازی ماژول","d":"صفحهٔ «ماژول‌های سامانه» برای مدیر مدرسه: مشاهدهٔ ماژول‌ها/قابلیت‌های فعال و غیرفعال و ارسال درخواست فعال‌سازی به سازنده","m":"پشتیبانی و گزارش خطا","c":"system","l":0},{"t":"مسیرهای سرویس","d":"تعریف مسیر با راننده، خودرو، پلاک، ظرفیت و ساعت حرکت","m":"سرویس مدرسه","c":"official","l":1},{"t":"تخصیص دانش‌آموز","d":"انتخاب مسیر سرویس هر دانش‌آموز و کنترل ظرفیت","m":"سرویس مدرسه","c":"official","l":0},{"t":"فهرست سرنشینان","d":"لیست چاپی سرنشینان هر سرویس با شماره تماس اولیا","m":"سرویس مدرسه","c":"official","l":0},{"t":"نمایش به دانش‌آموز","d":"مشاهدهٔ مسیر، راننده و ساعت حرکت در پنل دانش‌آموز","m":"سرویس مدرسه","c":"official","l":0},{"t":"نمودارهای آماری","d":"نمودارهای تعاملی در صفحهٔ گزارش‌ها","m":"گزارش‌ها و آمار","c":"system","l":1},{"t":"گزارش دانش‌آموزان","d":"ترکیب جمعیتی به تفکیک پایه، کلاس، جنسیت، وضعیت و سن","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"گزارش حضور و غیاب","d":"نرخ غیبت و تأخیر هر کلاس در بازهٔ دلخواه","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"گزارش نمرات","d":"میانگین هر کلاس در هر درس و مقایسه","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"گزارش معلمان","d":"بار کاری: تعداد کلاس، درس و ساعت هفتگی","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"نسخهٔ چاپی","d":"چاپ تمیز گزارش‌ها بدون منو","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"خروجی CSV","d":"دانلود جدول گزارش‌ها","m":"گزارش‌ها و آمار","c":"system","l":0},{"t":"جستجوی سراسری","d":"کادر جستجو در نوار بالا برای کارکنان و معلمان","m":"جستجوی سراسری","c":"system","l":1},{"t":"پیشنهاد زنده","d":"نمایش نتایج هنگام تایپ (AJAX)","m":"جستجوی سراسری","c":"system","l":0},{"t":"اطلاعات و لوگوی مدرسه","d":"نام، مقطع، تلفن، آدرس و لوگو","m":"تنظیمات و سیستم","c":"system","l":1},{"t":"شخصی‌سازی ظاهر (رنگ اصلی و پوسته)","d":"رنگ برند و پوستهٔ پیش‌فرض","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"مدیریت ماژول‌ها و قابلیت‌ها","d":"فعال/غیرفعال‌سازی هر ماژول و قابلیت","m":"تنظیمات و سیستم","c":"system","l":1},{"t":"پشتیبان‌گیری از پایگاه داده","d":"دانلود نسخهٔ پشتیبان (SQLite / JSON)","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"زمان‌بند کارهای پس‌زمینه","d":"اجرای خودکار کارهای روزانه (پیامک غیبت، یادآوری‌ها، پشتیبان‌گیری، پاک‌سازی) با تیک داخلی، cron هاست یا URL","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"پشتیبان‌گیری خودکار روزانه","d":"نسخهٔ پشتیبان شبانه با نگه‌داری N نسخهٔ آخر","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"ارسال پشتیبان به بیرون از سرور","d":"ارسال خودکار نسخهٔ پشتیبان فشرده (gzip) پس از هر پشتیبان‌گیری شبانه به ایمیل، FTP/FTPS یا WebDAV (Nextcloud و…) + ارسال دستی هر فایل و آزمایش اتصال؛ تا اگر هاست از دست رفت، نسخه‌ای بیرون از سرور داشته باشید","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"گزارش مصرف پیامک","d":"آمار پیامک‌های ارسال‌شده در بازهٔ دلخواه: به تفکیک روز (نمودار)، نوع پیامک، درگاه و پرمصرف‌ترین شماره‌ها؛ شمارش بخش‌های پیامک فارسی (۷۰/۶۷ نویسه) و برآورد هزینه بر اساس نرخ تنظیم‌شده؛ خروجی CSV","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"لاگ پیامک‌ها","d":"ثبت همهٔ پیامک‌های ارسالی (گیرنده، متن، وضعیت، سرویس‌دهنده) و ارائه‌دهندهٔ «لاگ» برای تست بدون هزینه","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"گزارش فعالیت کاربران","d":"ثبت ایجاد/ویرایش/حذف و سایر اقدامات","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"گزارش خطاها و لاگ سامانه","d":"ثبت خطاهای سرور، استثناها، شکست کارهای زمان‌بندی‌شده و پیامک/ایمیل در فایل‌های روزانه (storage/logs) با نمایش، فیلتر، دانلود و پاک‌سازی خودکار","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"تنظیمات درگاه پیامک","d":"کاوه‌نگار یا وب‌هوک سفارشی","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"تنظیمات ایمیل (SMTP)","d":"ارسال ایمیل از طریق سرور SMTP","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"تنظیمات امنیتی","d":"تعداد تلاش ورود، مدت قفل، کپچا و طول نشست","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"بارگذاری/حذف دادهٔ نمونه","d":"برای آشنایی با سامانه","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"اطلاعات سامانه و سلامت سرویس","d":"نسخهٔ Node، پایگاه داده، حافظه و زمان اجرا","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"تقویم شمسی و انتخابگر تاریخ","d":"همیشه فعال","m":"تنظیمات و سیستم","c":"system","l":1},{"t":"رابط راست‌چین با فونت وزیرمتن","d":"همیشه فعال","m":"تنظیمات و سیستم","c":"system","l":1},{"t":"حالت تاریک","d":"دکمهٔ تغییر پوسته در نوار بالا","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"نصب به‌عنوان اپلیکیشن (PWA)","d":"مانیفست وب‌اپ با نام/رنگ مدرسه، آیکون تولیدشده، سرویس‌ورکر (کش دارایی‌های ایستا و صفحهٔ آفلاین) و گزینهٔ «نصب روی گوشی» برای دانش‌آموزان و اولیا","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"ویزارد نصب وب و بازیابی اتصال","d":"همیشه فعال","m":"تنظیمات و سیستم","c":"system","l":1},{"t":"حالت تعمیر و نگهداری","d":"بستن موقت سامانه روی غیرمدیران با پیام و زمان بازگشت دلخواه (صفحهٔ ۵۰۳)، IPهای مجاز، فعال‌سازی خودکار هنگام به‌روزرسانی و نوار هشدار برای مدیر","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"پایش فضای دیسک و هشدار پرشدن","d":"بررسی ساعتی فضای آزاد پارتیشن storage و حجم پوشه‌های آپلود/پشتیبان/لاگ؛ هشدار به مدیر (اعلان + نوار بالای صفحه) هنگام عبور از آستانهٔ تنظیم‌شده","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"ویرایشگر همهٔ تنظیمات (پیشرفته)","d":"زبانهٔ «همهٔ تنظیمات»: فهرست کامل کلیدها با برچسب فارسی و گروه، جستجو، ویرایش تکی هر کلید، بازگشت به پیش‌فرض، خروجی و ورودی JSON برای انتقال تنظیمات بین مدارس","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"به‌روزرسانی نسخه از پنل","d":"نمایش نسخهٔ نصب‌شده و تاریخچه، بارگذاری بستهٔ نسخهٔ جدید (ZIP)، اجرای npm install و همگام‌سازی جدول‌ها در پس‌زمینه با گزارش زنده و ری‌استارت خودکار روی cPanel","m":"تنظیمات و سیستم","c":"system","l":0},{"t":"مدیریت کاربران و نقش‌ها","d":"ایجاد حساب مدیر/کارمند، ویرایش و حذف","m":"کاربران","c":"system","l":1},{"t":"ویرایش پروفایل و تصویر توسط کاربر","d":"ایمیل، موبایل، آواتار و پوسته","m":"کاربران","c":"system","l":0},{"t":"بازنشانی رمز توسط مدیر","d":"تعیین رمز جدید با اجبار تغییر در ورود بعدی","m":"کاربران","c":"system","l":0},{"t":"فعال/غیرفعال‌سازی حساب","d":"مسدودکردن ورود بدون حذف داده","m":"کاربران","c":"system","l":0},{"t":"سمت‌های سازمانی و مجوزها","d":"تعریف سمت (معاون، دفتردار، حسابدار…) با مجموعهٔ مجوزها و اختصاص به کاربران","m":"کاربران","c":"system","l":0},{"t":"مجوزهای اختصاصی کاربر","d":"افزودن مجوزهای تکی به یک کاربر فراتر از سمت","m":"کاربران","c":"system","l":0},{"t":"ارسال اطلاعات ورود با پیامک","d":"ارسال نام کاربری و رمز موقت به موبایل کاربر","m":"کاربران","c":"system","l":0},{"t":"محدودیت تلاش‌های ناموفق ورود","d":"پس از چند تلاش ناموفق، ورود برای مدتی مسدود می‌شود","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"سؤال امنیتی (کپچا) در صفحهٔ ورود","d":"یک جمع سادهٔ ریاضی برای جلوگیری از ربات‌ها","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"مرا به خاطر بسپار","d":"نشست طولانی‌مدت برای کاربران","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"اجبار تغییر رمز در اولین ورود","d":"برای حساب‌های تازه‌ساخته‌شده یا بازنشانی‌شده","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"ورود به جای کاربر (توسط مدیر)","d":"مدیر می‌تواند سامانه را از دید معلم یا دانش‌آموز ببیند","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"بازیابی رمز عبور (فراموشی رمز)","d":"کد یک‌بارمصرف ۶ رقمی با پیامک/ایمیل، اعتبار ۱۰ دقیقه، حداکثر ۳ درخواست در ساعت و ۵ تلاش برای هر کد","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"تاریخچهٔ ورود کاربران","d":"ثبت IP، مرورگر و زمان هر ورود","m":"احراز هویت و امنیت","c":"system","l":0},{"t":"محافظت CSRF و هدرهای امنیتی","d":"همیشه فعال","m":"احراز هویت و امنیت","c":"system","l":1},{"t":"نشست‌های پایدار روی پایگاه داده","d":"همیشه فعال","m":"احراز هویت و امنیت","c":"system","l":1},{"t":"راهنمای کاربری","d":"راهنمای گام‌به‌گام برای مدیر، معلم، دانش‌آموز و اولیا؛ بخش‌های مربوط به ماژول‌های خاموش پنهان می‌شوند","m":"راهنما و راه‌اندازی","c":"system","l":0},{"t":"چک‌لیست راه‌اندازی اولیه","d":"وضعیت زندهٔ گام‌های راه‌اندازی (اطلاعات مدرسه، رمز مدیر، سال تحصیلی، کلاس‌ها، معلمان، دانش‌آموزان، پیامک، پشتیبان‌گیری…) با پیشرفت درصدی و ویجت داشبورد","m":"راهنما و راه‌اندازی","c":"system","l":0},{"t":"راهنمای زمینه‌ای","d":"دکمهٔ «؟» در نوار بالا که به بخش مرتبط با صفحهٔ جاری می‌رود","m":"راهنما و راه‌اندازی","c":"system","l":0},{"t":"دربارهٔ سامانه","d":"نسخه، ماژول‌ها و قابلیت‌های فعال، محیط اجرا و راهنمای به‌روزرسانی","m":"راهنما و راه‌اندازی","c":"system","l":0}];
+
+const CAT_LABELS = {
+  academic: 'آموزش و آزمون',
+  attendance: 'حضور و انضباط',
+  students: 'دانش‌آموزان و اولیا',
+  finance: 'مالی و شهریه',
+  communication: 'پیامک و ارتباطات',
+  official: 'اسناد و خدمات',
+  system: 'سیستم و امنیت'
+};
+
+const CAT_TITLES = {
+  all: 'تمام ۳۲ ماژول',
+  academic: 'دسته آموزش و آزمون',
+  attendance: 'دسته حضور و انضباط',
+  students: 'دسته دانش‌آموزان و اولیا',
+  finance: 'دسته مالی و شهریه',
+  communication: 'دسته پیامک و ارتباطات',
+  official: 'دسته اسناد و خدمات',
+  system: 'دسته سیستم و امنیت'
+};
+
+let currentQuery = '';
+let activeFilterCategory = 'all';
+let currentDisplayLimit = 24;
+const PAGE_CHUNK = 24;
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&');
+}
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  try {
+    const escaped = escapeRegex(query);
+    const regex = new RegExp('(' + escaped + ')', 'gi');
+    return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+  } catch (e) {
+    return text;
+  }
+}
+
+function getFilteredFeatures() {
+  let list = FEATURES_DB;
+  if (activeFilterCategory !== 'all') {
+    list = list.filter(f => f.c === activeFilterCategory);
+  }
+  if (currentQuery) {
+    const q = currentQuery.toLowerCase();
+    list = list.filter(f => 
+      f.t.toLowerCase().includes(q) || 
+      f.d.toLowerCase().includes(q) || 
+      f.m.toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+function renderFeaturesList() {
+  const container = document.getElementById('featuresResultsContainer');
+  if (!container) return;
+  
+  const paginationWrap = document.getElementById('featuresPaginationWrap');
+  const showingCountEl = document.getElementById('showingCount');
+  const totalCountEl = document.getElementById('totalMatchingCount');
+  const activeDescEl = document.getElementById('activeFilterDesc');
+  const clearBtn = document.getElementById('searchClearBtn');
+  const remainingPill = document.getElementById('remainingCountPill');
+
+  if (clearBtn) {
+    clearBtn.style.display = currentQuery ? 'flex' : 'none';
+  }
+
+  const allFiltered = getFilteredFeatures();
+  const total = allFiltered.length;
+
+  const isSearchActive = currentQuery.length > 0;
+  const itemsToRender = isSearchActive ? allFiltered : allFiltered.slice(0, currentDisplayLimit);
+  const showing = itemsToRender.length;
+
+  if (showingCountEl) showingCountEl.textContent = showing.toLocaleString('fa-IR');
+  if (totalCountEl) totalCountEl.textContent = total.toLocaleString('fa-IR');
+  if (activeDescEl) {
+    let desc = '(' + (CAT_TITLES[activeFilterCategory] || 'همه دسته‌ها');
+    if (isSearchActive) desc += ' - فیلتر جستجو: «' + currentQuery + '»';
+    desc += ')';
+    activeDescEl.textContent = desc;
+  }
+
+  if (total === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align:center; padding: 4rem 1.5rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 2px dashed var(--border-glass);">
+        <span style="font-size:3rem;display:block;margin-bottom:12px;">🔍</span>
+        <h3 style="font-size:1.2rem;font-weight:800;color:var(--text-main);margin-bottom:8px;">هیچ قابلیتی منطبق با «${currentQuery}» یافت نشد!</h3>
+        <p style="font-size:0.95rem;color:var(--text-muted);line-height:2;max-width:550px;margin:0 auto 1.2rem;">
+          لطفاً کلمات کلیدی دیگری مثل <strong>«حضور و غیاب»</strong>، <strong>«کارنامه»</strong>، <strong>«پیامک»</strong>، <strong>«شهریه»</strong>، <strong>«زرین‌پال»</strong>، <strong>«بارکد»</strong> یا <strong>«تکلیف»</strong> را امتحان کنید.
+        </p>
+        <button onclick="clearFeatureSearch()" style="padding:0.6rem 1.5rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-pill);font-weight:700;font-family:inherit;cursor:pointer;">پاک کردن فیلترها و مشاهده همه</button>
+      </div>
+    `;
+    if (paginationWrap) paginationWrap.style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = itemsToRender.map(item => {
+    const titleHtml = isSearchActive ? highlightMatch(item.t, currentQuery) : item.t;
+    const descHtml = isSearchActive ? highlightMatch(item.d, currentQuery) : item.d;
+    const catName = CAT_LABELS[item.c] || 'سیستم';
+    const isLocked = item.l === 1;
+
+    return `
+      <div class="feature-item-card reveal active">
+        <div class="fic-top-meta">
+          <span class="fic-cat-tag">📂 ${catName}</span>
+          <span class="fic-status-badge ${isLocked ? 'locked' : 'custom'}" title="${isLocked ? 'این قابلیت به عنوان استاندارد پایه‌ای همیشه فعال است' : 'این قابلیت بنا به نیاز مدرسه قابل فعال یا غیرفعال‌سازی است'}">
+            ${isLocked ? '🟢 همیشه فعال' : '⚙️ قابل فعال‌سازی'}
+          </span>
+        </div>
+        <div class="fic-head">
+          <h3 class="fic-title">${titleHtml}</h3>
+          <span class="fic-module-badge">${item.m}</span>
+        </div>
+        <p class="fic-desc">${descHtml}</p>
+      </div>
+    `;
+  }).join('');
+
+  if (paginationWrap) {
+    if (isSearchActive || showing >= total) {
+      paginationWrap.style.display = 'none';
+    } else {
+      paginationWrap.style.display = 'flex';
+      const remaining = total - showing;
+      if (remainingPill) {
+        remainingPill.textContent = remaining.toLocaleString('fa-IR') + ' مورد دیگر';
+      }
+    }
+  }
+}
+
+function loadMoreFeatures() {
+  currentDisplayLimit += PAGE_CHUNK;
+  renderFeaturesList();
+}
+
+function showAllFeatures() {
+  currentDisplayLimit = FEATURES_DB.length;
+  renderFeaturesList();
+}
+
+function clearFeatureSearch() {
+  const input = document.getElementById('featureSearchInput');
+  if (input) input.value = '';
+  currentQuery = '';
+  currentDisplayLimit = PAGE_CHUNK;
+  renderFeaturesList();
+}
+
+document.getElementById('featureSearchInput').addEventListener('input', function(e) {
+  currentQuery = e.target.value.trim();
+  renderFeaturesList();
+});
+
+function filterFeaturesByCategory(cat, pillEl) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  if (pillEl) pillEl.classList.add('active');
+  activeFilterCategory = cat;
+  currentDisplayLimit = PAGE_CHUNK;
+  renderFeaturesList();
+}
+
+renderFeaturesList();
+
+/* ۵. ماشین حساب هوشمند صرفه‌جویی زمان و هزینه */
+function updateCalculator() {
+  const students = parseInt(document.getElementById('studentsRange').value);
+  const teachers = parseInt(document.getElementById('teachersRange').value);
+  
+  document.getElementById('studentCountLabel').textContent = `${students.toLocaleString('fa-IR')} نفر`;
+  document.getElementById('teacherCountLabel').textContent = `${teachers.toLocaleString('fa-IR')} نفر`;
+  
+  const savedHours = Math.round((students * 0.22) + (teachers * 2.1));
+  const savedPaper = Math.round(students * 12);
+  const reducedCalls = Math.min(92, Math.round(70 + (students / 60)));
+  
+  document.getElementById('savedHours').textContent = `${savedHours.toLocaleString('fa-IR')} ساعت`;
+  document.getElementById('savedPaper').textContent = `${savedPaper.toLocaleString('fa-IR')} برگ`;
+  document.getElementById('reducedCalls').textContent = `${reducedCalls.toLocaleString('fa-IR')}٪`;
+}
+
+/* ۶. پنجره‌های مدال تعاملی */
+function openDemoModal() {
+  document.getElementById('demoModal').classList.add('open');
+}
+function closeDemoModal() {
+  document.getElementById('demoModal').classList.remove('open');
+}
+function openVerificationModal() {
+  document.getElementById('verifyModal').classList.add('open');
+}
+function closeVerificationModal() {
+  document.getElementById('verifyModal').classList.remove('open');
+}
+function handleDemoSubmit(e) {
+  e.preventDefault();
+  alert('درخواست شما با موفقیت ثبت شد! کارشناسان سامانه «مدرسه‌یار» به زودی با شما تماس خواهند گرفت و مشخصات دمو برایتان پیامک می‌شود.');
+  closeDemoModal();
+}
+
+/* ۷. آکاردئون پرسش‌های متداول */
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  item.classList.toggle('active');
+}
+
+/* ۸. کانواس پس‌زمینه ستاره‌ها و ذرات تعاملی */
+(function initCanvas() {
+  const canvas = document.getElementById('bgCanvas');
+  if (!canvas || !canvas.getContext) return;
+  const ctx = canvas.getContext('2d');
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+  
+  const particles = [];
+  const count = Math.min(60, Math.floor(width / 22));
+  
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.8 + 0.8,
+      alpha: Math.random() * 0.5 + 0.2
+    });
+  }
+  
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const particleColor = isDark ? 'rgba(165, 180, 252, ' : 'rgba(79, 70, 229, ';
+    const lineBaseAlpha = isDark ? 0.16 : 0.08;
+    
+    for (let i = 0; i < count; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = width;
+      if (p.x > width) p.x = 0;
+      if (p.y < 0) p.y = height;
+      if (p.y > height) p.y = 0;
+      
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `${particleColor}${p.alpha})`;
+      ctx.fill();
+      
+      for (let j = i + 1; j < count; j++) {
+        const p2 = particles[j];
+        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+        if (dist < 110) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = `rgba(79, 70, 229, ${lineBaseAlpha * (1 - dist / 110)})`;
+          ctx.lineWidth = 0.75;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ۹. اسکرول و ترنزیشن‌های ورود عناصر */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ۱۰. نوار اسکرول و دکمه بازگشت به بالا */
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = scrolled / maxScroll;
+  
+  document.getElementById('scrollProgress').style.transform = `scaleX(${progress})`;
+  
+  const navbar = document.getElementById('mainNavbar');
+  if (scrolled > 60) {
+    navbar.classList.add('scrolled');
+  } else {
+    navbar.classList.remove('scrolled');
+  }
+  
+  const backToTop = document.getElementById('backToTopBtn');
+  if (scrolled > 500) {
+    backToTop.classList.add('visible');
+  } else {
+    backToTop.classList.remove('visible');
+  }
+});
+
+/* ۱۱. منوی موبایل */
+const menuToggle = document.getElementById('menuToggle');
+const mobileNav = document.getElementById('mobileNav');
+if (menuToggle && mobileNav) {
+  menuToggle.addEventListener('click', toggleMenu);
+}
+
+function toggleMenu() {
+  mobileNav.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سامانهٔ مدیریت مدرسه | یک پلتفرم، کل مدرسهٔ شما</title>
+<meta name="description" content="سامانهٔ جامع مدیریت مدرسه: ۳۲ ماژول، بیش از ۲۷۰ قابلیت — حضور و غیاب، نمرات و کارنامه، پیش‌ثبت‌نام آنلاین، مالی و شهریه، پنل اولیا و… کاملاً فارسی و شمسی.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+/* ============ توکن‌ها ============ */
+:root{
+  --brand:#2563eb; --brand2:#6d28d9; --brand-dark:#1e40af;
+  --ink:#0f172a; --ink2:#334155; --mut:#64748b;
+  --bg:#f8fafc; --card:#ffffff; --line:#e2e8f0;
+  --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+  --grad:linear-gradient(135deg,#2563eb 0%,#4f46e5 55%,#6d28d9 100%);
+  --sh-s:0 1px 2px rgba(15,23,42,.06),0 2px 8px rgba(15,23,42,.05);
+  --sh-m:0 10px 30px -12px rgba(15,23,42,.18);
+  --sh-l:0 30px 70px -28px rgba(15,23,42,.35);
+  --r:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Vazirmatn',Vazirmatn,Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.9;overflow-x:hidden;font-size:15.5px}
+::selection{background:rgba(37,99,235,.2)}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+.num{font-variant-numeric:tabular-nums}
+
+/* ============ انیمیشن‌های پایه ============ */
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes floatY2{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-24px) rotate(2deg)}}
+@keyframes blobMove{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,25px) scale(.94)}}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(50%)}}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(37,99,235,.35)}70%{box-shadow:0 0 0 14px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}
+@keyframes barGrow{from{transform:scaleY(.06)}to{transform:scaleY(1)}}
+@keyframes shine{from{transform:translateX(-120%) skewX(-18deg)}to{transform:translateX(240%) skewX(-18deg)}}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
+@keyframes tickerPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.65,.3,1),transform .7s cubic-bezier(.2,.65,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal[data-fx="right"]{transform:translateX(40px)}
+.reveal[data-fx="left"]{transform:translateX(-40px)}
+.reveal[data-fx="zoom"]{transform:scale(.9)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}.reveal{opacity:1;transform:none}}
+
+/* ============ ناوبری ============ */
+.nav{position:fixed;top:0;right:0;left:0;z-index:100;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;padding:.8rem clamp(1rem,4vw,3rem);background:rgba(255,255,255,.72);backdrop-filter:blur(14px);border-bottom:1px solid rgba(226,232,240,.7);transition:box-shadow .3s}
+.nav.scrolled{box-shadow:var(--sh-s)}
+.nav .logo{justify-self:start;display:flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.02rem}
+.nav .logo i{width:38px;height:38px;border-radius:12px;background:var(--grad);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;box-shadow:0 8px 18px -6px rgba(37,99,235,.55)}
+.nav .links{justify-self:center;display:flex;gap:.25rem}
+.nav .links a{padding:.45rem .8rem;border-radius:10px;font-size:.9rem;color:var(--ink2);transition:.2s}
+.nav .links a:hover{background:rgba(37,99,235,.08);color:var(--brand)}
+.nav .cta{justify-self:end;background:var(--grad);color:#fff;border:0;font-family:inherit;font-size:.9rem;font-weight:700;padding:.55rem 1.15rem;border-radius:12px;cursor:pointer;box-shadow:0 10px 22px -8px rgba(37,99,235,.6);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.nav .cta:hover{transform:translateY(-2px);box-shadow:0 14px 28px -8px rgba(37,99,235,.7)}
+.nav .cta::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-120%) skewX(-18deg)}
+.nav .cta:hover::after{animation:shine .9s ease}
+@media (max-width:860px){.nav .links{display:none}}
+@media (max-width:560px){
+  .nav{padding:.7rem .9rem;gap:.6rem}
+  .nav .logo{font-size:0;gap:0}
+  .nav .cta{white-space:nowrap;font-size:.8rem;padding:.5rem .85rem}
+  .hero{padding-top:6rem}
+  .hero .stats{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:1rem 0;max-width:420px;margin-inline:auto}
+}
+
+/* ============ هیرو ============ */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:7.5rem 1.25rem 4rem;overflow:hidden;background:#fff}
+.hero .blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none}
+.hero .b1{width:520px;height:520px;background:rgba(37,99,235,.30);top:-140px;right:-120px;animation:blobMove 14s ease-in-out infinite}
+.hero .b2{width:460px;height:460px;background:rgba(109,40,217,.24);bottom:-120px;left:-100px;animation:blobMove 17s ease-in-out infinite reverse}
+.hero .b3{width:300px;height:300px;background:rgba(14,165,233,.22);top:36%;left:16%;animation:blobMove 20s ease-in-out infinite}
+.hero .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(37,99,235,.13) 1px,transparent 1.4px);background-size:30px 30px;mask-image:radial-gradient(ellipse 75% 65% at 50% 42%,#000 35%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 75% 65% at 50% 42%,#000 35%,transparent 75%)}
+.hero>*{position:relative}
+.badge-top{display:inline-flex;align-items:center;gap:.5rem;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.22);color:var(--brand);font-size:.82rem;font-weight:600;padding:.4rem 1rem;border-radius:999px;margin-bottom:1.4rem;animation:popIn .8s .1s both}
+.badge-top .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:tickerPulse 2s infinite}
+.hero h1{font-size:clamp(2rem,5.4vw,3.7rem);font-weight:900;line-height:1.6;max-width:900px;animation:popIn .9s .2s both}
+.hero h1 .g{background:var(--grad);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradShift 6s ease infinite}
+.hero .sub{color:var(--mut);font-size:clamp(.95rem,1.6vw,1.12rem);max-width:680px;margin:1.1rem auto 0;animation:popIn .9s .35s both}
+.hero .actions{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;animation:popIn .9s .5s both}
+.btn{display:inline-flex;align-items:center;gap:.55rem;font-family:inherit;font-weight:700;font-size:.98rem;padding:.85rem 1.7rem;border-radius:14px;border:0;cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.btn-primary{background:var(--grad);background-size:180% auto;color:#fff;box-shadow:0 14px 30px -10px rgba(37,99,235,.65)}
+.btn-primary:hover{transform:translateY(-2px);background-position:100% 50%;box-shadow:0 18px 36px -10px rgba(37,99,235,.75)}
+.btn-ghost{background:#fff;color:var(--ink2);border:1.5px solid var(--line)}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-2px)}
+.hero .stats{display:flex;gap:clamp(1rem,4vw,3rem);justify-content:center;flex-wrap:wrap;margin-top:3.2rem;animation:popIn .9s .65s both}
+.hero .stat b{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .stat > span{display:block;color:var(--mut);font-size:.85rem}
+
+/* ماکِ داشبورد در هیرو */
+.hero-mock{margin-top:3.6rem;width:min(880px,94vw);animation:popIn 1s .8s both;position:relative}
+.mock-window{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-l);overflow:hidden;text-align:start}
+.mock-bar{display:flex;align-items:center;gap:.45rem;background:var(--bg);border-bottom:1px solid var(--line);padding:.7rem 1.1rem}
+.mock-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.mock-bar i:nth-child(1){background:#f87171}.mock-bar i:nth-child(2){background:#fbbf24}.mock-bar i:nth-child(3){background:#34d399}
+.mock-bar .url{margin-inline-start:.8rem;background:#fff;border:1px solid var(--line);border-radius:8px;font-size:.72rem;color:var(--mut);padding:.15rem .8rem;direction:ltr}
+.mock-body{display:grid;grid-template-columns:200px 1fr;min-height:300px}
+.mock-side{background:#0f172a;color:#cbd5e1;padding:1rem .8rem;font-size:.78rem}
+.mock-side .it{display:flex;align-items:center;gap:.55rem;padding:.5rem .65rem;border-radius:9px;margin-bottom:2px}
+.mock-side .it i{opacity:.8}
+.mock-side .it.on{background:var(--brand);color:#fff;box-shadow:0 6px 14px -6px rgba(37,99,235,.7)}
+.mock-main{padding:1.1rem;background:var(--bg)}
+.mock-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:.9rem}
+.mock-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:.75rem .85rem;box-shadow:var(--sh-s)}
+.mock-card b{font-size:1.15rem;font-weight:800;display:block}
+.mock-card span{font-size:.68rem;color:var(--mut)}
+.mock-card .ic{width:28px;height:28px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;margin-bottom:.3rem}
+.mock-row{display:grid;grid-template-columns:1.5fr 1fr;gap:.7rem}
+.mock-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:.85rem;box-shadow:var(--sh-s)}
+.mock-panel h6{font-size:.78rem;color:var(--mut);font-weight:600;margin-bottom:.6rem}
+.bars{display:flex;align-items:flex-end;gap:.45rem;height:86px}
+.bars i{flex:1;background:var(--grad);border-radius:5px 5px 2px 2px;transform-origin:bottom;animation:barGrow 1s cubic-bezier(.2,.7,.3,1.2) both}
+.mock-line{display:flex;align-items:center;gap:.5rem;font-size:.74rem;padding:.35rem 0;border-bottom:1px dashed var(--line)}
+.mock-line:last-child{border:0}
+.mock-line .st{margin-inline-start:auto;font-size:.66rem;font-weight:700;padding:.1rem .55rem;border-radius:99px}
+.st.g{background:rgba(22,163,74,.12);color:#15803d}.st.r{background:rgba(220,38,38,.12);color:#b91c1c}.st.o{background:rgba(217,119,6,.14);color:#b45309}
+@media (max-width:760px){.mock-body{grid-template-columns:1fr}.mock-side{display:none}.mock-cards{grid-template-columns:repeat(2,1fr)}.mock-row{grid-template-columns:1fr}}
+
+/* ============ نوار متحرک ============ */
+.marquee{background:#0f172a;color:#94a3b8;overflow:hidden;padding:.9rem 0;white-space:nowrap}
+.marquee .track{display:inline-flex;gap:2.6rem;animation:marquee 38s linear infinite;padding-inline-start:2.6rem}
+.marquee span{display:inline-flex;align-items:center;gap:.55rem;font-size:.88rem}
+.marquee i{color:var(--brand);opacity:.9}
+.marquee:hover .track{animation-play-state:paused}
+
+/* ============ بخش‌ها ============ */
+section{padding:clamp(3.5rem,8vw,6.5rem) 1.25rem}
+.wrap{max-width:1160px;margin:0 auto}
+.sec-head{text-align:center;max-width:720px;margin:0 auto clamp(2.2rem,5vw,3.6rem)}
+.kicker{display:inline-flex;align-items:center;gap:.45rem;color:var(--brand);background:rgba(37,99,235,.08);font-size:.8rem;font-weight:700;padding:.35rem .95rem;border-radius:999px;margin-bottom:1rem}
+.sec-head h2{font-size:clamp(1.5rem,3.4vw,2.3rem);font-weight:900;line-height:1.7}
+.sec-head p{color:var(--mut);margin-top:.7rem}
+
+/* کارت‌های ارزش */
+.values{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.1rem}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1.6rem 1.4rem;box-shadow:var(--sh-s);transition:transform .3s,box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
+.vcard::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--grad);opacity:0;transition:.3s}
+.vcard:hover{transform:translateY(-6px);box-shadow:var(--sh-m);border-color:rgba(37,99,235,.35)}
+.vcard:hover::before{opacity:1}
+.vcard .ic{width:52px;height:52px;border-radius:15px;background:rgba(37,99,235,.09);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;transition:.3s}
+.vcard:hover .ic{background:var(--grad);color:#fff;transform:rotate(-6deg) scale(1.06)}
+.vcard h3{font-size:1.05rem;font-weight:800;margin-bottom:.45rem}
+.vcard p{color:var(--mut);font-size:.88rem}
+
+/* ماژول‌ها */
+#modules{background:#fff}
+.filter{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.2rem}
+.filter button{font-family:inherit;font-size:.85rem;font-weight:600;padding:.5rem 1.15rem;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;transition:.2s}
+.filter button:hover{border-color:var(--brand);color:var(--brand)}
+.filter button.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -6px rgba(37,99,235,.5)}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:1rem}
+.mod{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:1.25rem 1.15rem;transition:transform .25s,box-shadow .25s,border-color .25s,opacity .3s;cursor:default;animation:popIn .45s both}
+.mod:hover{transform:translateY(-5px);box-shadow:var(--sh-m);border-color:rgba(37,99,235,.4);background:#fff}
+.mod .top{display:flex;align-items:center;gap:.7rem;margin-bottom:.55rem}
+.mod .ic{width:42px;height:42px;border-radius:12px;background:rgba(37,99,235,.1);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;flex:0 0 auto}
+.mod h3{font-size:.98rem;font-weight:800}
+.mod .cnt{margin-inline-start:auto;font-size:.68rem;color:var(--brand);background:rgba(37,99,235,.09);padding:.12rem .55rem;border-radius:99px;font-weight:700;white-space:nowrap}
+.mod p{color:var(--mut);font-size:.8rem;line-height:1.85}
+.mod .feats{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.7rem;max-height:0;overflow:hidden;transition:max-height .4s ease}
+.mod:hover .feats{max-height:220px}
+.mod .feats b{font-size:.68rem;font-weight:600;background:#fff;border:1px solid var(--line);color:var(--ink2);padding:.14rem .55rem;border-radius:99px}
+
+/* اسپات‌لایت‌ها */
+.spot{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4.5rem);align-items:center;margin-bottom:clamp(3.5rem,7vw,6rem)}
+.spot:last-child{margin-bottom:0}
+.spot.flip .visual{order:-1}
+@media (max-width:900px){.spot{grid-template-columns:1fr}.spot.flip .visual{order:0}}
+.spot .txt .kicker{margin-bottom:.8rem}
+.spot .txt h3{font-size:clamp(1.3rem,2.6vw,1.75rem);font-weight:900;line-height:1.7;margin-bottom:.8rem}
+.spot .txt>p{color:var(--mut);margin-bottom:1.2rem}
+.spot ul{list-style:none;display:grid;gap:.6rem}
+.spot li{display:flex;gap:.6rem;align-items:flex-start;color:var(--ink2);font-size:.92rem}
+.spot li i{color:var(--ok);margin-top:.35rem;flex:0 0 auto}
+.visual{position:relative}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-l);overflow:hidden}
+.glass .head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.2rem;border-bottom:1px solid var(--line);font-weight:800;font-size:.92rem}
+.glass .head span{font-size:.72rem;color:var(--mut);font-weight:500}
+.glass .body{padding:1.1rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.7rem;font-weight:700;padding:.18rem .6rem;border-radius:99px}
+.chip.g{background:rgba(22,163,74,.12);color:#15803d}.chip.r{background:rgba(220,38,38,.12);color:#b91c1c}.chip.o{background:rgba(217,119,6,.14);color:#b45309}.chip.b{background:rgba(37,99,235,.1);color:var(--brand)}
+.mini-row{display:flex;align-items:center;gap:.65rem;padding:.55rem .2rem;border-bottom:1px dashed var(--line);font-size:.83rem}
+.mini-row:last-child{border:0}
+.mini-row .av{width:32px;height:32px;border-radius:50%;background:var(--grad);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex:0 0 auto}
+.mini-row .st{margin-inline-start:auto}
+.float-tag{position:absolute;background:#fff;border:1px solid var(--line);box-shadow:var(--sh-m);border-radius:14px;padding:.6rem .9rem;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:.5rem;animation:floatY 5s ease-in-out infinite;z-index:2}
+.float-tag i{color:var(--brand)}
+.tt{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+.tt .cell{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:.5rem .3rem;text-align:center;font-size:.66rem;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:.15rem;animation:popIn .5s both}
+.tt .cell b{font-size:.68rem}
+.tt .cell.on{background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.4);color:var(--brand);font-weight:700}
+.tt .day{background:transparent;border:0;font-weight:800;color:var(--mut);font-size:.68rem;min-height:auto}
+.phone{width:210px;margin:0 auto;background:#0f172a;border-radius:30px;padding:.6rem;box-shadow:var(--sh-l);animation:floatY2 6s ease-in-out infinite}
+.phone .scr{background:#fff;border-radius:22px;overflow:hidden}
+.phone .notch{width:80px;height:16px;background:#0f172a;border-radius:0 0 12px 12px;margin:0 auto}
+.phone .pbody{padding:.9rem .8rem 1.2rem;font-size:.72rem}
+.phone .pbody .t{font-weight:800;font-size:.8rem;margin-bottom:.5rem;display:flex;gap:.4rem;align-items:center}
+.phone .pbody .t i{color:var(--bad)}
+.steps{counter-reset:s;display:grid;gap:.7rem}
+.steps .s{display:flex;gap:.7rem;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:.7rem .9rem;animation:popIn .5s both}
+.steps .s b{font-size:.85rem}
+.steps .s span{display:block;font-size:.74rem;color:var(--mut)}
+.steps .s::before{counter-increment:s;content:counter(s);flex:0 0 auto;width:30px;height:30px;border-radius:10px;background:var(--grad);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800}
+.doc-mock{position:relative;padding:1.4rem 1.3rem}
+.doc-mock .lh{display:flex;align-items:center;gap:.7rem;border-bottom:2px solid var(--brand);padding-bottom:.7rem;margin-bottom:.9rem}
+.doc-mock .lh .lg{width:44px;height:44px;border-radius:12px;background:var(--grad);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem}
+.doc-mock .lh b{font-size:.9rem}
+.doc-mock .lh span{display:block;font-size:.68rem;color:var(--mut);font-weight:500}
+.doc-mock .ln{height:9px;border-radius:5px;background:var(--bg);margin-bottom:.55rem;position:relative;overflow:hidden}
+.doc-mock .ln::after{content:"";position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--w,70%);background:linear-gradient(270deg,var(--line),#cbd5e1);border-radius:5px}
+.doc-mock .serial{position:absolute;top:1.1rem;left:1.2rem;font-size:.66rem;color:var(--mut);border:1px dashed var(--line);border-radius:8px;padding:.2rem .55rem;direction:ltr}
+.doc-mock .qr{position:absolute;bottom:1.1rem;left:1.2rem;width:64px;height:64px;background:
+  conic-gradient(#0f172a 25%,transparent 0 50%,#0f172a 0 75%,transparent 0) 0 0/16px 16px, #fff;
+  border:4px solid #fff;outline:2px solid #0f172a;border-radius:6px}
+.pay-card .amount{font-size:1.9rem;font-weight:900;color:var(--ink);text-align:center;margin:.4rem 0 .2rem}
+.pay-card .amount small{font-size:.85rem;color:var(--mut);font-weight:500}
+.pay-btn{display:flex;align-items:center;justify-content:center;gap:.5rem;background:#f6bb2f;color:#1f2937;font-weight:800;font-size:.9rem;border-radius:12px;padding:.75rem;margin-top:1rem;box-shadow:0 10px 20px -8px rgba(246,187,47,.7)}
+.prog{height:9px;border-radius:6px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.prog i{display:block;height:100%;background:var(--grad);border-radius:6px;transition:width 1.4s cubic-bezier(.2,.7,.3,1)}
+
+/* نقش‌ها — پنل مزایا */
+#roles{background:#fff}
+.role-tabs{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem}
+.role-tabs button{display:inline-flex;align-items:center;gap:.5rem;font-family:inherit;font-size:.9rem;font-weight:700;padding:.6rem 1.3rem;border-radius:14px;border:1.5px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;transition:.25s}
+.role-tabs button.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 10px 22px -8px rgba(37,99,235,.55);transform:translateY(-2px)}
+.ben-panel{display:none}
+.ben-panel.on{display:block;animation:popIn .4s both;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:clamp(1.4rem,3vw,2.2rem);box-shadow:var(--sh-s)}
+.ben-head{display:flex;align-items:center;gap:1.1rem;margin-bottom:1.5rem;text-align:start}
+.ben-ic{width:66px;height:66px;border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:1.75rem;flex:0 0 auto;animation:popIn .5s both}
+.ben-head h3{font-size:clamp(1.15rem,2.4vw,1.45rem);font-weight:900;line-height:1.6}
+.ben-head p{color:var(--mut);font-size:.92rem}
+.ben-hl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.85rem;margin-bottom:1.5rem}
+.ben-hl .hl{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:1.15rem 1rem;text-align:center;box-shadow:var(--sh-s);transition:transform .25s}
+.ben-hl .hl:hover{transform:translateY(-3px)}
+.ben-hl .hl b{font-size:clamp(1.35rem,2.6vw,1.7rem);font-weight:900;display:block;background:var(--grad);background-size:180% auto;-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.5}
+.ben-hl .hl span{font-size:.8rem;color:var(--mut)}
+.ben-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:.85rem}
+.ben-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.2rem 1.25rem;box-shadow:var(--sh-s);transition:transform .25s,box-shadow .25s,border-color .25s;animation:popIn .5s both}
+.ben-card:hover{transform:translateY(-5px);box-shadow:var(--sh-m);border-color:var(--bc)}
+.ben-card i{font-size:1.3rem;color:var(--c,var(--brand));margin-bottom:.55rem;display:block}
+.ben-card b{display:block;font-size:.94rem;margin-bottom:.3rem}
+.ben-card span{font-size:.81rem;color:var(--mut);line-height:1.9}
+
+/* فناوری و امنیت */
+#tech{background:#0f172a;color:#e2e8f0;position:relative;overflow:hidden}
+#tech::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 380px at 85% 10%,rgba(37,99,235,.25),transparent 60%),radial-gradient(500px 340px at 10% 90%,rgba(109,40,217,.2),transparent 60%)}
+#tech .wrap{position:relative}
+#tech .kicker{background:rgba(255,255,255,.08);color:#93c5fd}
+#tech .sec-head h2{color:#fff}
+#tech .sec-head p{color:#94a3b8}
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}
+.tcard{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:1.3rem 1.25rem;transition:.3s;backdrop-filter:blur(4px)}
+.tcard:hover{background:rgba(255,255,255,.09);transform:translateY(-4px)}
+.tcard i{font-size:1.5rem;color:#60a5fa;margin-bottom:.7rem;display:block}
+.tcard b{display:block;font-size:.98rem;margin-bottom:.3rem;color:#fff}
+.tcard p{font-size:.83rem;color:#94a3b8;line-height:1.85}
+.tech-badges{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;margin-top:2.4rem}
+.tech-badges span{border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:.42rem 1.05rem;font-size:.82rem;color:#cbd5e1;transition:.25s}
+.tech-badges span:hover{border-color:#60a5fa;color:#93c5fd;transform:translateY(-2px)}
+
+/* آمار */
+#numbers{padding-block:clamp(2.2rem,4vw,3.6rem)}
+.counters{position:relative;overflow:hidden;background:var(--grad);background-size:200% auto;animation:gradShift 9s ease infinite;border-radius:28px;padding:clamp(1.8rem,4vw,2.8rem) clamp(1.2rem,3vw,2.4rem);display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;box-shadow:0 34px 70px -30px rgba(37,99,235,.55)}
+.counters::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.15) 1px,transparent 1.4px);background-size:24px 24px;mask-image:linear-gradient(210deg,#000 10%,transparent 65%);-webkit-mask-image:linear-gradient(210deg,#000 10%,transparent 65%)}
+.counter{position:relative;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:1.9rem 1rem 1.6rem;text-align:center;backdrop-filter:blur(4px);transition:transform .3s,background .3s}
+.counter:hover{background:rgba(255,255,255,.17);transform:translateY(-5px)}
+.counter .ic{width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1rem;box-shadow:0 8px 18px -8px rgba(2,6,23,.4)}
+.counter b{font-size:clamp(2.5rem,4.6vw,3.5rem);font-weight:900;color:#fff;display:block;line-height:1.45;text-shadow:0 3px 14px rgba(2,6,23,.25);letter-spacing:-.01em}
+.counter > span{color:rgba(255,255,255,.92);font-size:.95rem;font-weight:500}
+
+/* گام‌های راه‌اندازی */
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;counter-reset:g}
+.setup .g{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1.7rem 1.4rem;box-shadow:var(--sh-s);position:relative;transition:.3s}
+.setup .g:hover{transform:translateY(-5px);box-shadow:var(--sh-m)}
+.setup .g::before{counter-increment:g;content:counter(g);position:absolute;top:-16px;inset-inline-start:1.3rem;width:38px;height:38px;border-radius:12px;background:var(--grad);color:#fff;font-weight:900;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 20px -8px rgba(37,99,235,.6)}
+.setup .g i{font-size:1.5rem;color:var(--brand);margin:1rem 0 .6rem;display:block}
+.setup .g b{display:block;font-size:1rem;margin-bottom:.3rem}
+.setup .g p{color:var(--mut);font-size:.85rem}
+
+/* FAQ */
+#faq{background:#fff}
+.faq{max-width:760px;margin:0 auto;display:grid;gap:.7rem}
+.qa{border:1px solid var(--line);border-radius:15px;background:var(--bg);overflow:hidden;transition:.3s}
+.qa.open{border-color:rgba(37,99,235,.4);box-shadow:var(--sh-s)}
+.qa button{width:100%;display:flex;align-items:center;gap:.8rem;font-family:inherit;font-size:.95rem;font-weight:700;background:transparent;border:0;padding:1.05rem 1.3rem;cursor:pointer;color:var(--ink);text-align:start}
+.qa button i{margin-inline-start:auto;transition:transform .3s;color:var(--brand)}
+.qa.open button i{transform:rotate(180deg)}
+.qa .a{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.qa .a p{padding:0 1.3rem 1.1rem;color:var(--mut);font-size:.88rem}
+
+/* CTA پایانی */
+.final{background:var(--grad);background-size:200% auto;animation:gradShift 8s ease infinite;border-radius:28px;padding:clamp(2.5rem,6vw,4.5rem) clamp(1.5rem,4vw,3.5rem);text-align:center;color:#fff;position:relative;overflow:hidden;box-shadow:var(--sh-l)}
+.final::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1.4px);background-size:26px 26px;mask-image:linear-gradient(200deg,#000 5%,transparent 60%);-webkit-mask-image:linear-gradient(200deg,#000 5%,transparent 60%)}
+.final>*{position:relative}
+.final h2{font-size:clamp(1.5rem,3.5vw,2.4rem);font-weight:900;line-height:1.7}
+.final p{opacity:.9;margin:.8rem auto 1.8rem;max-width:560px}
+.final .btn-white{background:#fff;color:var(--brand-dark)}
+.final .btn-white:hover{transform:translateY(-2px);box-shadow:0 16px 32px -10px rgba(0,0,0,.35)}
+.final .btn-outline-w{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.6)}
+.final .btn-outline-w:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+
+footer{padding:2.6rem 1.25rem;text-align:center;color:var(--mut);font-size:.85rem}
+footer b{color:var(--ink2)}
+
+/* دکمهٔ بازگشت به بالا */
+.toTop{position:fixed;bottom:1.4rem;left:1.4rem;width:46px;height:46px;border-radius:14px;background:var(--grad);color:#fff;border:0;cursor:pointer;font-size:1.1rem;box-shadow:0 12px 26px -8px rgba(37,99,235,.65);opacity:0;pointer-events:none;transition:.3s;z-index:90}
+.toTop.show{opacity:1;pointer-events:auto}
+.toTop:hover{transform:translateY(-3px)}
+</style>
+</head>
+<body>
+
+<!-- ══════════ ناوبری ══════════ -->
+<nav class="nav" id="nav">
+  <a class="logo" href="#top"><i class="bi bi-mortarboard-fill"></i> سامانهٔ مدیریت مدرسه</a>
+  <div class="links">
+    <a href="#values">چرا ما؟</a>
+    <a href="#modules">ماژول‌ها</a>
+    <a href="#spotlights">قابلیت‌های کلیدی</a>
+    <a href="#roles">مزایا برای هر نقش</a>
+    <a href="#tech">فناوری و امنیت</a>
+    <a href="#faq">سؤالات متداول</a>
+  </div>
+  <a href="#final" class="cta"><i class="bi bi-rocket-takeoff"></i> درخواست دموی زنده</a>
+</nav>
+
+<!-- ══════════ هیرو ══════════ -->
+<header class="hero" id="top">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="grid-bg"></div>
+  <div class="badge-top"><span class="dot"></span> نسخهٔ ۱.۲ — کاملاً فارسی، شمسی و راست‌چین</div>
+  <h1>کل مدرسهٔ شما،<br>در <span class="g">یک پلتفرم هوشمند</span></h1>
+  <p class="sub">از ثبت‌نام تا کارنامه، از حضور و غیاب تا شهریه — سامانهٔ یکپارچهٔ مدیریت مدرسه با ۳۲ ماژول و بیش از ۲۷۰ قابلیت که مدیر، معلم، دانش‌آموز و اولیا را به هم متصل می‌کند. روی هاست خودِ مدرسه نصب می‌شود؛ داده‌ها همیشه ملک خودتان است.</p>
+  <div class="actions">
+    <a class="btn btn-primary" href="#spotlights"><i class="bi bi-stars"></i> مشاهدهٔ قابلیت‌های کلیدی</a>
+    <a class="btn btn-ghost" href="#modules"><i class="bi bi-grid-1x2"></i> ۳۲ ماژول سامانه</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><b><span class="count num" data-count="32">۰</span></b><span>ماژول تخصصی</span></div>
+    <div class="stat"><b><span class="count num" data-count="270">۰</span>+</b><span>قابلیت کاربردی</span></div>
+    <div class="stat"><b><span class="count num" data-count="5">۰</span></b><span>نقش کاربری</span></div>
+    <div class="stat"><b><span class="count num" data-count="100">۰</span>٪</b><span>فارسی و شمسی</span></div>
+  </div>
+
+  <div class="hero-mock">
+    <div class="mock-window">
+      <div class="mock-bar"><i></i><i></i><i></i><span class="url">school.ir/dashboard</span></div>
+      <div class="mock-body">
+        <div class="mock-side">
+          <div class="it on"><i class="bi bi-speedometer2"></i> داشبورد</div>
+          <div class="it"><i class="bi bi-clipboard-check"></i> حضور و غیاب</div>
+          <div class="it"><i class="bi bi-award"></i> نمرات و کارنامه</div>
+          <div class="it"><i class="bi bi-cash-stack"></i> امور مالی</div>
+          <div class="it"><i class="bi bi-megaphone"></i> اطلاعیه‌ها</div>
+          <div class="it"><i class="bi bi-bus-front"></i> سرویس مدرسه</div>
+          <div class="it"><i class="bi bi-book"></i> کتابخانه</div>
+          <div class="it"><i class="bi bi-gear"></i> تنظیمات</div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-cards">
+            <div class="mock-card"><span class="ic" style="background:rgba(37,99,235,.1);color:#2563eb"><i class="bi bi-people"></i></span><b class="num">۵۴۲</b><span>دانش‌آموز فعال</span></div>
+            <div class="mock-card"><span class="ic" style="background:rgba(22,163,74,.12);color:#16a34a"><i class="bi bi-clipboard-check"></i></span><b class="num">۹۴٪</b><span>حضور امروز</span></div>
+            <div class="mock-card"><span class="ic" style="background:rgba(217,119,6,.14);color:#d97706"><i class="bi bi-exclamation-circle"></i></span><b class="num">۱۲</b><span>غیبت امروز</span></div>
+            <div class="mock-card"><span class="ic" style="background:rgba(109,40,217,.12);color:#6d28d9"><i class="bi bi-cash-coin"></i></span><b class="num">۸۶٪</b><span>وصول شهریه</span></div>
+          </div>
+          <div class="mock-row">
+            <div class="mock-panel">
+              <h6>روند حضور هفتهٔ جاری</h6>
+              <div class="bars">
+                <i style="height:82%;animation-delay:.1s"></i><i style="height:90%;animation-delay:.2s"></i><i style="height:74%;animation-delay:.3s"></i><i style="height:95%;animation-delay:.4s"></i><i style="height:88%;animation-delay:.5s"></i><i style="height:60%;animation-delay:.6s"></i><i style="height:40%;animation-delay:.7s"></i>
+              </div>
+            </div>
+            <div class="mock-panel">
+              <h6>رویدادهای امروز</h6>
+              <div class="mock-line"><i class="bi bi-clipboard-x" style="color:#dc2626"></i> غیبت رضا محمدی — هشدار به ولی <span class="st r">ارسال شد</span></div>
+              <div class="mock-line"><i class="bi bi-award" style="color:#2563eb"></i> انتشار نمرات میان‌ترم پایهٔ هفتم <span class="st g">منتشر شد</span></div>
+              <div class="mock-line"><i class="bi bi-cash" style="color:#d97706"></i> پرداخت شهریهٔ آنلاین — کلاس نهم <span class="st o">در انتظار</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ نوار متحرک ماژول‌ها ══════════ -->
+<div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
+
+<!-- ══════════ چرا این سامانه ══════════ -->
+<section id="values">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-gem"></i> چرا این سامانه؟</span>
+      <h2>هر چیزی که یک مدرسهٔ مدرن لازم دارد — <br>بدون پراکندگی و کاغذبازی</h2>
+      <p>به‌جای چند نرم‌افزار جدا و گروه‌های شلوغ واتساپ، یک سامانهٔ یکپارچه که همهٔ گردش کار مدرسه را پوشش می‌دهد.</p>
+    </div>
+    <div class="values">
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-hdd-network"></i></div><h3>نصب روی هاست خودِ مدرسه</h3><p>داده‌ها ۱۰۰٪ نزد خودتان می‌ماند؛ نه اشتراک ماهانهٔ اجباری، نه وابستگی به سرور اشخاص ثالث و نه نگرانی برای مالکیت اطلاعات.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-translate"></i></div><h3>کاملاً فارسی و شمسی</h3><p>رابط راست‌چین با فونت وزیرمتن، تقویم و تاریخ شمسی در تمام گزارش‌ها — محصول بومی، نه ترجمهٔ نصفه‌نیمهٔ یک سیستم خارجی.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-rocket-takeoff"></i></div><h3>راه‌اندازی در چند روز</h3><p>ویزارد نصب وب، ورود گروهی دانش‌آموزان از اکسل، دادهٔ نمونه برای تمرین و چک‌لیست زندهٔ راه‌اندازی — بدون نیاز به تیم فنی.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-sliders"></i></div><h3>سفارشی‌سازی کامل</h3><p>رنگ و لوگوی مدرسه، فعال/غیرفعال‌سازی هر ماژول و هر قابلیت، سمت‌های سازمانی با مجوزهای دلخواه — سامانه مطابق روش شما شکل می‌گیرد.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-arrow-repeat"></i></div><h3>نگهداری و به‌روزرسانی آسان</h3><p>به‌روزرسانی با بارگذاری ZIP از خود پنل، حالت تعمیر برنامه‌ریزی‌شده، پایش فضای دیسک و لاگ کامل خطاها — نگهداری‌اش یک غذا خوردن است.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-shield-lock"></i></div><h3>امنیت چندلایه</h3><p>قفل ورود پس از تلاش‌های ناموفق، کپچا، محافظت CSRF، نشست روی پایگاه داده و تاریخچهٔ کامل ورود کاربران — حساب مدرسه شما در امان است.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-clock-history"></i></div><h3>کارهای خودکار در پس‌زمینه</h3><p>پیامک غیبت، یادآوری‌ها و پشتیبان‌گیری شبانه طبق زمان‌بند داخلی خودشان اجرا می‌شوند — هیچ چیزی به حافظهٔ آدم‌ها گره نخورده است.</p></div>
+      <div class="vcard reveal"><div class="ic"><i class="bi bi-life-preserver"></i></div><h3>پشتیبانی که جواب می‌دهد</h3><p>دکمهٔ گزارش خطا در همهٔ صفحات با پیوست تصویر، راهنمای نقش‌محور داخل سامانه و تیکت با مهلت پاسخ (SLA) مشخص.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ ماژول‌ها ══════════ -->
+<section id="modules">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-grid-1x2"></i> ۳۲ ماژول یکپارچه</span>
+      <h2>همهٔ بخش‌های مدرسه، در یک سامانه</h2>
+      <p>روی هر ماژول بمانید تا قابلیت‌های آن را ببینید. هر ماژول را می‌توانید جداگانه فعال یا غیرفعال کنید.</p>
+    </div>
+    <div class="filter reveal" id="modFilter"></div>
+    <div class="mods" id="modGrid"></div>
+  </div>
+</section>
+
+<!-- ══════════ قابلیت‌های کلیدی ══════════ -->
+<section id="spotlights" style="padding-top:clamp(3rem,7vw,5.5rem)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-stars"></i> نقاط عطف سامانه</span>
+      <h2>قابلیت‌هایی که تفاوت را رقم می‌زنند</h2>
+      <p>این‌ها همان چیزهایی هستند که اولیا و مدیران در نگاه اول عاشقشان می‌شوند.</p>
+    </div>
+
+    <!-- ۱. برنامهٔ هفتگی خودکار -->
+    <div class="spot">
+      <div class="txt reveal" data-fx="right">
+        <span class="kicker"><i class="bi bi-magic"></i> ماژول ساختار آموزشی</span>
+        <h3>برنامهٔ هفتگی کل مدرسه،<br>با یک کلیک تولید می‌شود</h3>
+        <p>دیگر هیچ مدرسه‌ای ساعت‌ها سرِ چیدن برنامه و حل تداخل معلمان وقت تلف نمی‌کند. موتور چیدمان خودکار، دروس را بر اساس ساعت هفتگی هر درس، بدون تداخل معلمان و با رعایت ساعات در دسترس‌نبودن آن‌ها می‌چیند.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> حذف کامل تداخل برنامهٔ معلمان بین کلاس‌ها</li>
+          <li><i class="bi bi-check-circle-fill"></i> رعایت ساعات اعلام‌شدهٔ در دسترس‌نبودن معلم</li>
+          <li><i class="bi bi-check-circle-fill"></i> پخش متوازن دروس در روزها و زنگ‌های دوتایی</li>
+          <li><i class="bi bi-check-circle-fill"></i> پیش‌نمایش، چیدمان دستی و چاپ برنامه برای کلاس و معلم</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass">
+          <div class="head">برنامهٔ هفتگی — کلاس هفتم الف <span class="chip g"><i class="bi bi-check-lg"></i> بدون تداخل</span></div>
+          <div class="body">
+            <div class="tt">
+              <div class="cell day"></div><div class="cell day">شنبه</div><div class="cell day">یکشنبه</div><div class="cell day">دوشنبه</div><div class="cell day">سه‌شنبه</div>
+              <div class="cell day">زنگ ۱</div><div class="cell on" style="animation-delay:.05s"><b>ریاضی</b>احمدی</div><div class="cell on" style="animation-delay:.1s"><b>فارسی</b>کریمی</div><div class="cell on" style="animation-delay:.15s"><b>علوم</b>رضایی</div><div class="cell on" style="animation-delay:.2s"><b>قرآن</b>حسینی</div>
+              <div class="cell day">زنگ ۲</div><div class="cell on" style="animation-delay:.25s"><b>ریاضی</b>احمدی</div><div class="cell on" style="animation-delay:.3s"><b>انگلیسی</b>مرادی</div><div class="cell on" style="animation-delay:.35s"><b>علوم</b>رضایی</div><div class="cell on" style="animation-delay:.4s"><b>هنر</b>صادقی</div>
+              <div class="cell day">زنگ ۳</div><div class="cell on" style="animation-delay:.45s"><b>فارسی</b>کریمی</div><div class="cell on" style="animation-delay:.5s"><b>مطالعات</b>حسینی</div><div class="cell on" style="animation-delay:.55s"><b>انگلیسی</b>مرادی</div><div class="cell on" style="animation-delay:.6s"><b>ورزش</b>قاسمی</div>
+              <div class="cell day">زنگ ۴</div><div class="cell on" style="animation-delay:.65s"><b>هدیه‌ها</b>حسینی</div><div class="cell on" style="animation-delay:.7s"><b>ریاضی</b>احمدی</div><div class="cell on" style="animation-delay:.75s"><b>کاروفناوری</b>نوری</div><div class="cell on" style="animation-delay:.8s"><b>ورزش</b>قاسمی</div>
+            </div>
+          </div>
+        </div>
+        <div class="float-tag" style="top:-18px;left:-10px;animation-delay:.6s"><i class="bi bi-lightning-charge-fill"></i> تولید در چند ثانیه</div>
+        <div class="float-tag" style="bottom:-16px;right:-8px;animation-delay:1.4s"><i class="bi bi-people"></i> بدون تداخل معلمان</div>
+      </div>
+    </div>
+
+    <!-- ۲. حضور و غیاب -->
+    <div class="spot flip">
+      <div class="txt reveal" data-fx="left">
+        <span class="kicker"><i class="bi bi-clipboard-check"></i> ماژول حضور و غیاب</span>
+        <h3>فرزندتان غایب شد؟<br>قبل از خروج او از مدرسه، پیامک می‌گیرید</h3>
+        <p>ثبت روزانه یا زنگ‌به‌زنگ توسط معلم، وضعیت‌های تأخیر و مرخصی، «همه حاضر» با یک کلیک و… مهم‌تر از همه: پیامک خودکار غیبت به ولی، در همان لحظهٔ ثبت.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> ثبت زنگ‌به‌زنگ به تفکیک درس + تأخیر با ذکر دقیقه</li>
+          <li><i class="bi bi-check-circle-fill"></i> اعلان و پیامک خودکار غیبت به اولیا (زمان‌بندی‌شده)</li>
+          <li><i class="bi bi-check-circle-fill"></i> درخواست موجه‌سازی غیبت با بارگذاری مدرک و تأیید مدیر</li>
+          <li><i class="bi bi-check-circle-fill"></i> هشدار غیبت‌های مکرر، دفتر حضور ماهانه و خروجی CSV</li>
+          <li><i class="bi bi-check-circle-fill"></i> لحاظ‌کردن خودکار تعطیلات رسمی تقویم</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass">
+          <div class="head">حضور و غیاب امروز — کلاس هشتم ب <span class="chip b num">۹۲٪ حضور</span></div>
+          <div class="body">
+            <div class="mini-row"><span class="av">ر.م</span> رضا محمدی <span class="st"><span class="chip r">غایب</span></span></div>
+            <div class="mini-row"><span class="av">س.ا</span> سارا احمدی <span class="st"><span class="chip o">تأخیر ۱۵ دقیقه</span></span></div>
+            <div class="mini-row"><span class="av">ع.ک</span> علی کریمی <span class="st"><span class="chip g">حاضر</span></span></div>
+            <div class="mini-row"><span class="av">ن.ح</span> نگار حسینی <span class="st"><span class="chip g">حاضر</span></span></div>
+            <div class="mini-row"><span class="av">م.ص</span> محمد صادقی <span class="st"><span class="chip b">مرخصی موجه</span></span></div>
+          </div>
+        </div>
+        <div style="margin-top:-30px">
+        <div class="phone">
+          <div class="scr">
+            <div class="notch"></div>
+            <div class="pbody">
+              <div class="t"><i class="bi bi-chat-dots-fill"></i> پیامک دریافتی</div>
+              <div style="background:#f1f5f9;border-radius:12px;padding:.6rem .7rem;line-height:1.9">
+                ولی رضا محمدی، فرزند شما امروز در کلاس هشتم ب <b style="color:#b91c1c">غایب</b> ثبت شده است.<br><span style="color:#64748b;font-size:.62rem">دبیرستان شهید بهشتی — ۰۸:۰۵</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ۳. کارنامه و تحلیل -->
+    <div class="spot">
+      <div class="txt reveal" data-fx="right">
+        <span class="kicker"><i class="bi bi-award"></i> ماژول آزمون‌ها و نمرات</span>
+        <h3>کارنامهٔ دیجیتال با<br>تحلیل و رتبه‌بندی خودکار</h3>
+        <p>از کوئیز روزانه تا کارنامهٔ پایان نوبت — هم عددی و هم توصیفی برای پایه‌های ابتدایی. معدل وزنی، رتبهٔ کلاس، نمودار تحلیل و چاپ کارنامهٔ رسمی، همه خودکار.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> برگهٔ ورود نمرهٔ کلاسی با ذخیرهٔ یکجا و انتشار کنترل‌شده</li>
+          <li><i class="bi bi-check-circle-fill"></i> ارزشیابی توصیفی برای ابتدایی، عددی برای متوسطه</li>
+          <li><i class="bi bi-check-circle-fill"></i> قفل نمرات نوبت + تاریخچهٔ هر تغییر با ثبت دلیل</li>
+          <li><i class="bi bi-check-circle-fill"></i> تحلیل نمرات، مقایسهٔ کلاس‌ها و چاپ کارنامهٔ رسمی</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass">
+          <div class="head">کارنامهٔ نوبت اول — نگار حسینی <span class="chip g num">رتبه ۳</span></div>
+          <div class="body">
+            <div class="mini-row">ریاضی <span class="st"><b class="num">۱۹٫۵</b></span></div>
+            <div class="mini-row">علوم <span class="st"><b class="num">۱۸٫۷۵</b></span></div>
+            <div class="mini-row">ادبیات فارسی <span class="st"><b class="num">۱۹</b></span></div>
+            <div class="mini-row">زبان انگلیسی <span class="st"><b class="num">۱۷٫۲۵</b></span></div>
+            <div style="display:flex;align-items:center;gap:.7rem;margin-top:.9rem">
+              <b style="font-size:.8rem;white-space:nowrap">معدل کل: <span class="num" style="color:var(--brand)">۱۸٫۹</span></b>
+              <div class="prog" style="flex:1"><i style="width:0" class="jprog" data-w="89%"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="float-tag" style="top:-16px;right:-6px;animation-delay:.8s"><i class="bi bi-lock-fill"></i> قفل نمرات + تاریخچهٔ تغییر</div>
+      </div>
+    </div>
+
+    <!-- ۴. پیش‌ثبت‌نام -->
+    <div class="spot flip">
+      <div class="txt reveal" data-fx="left">
+        <span class="kicker"><i class="bi bi-person-plus"></i> ماژول پذیرش</span>
+        <h3>پیش‌ثبت‌نام آنلاین،<br>حتی وقتی مدرسه تعطیل است</h3>
+        <p>اولیا بدون نیاز به ورود، از فرم عمومی مدرسه ثبت‌نام می‌کنند، مدارک را بارگذاری می‌کنند و کد رهگیری می‌گیرند. مدیر وضعیت هر درخواست را تغییر می‌دهد و خانواده با پیامک باخبر می‌شود؛ در پایان، پذیرفته‌شده با یک کلیک به پروندهٔ دانش‌آموز تبدیل می‌شود.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> فرم عمومی با اعتبارسنجی کد ملی، موبایل و تاریخ شمسی</li>
+          <li><i class="bi bi-check-circle-fill"></i> پیگیری آنلاین درخواست با کد رهگیری</li>
+          <li><i class="bi bi-check-circle-fill"></i> پیامک خودکار کد رهگیری و نتیجهٔ پذیرش</li>
+          <li><i class="bi bi-check-circle-fill"></i> تبدیل یک‌کلیکی درخواست پذیرفته‌شده به پروندهٔ کامل</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass">
+          <div class="head">درخواست‌های پذیرش <span class="chip b num">۲۳ درخواست جدید</span></div>
+          <div class="body">
+            <div class="steps">
+              <div class="s" style="animation-delay:.05s"><div><b>امیر رضایی <span class="chip g">پذیرفته شد</span></b><span>پایهٔ هفتم — کد رهگیری PR-1405-0042</span></div></div>
+              <div class="s" style="animation-delay:.15s"><div><b>درسا محمدی <span class="chip o">در حال بررسی</span></b><span>پایهٔ هفتم — مدارک بارگذاری شد</span></div></div>
+              <div class="s" style="animation-delay:.25s"><div><b>پارسا نادری <span class="chip b">نیازمند مدارک</span></b><span>پایهٔ ششم — پیام برای خانواده ارسال شد</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="float-tag" style="bottom:-16px;left:-6px;animation-delay:.5s"><i class="bi bi-qr-code"></i> پیگیری با کد رهگیری</div>
+      </div>
+    </div>
+
+    <!-- ۵. اسناد رسمی -->
+    <div class="spot">
+      <div class="txt reveal" data-fx="right">
+        <span class="kicker"><i class="bi bi-file-earmark-ruled"></i> ماژول اسناد رسمی</span>
+        <h3>گواهی و کارنامه با سربرگ،<br>مهر و استعلام اصالت</h3>
+        <p>گواهی اشتغال به تحصیل، معرفی‌نامه، کارنامهٔ رسمی و ریزنمرات — با سربرگ مدرسه، شمارهٔ سریال یکتا، امضا و مهر مدیر. هر سند یک کد استعلام دارد که هر کسی می‌تواند اصالتش را عمومی بررسی کند؛ سند جعلی دیگر معنا ندارد.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> سریال خودکار به‌ازای نوع سند و سال تحصیلی (گ-۱۴۰۵-۰۰۰۱)</li>
+          <li><i class="bi bi-check-circle-fill"></i> قالب قابل ویرایش با متغیرهای خودکار از پرونده</li>
+          <li><i class="bi bi-check-circle-fill"></i> صفحهٔ عمومی استعلام اصالت + ابطال سند با ثبت دلیل</li>
+          <li><i class="bi bi-check-circle-fill"></i> کارت دانش‌آموزی چاپی با بارکد و QR استعلام هویت</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass doc-mock">
+          <span class="serial num">گ-1405-0037</span>
+          <div class="lh">
+            <span class="lg"><i class="bi bi-mortarboard-fill"></i></span>
+            <div><b>گواهی اشتغال به تحصیل</b><span>دبیرستان نمونهٔ دولتی شهید بهشتی</span></div>
+          </div>
+          <div class="ln" style="--w:88%"></div>
+          <div class="ln" style="--w:95%"></div>
+          <div class="ln" style="--w:72%"></div>
+          <div class="ln" style="--w:84%"></div>
+          <div class="ln" style="--w:60%"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:1rem"><span class="chip g"><i class="bi bi-patch-check-fill"></i> اصالت تأیید شد — verify</span></div>
+          <div class="qr" title="استعلام اصالت"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ۶. مالی -->
+    <div class="spot flip">
+      <div class="txt reveal" data-fx="left">
+        <span class="kicker"><i class="bi bi-cash-stack"></i> ماژول امور مالی</span>
+        <h3>شهریه، قسط و پرداخت آنلاین<br>بدون رفت‌وآمد به دفتر مدرسه</h3>
+        <p>صدور صورت‌حساب گروهی برای کل پایه با یک کلیک، تخفیف، پرداخت جزئی و اقساط، و درگاه پرداخت آنلاین زرین‌پال داخل پنل اولیا. یادآوری بدهی خودکار به بدهکاران و گزارش وصولی و معوقات با نمودار.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill"></i> صورت‌حساب گروهی به تفکیک پایه/کلاس</li>
+          <li><i class="bi bi-check-circle-fill"></i> پرداخت آنلاین زرین‌پال + ثبت خودکار و استعلام تراکنش</li>
+          <li><i class="bi bi-check-circle-fill"></i> رسید چاپی، تخفیف و پرداخت اقساطی</li>
+          <li><i class="bi bi-check-circle-fill"></i> یادآوری بدهی با اعلان/پیامک + گزارش وصولی</li>
+        </ul>
+      </div>
+      <div class="visual reveal" data-fx="zoom">
+        <div class="glass pay-card">
+          <div class="head">صورت‌حساب شهریه — نوبت دوم <span class="chip o">۲ قسط باقی</span></div>
+          <div class="body" style="text-align:center">
+            <span style="font-size:.78rem;color:var(--mut)">ماندهٔ قابل پرداخت</span>
+            <div class="amount num">۴٫۲۵۰٫۰۰۰ <small>تومان</small></div>
+            <div class="mini-row" style="text-align:start">قسط اول <span class="st"><span class="chip g">پرداخت شد</span></span></div>
+            <div class="mini-row" style="text-align:start">قسط دوم <span class="st"><span class="chip o">سررسید ۲۵ مهر</span></span></div>
+            <div class="pay-btn"><i class="bi bi-credit-card"></i> پرداخت آنلاین با زرین‌پال</div>
+            <div style="font-size:.7rem;color:var(--mut);margin-top:.6rem">پرداخت موفق بلافاصله در پنل مدیر ثبت می‌شود</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ مزایا برای هر نقش ══════════ -->
+<section id="roles">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-people"></i> مزایای سامانه برای:</span>
+      <h2>هر نقش، یک دلیل قوی برای عاشق شدن</h2>
+      <p>روی هر نقش کلیک کنید تا دقیقاً ببینید این سامانه چه چیزی را برای او تغییر می‌دهد — با جزئیات کامل.</p>
+    </div>
+    <div class="role-tabs reveal" id="roleTabs"></div>
+    <div id="rolePanels"></div>
+  </div>
+</section>
+
+<!-- ══════════ فناوری و امنیت ══════════ -->
+<section id="tech">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-cpu"></i> زیرساخت</span>
+      <h2>مدرن، امن و متعلق به خودتان</h2>
+      <p>سامانه روی زیرساخت استاندارد وب ساخته شده و کامل روی هاست خود مدرسه اجرا می‌شود.</p>
+    </div>
+    <div class="tech-grid">
+      <div class="tcard reveal"><i class="bi bi-hdd-network"></i><b>نصب روی هاست خود مدرسه</b><p>سازگار با هاست‌های cPanel اشتراکی و سرور اختصاصی؛ ویزارد نصب وب، نصب را بدون دانش فنی به چند دقیقه تبدیل می‌کند.</p></div>
+      <div class="tcard reveal"><i class="bi bi-database"></i><b>MySQL یا SQLite</b><p>انتخاب پایگاه داده هنگام نصب؛ پشتیبان‌گیری خودکار شبانه و ارسال نسخهٔ پشتیبان به ایمیل، FTP یا WebDAV بیرون از سرور.</p></div>
+      <div class="tcard reveal"><i class="bi bi-shield-lock"></i><b>امنیت لایه‌به‌لایه</b><p>قفل ورود، کپچا، CSRF، هدرهای امنیتی، نشست روی پایگاه داده، تاریخچهٔ ورود و گزارش فعالیت کامل کاربران.</p></div>
+      <div class="tcard reveal"><i class="bi bi-cloud-arrow-down"></i><b>به‌روزرسانی از پنل</b><p>بارگذاری بستهٔ نسخهٔ جدید ZIP از خود پنل مدیریت با نصب خودکار وابستگی‌ها و همگام‌سازی پایگاه داده.</p></div>
+      <div class="tcard reveal"><i class="bi bi-chat-square-text"></i><b>پیامک و ایمیل</b><p>درگاه کاوه‌نگار یا وب‌هوک سفارشی + SMTP؛ با صف تلاش مجدد هوشمند و گزارش مصرف و هزینهٔ پیامک.</p></div>
+      <div class="tcard reveal"><i class="bi bi-phone"></i><b>اپلیکیشن موبایل (PWA)</b><p>سامانه مثل اپ روی گوشی اندروید و آیفون نصب می‌شود — با آیکون و رنگ برند مدرسه، سرویس‌ورکر و صفحهٔ آفلاین؛ بدون هزینهٔ استور و انتشار.</p></div>
+      <div class="tcard reveal"><i class="bi bi-tools"></i><b>حالت تعمیر و پایش سلامت</b><p>بستن موقت سامانه روی غیرمدیران با پیام دلخواه، پایش ساعتی فضای دیسک با هشدار خودکار به مدیر و لاگ خطاهای روزانه.</p></div>
+      <div class="tcard reveal"><i class="bi bi-life-preserver"></i><b>پشتیبانی واقعی</b><p>دکمهٔ گزارش خطا در همهٔ صفحات، راهنمای نقش‌محور داخل سامانه، چک‌لیست راه‌اندازی و تیکت با SLA پاسخ.</p></div>
+    </div>
+    <div class="tech-badges reveal">
+      <span>Node.js</span><span>Express</span><span>MySQL / SQLite</span><span>PWA + Service Worker</span><span>Bootstrap RTL</span><span>Chart.js</span><span>تقویم شمسی</span><span>فونت وزیرمتن</span><span>CSRF Protection</span><span>حالت تاریک</span><span>کنسول مدیریت چندمدرسه‌ای</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ آمار ══════════ -->
+<section id="numbers">
+  <div class="wrap">
+    <div class="sec-head reveal" style="margin-bottom:2.2rem">
+      <span class="kicker"><i class="bi bi-graph-up-arrow"></i> سامانه در یک نگاه</span>
+      <h2>اعدادی که خودشان حرف می‌زنند</h2>
+    </div>
+    <div class="counters reveal" data-fx="zoom">
+      <div class="counter"><span class="ic"><i class="bi bi-grid-1x2"></i></span><b><span class="count num" data-count="32">۰</span></b><span>ماژول یکپارچه</span></div>
+      <div class="counter"><span class="ic"><i class="bi bi-toggles"></i></span><b><span class="count num" data-count="276">۰</span></b><span>قابلیت قابل فعال‌سازی</span></div>
+      <div class="counter"><span class="ic"><i class="bi bi-people"></i></span><b><span class="count num" data-count="5">۰</span></b><span>نقش کاربری با پنل اختصاصی</span></div>
+      <div class="counter"><span class="ic"><i class="bi bi-database"></i></span><b><span class="count num" data-count="2">۰</span></b><span>پایگاه دادهٔ قابل انتخاب</span></div>
+      <div class="counter"><span class="ic"><i class="bi bi-translate"></i></span><b>۱۰۰٪</b><span>فارسی، شمسی و راست‌چین</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ راه‌اندازی ══════════ -->
+<section id="setup" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-rocket-takeoff"></i> راه‌اندازی</span>
+      <h2>از خرید تا مدرسهٔ آنلاین، در چند روز</h2>
+    </div>
+    <div class="setup">
+      <div class="g reveal"><i class="bi bi-wizard"></i><b>نصب با ویزارد</b><p>ویزارد نصب وب، پیش‌نیازها را چک می‌کند و در چند دقیقه سامانه را روی هاست شما بالا می‌آورد.</p></div>
+      <div class="g reveal"><i class="bi bi-sliders2"></i><b>شخصی‌سازی مدرسه</b><p>نام، لوگو، رنگ برند و فعال‌سازی ماژول‌های موردنیاز — با چک‌لیست زندهٔ راه‌اندازی که پیشرفت شما را نشان می‌دهد.</p></div>
+      <div class="g reveal"><i class="bi bi-box-arrow-in-down"></i><b>ورود داده‌ها</b><p>ورود گروهی دانش‌آموزان از اکسل/CSV، ساخت خودکار حساب کاربری و ارسال پیامک اطلاعات ورود به اولیا.</p></div>
+      <div class="g reveal"><i class="bi bi-emoji-smile"></i><b>شروع کار</b><p>راهنمای نقش‌محور داخل سامانه، دادهٔ نمونه برای تمرین و پشتیبانی با تیکت — تیم شما در یک هفته مسلط می‌شود.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ سؤالات متداول ══════════ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker"><i class="bi bi-question-circle"></i> سؤالات متداول</span>
+      <h2>چیزهایی که مدیران قبل از خرید می‌پرسند</h2>
+    </div>
+    <div class="faq reveal" id="faqList"></div>
+  </div>
+</section>
+
+<!-- ══════════ CTA ══════════ -->
+<section id="final" style="padding-top:0">
+  <div class="wrap">
+    <div class="final reveal" data-fx="zoom">
+      <h2>آماده‌اید مدرسهٔ شما هم<br>هوشمند شود؟</h2>
+      <p>یک دموی زنده با دادهٔ واقعی ببینید و با حساب‌های نمایشی مدیر، معلم، دانش‌آموز و ولی، خودتان قضاوت کنید.</p>
+      <div style="display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-white" href="#"><i class="bi bi-play-circle"></i> درخواست دموی زنده</a>
+        <a class="btn btn-outline-w" href="#top"><i class="bi bi-arrow-up"></i> مرور دوبارهٔ قابلیت‌ها</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><b>سامانهٔ مدیریت مدرسه</b> — نسخهٔ ۱.۲ · یکپارچه، امن و کاملاً فارسی</p>
+  <p style="margin-top:.3rem">طراحی‌شده برای مدرسه‌هایی که آینده را جدی می‌گیرند.</p>
+</footer>
+
+<button class="toTop" id="toTop" aria-label="بازگشت به بالا"><i class="bi bi-arrow-up"></i></button>
+
+<script>
+/* ============ دادهٔ ماژول‌ها (استخراج‌شده از خود سامانه) ============ */
+const CATS = { main:'اصلی', people:'افراد', academic:'آموزش', daily:'روزانه', communication:'ارتباطات', services:'خدمات', finance:'مالی', system:'سیستم' };
+const MODULES = [
+{n:'داشبورد',d:'داشبورد اختصاصی مدیر، معلم و دانش‌آموز با آمار، نمودار و دسترسی سریع',i:'bi-speedometer2',c:'main',f:['آمار کلی','نمودار تحلیلی','کارهای در انتظار','تولدها']},
+{n:'ساختار آموزشی',d:'سال تحصیلی، نوبت‌ها، پایه‌ها، دروس، کلاس‌ها و برنامهٔ هفتگی',i:'bi-mortarboard',c:'academic',f:['برنامهٔ خودکار','اتاق‌ها','ارتقای گروهی','پایان سال']},
+{n:'معلمان و کادر',d:'پروندهٔ معلمان، حساب کاربری، کلاس‌ها، بار کاری و مدارک',i:'bi-person-video3',c:'people',f:['پروندهٔ معلم','بار کاری','مدارک','دفترچهٔ تماس']},
+{n:'سوابق تحصیلی',d:'ثبت‌نام سالانه، تاریخچهٔ سال‌به‌سال و ارتقای پایه',i:'bi-layers',c:'academic',f:['تاریخچه','ارتقا/تکرار','فارغ‌التحصیلی']},
+{n:'دفتر کلاسی',d:'گزارش هر جلسهٔ تدریس، سرفصل‌ها و پیشرفت بودجه‌بندی',i:'bi-journal-bookmark',c:'academic',f:['گزارش تدریس','بودجه‌بندی','جلسات ثبت‌نشده']},
+{n:'دانش‌آموزان',d:'پروندهٔ کامل: هویتی، اولیا، پزشکی، مدارک، کارت و یادداشت‌ها',i:'bi-people',c:'people',f:['ورود گروهی CSV','کارت با QR','خط زمانی','خواهر/برادر']},
+{n:'انضباط و تشویق',d:'موارد انضباطی منفی و امتیازهای مثبت با اطلاع به اولیا',i:'bi-shield-check',c:'people',f:['امتیاز مثبت/منفی','اطلاع اولیا','رتبهٔ کلاس']},
+{n:'پنل اولیا',d:'حساب ولی با پروندهٔ فرزند، حضور، نمرات، مالی و ارتباط',i:'bi-people-fill',c:'people',f:['چند فرزند','پیامک ورود','پیام به معلم']},
+{n:'سلامت و بهداشت',d:'معاینات دوره‌ای، حوادث، واکسیناسیون و هشدار حساسیت',i:'bi-heart-pulse',c:'people',f:['سوابق سلامت','هشدار حساسیت','ارجاع درمانی']},
+{n:'پیش‌ثبت‌نام و پذیرش',d:'فرم عمومی با کد رهگیری، بررسی و تبدیل به پرونده',i:'bi-person-plus',c:'people',f:['فرم عمومی','کد رهگیری','پیامک نتیجه']},
+{n:'مشاوره',d:'جلسات مشاورهٔ تحصیلی و رفتاری با پیگیری و جلسات محرمانه',i:'bi-chat-heart',c:'people',f:['جلسات','محرمانگی','درخواست دانش‌آموز']},
+{n:'امور اداری',d:'درخواست مرخصی کارکنان، تأیید مدیر و ماندهٔ سقف سالانه',i:'bi-person-badge',c:'people',f:['گردش تأیید','ماندهٔ مرخصی']},
+{n:'حضور و غیاب',d:'ثبت روزانه و زنگ‌به‌زنگ، گزارش‌ها، موجه‌سازی و پیامک غیبت',i:'bi-clipboard-check',c:'daily',f:['زنگ‌به‌زنگ','پیامک به ولی','هشدار مکرر','کارکنان']},
+{n:'آزمون‌ها و نمرات',d:'تعریف آزمون، ثبت نمره، کارنامه، رتبه‌بندی و تحلیل',i:'bi-award',c:'academic',f:['توصیفی/عددی','قفل نمرات','تحلیل','چاپ کارنامه']},
+{n:'تکالیف و محتوا',d:'تکلیف با مهلت، ارسال پاسخ، نمره و بازخورد + جزوه',i:'bi-journal-check',c:'academic',f:['ارسال فایل','بازخورد','یادآوری مهلت']},
+{n:'تیکت و پشتیبانی',d:'گفتگوی رشته‌ای با اولویت، ارجاع، SLA و امتیازدهی',i:'bi-chat-left-text',c:'communication',f:['SLA','یادداشت داخلی','پاسخ آماده','امتیاز']},
+{n:'پیام‌های داخلی',d:'صندوق پیام بین مدیر، معلمان و دانش‌آموزان با رسید خواندن',i:'bi-envelope',c:'communication',f:['ارسال گروهی','رسید خواندن','رشته‌ای']},
+{n:'اطلاعیه‌ها',d:'تابلوی اعلانات با مخاطب، سنجاق، زمان‌بندی و شمارش بازدید',i:'bi-megaphone',c:'communication',f:['سنجاق','زمان‌بندی','شمارش بازدید']},
+{n:'اسناد رسمی',d:'گواهی و نامه با سربرگ، سریال، مهر و استعلام اصالت',i:'bi-file-earmark-ruled',c:'services',f:['استعلام اصالت','ابطال سند','کارنامهٔ رسمی']},
+{n:'اعلان‌ها',d:'اعلان درون‌برنامه‌ای، پیامک و ایمیل با صف تلاش مجدد',i:'bi-bell',c:'communication',f:['پیامک/ایمیل','صف تلاش مجدد','ارسال دستی']},
+{n:'تقویم و رویدادها',d:'تقویم شمسی مدرسه: رویداد، تعطیل، آزمون، مهلت تکالیف و تولد',i:'bi-calendar3',c:'communication',f:['نمای ماهانه','خروجی iCal','تولدها']},
+{n:'نظرسنجی',d:'نظرسنجی از دانش‌آموزان، معلمان یا کلاس با نمودار نتایج',i:'bi-bar-chart-steps',c:'communication',f:['چندگزینه‌ای','نتایج زنده']},
+{n:'امور مالی و شهریه',d:'صورت‌حساب گروهی، پرداخت، تخفیف، اقساط و درگاه زرین‌پال',i:'bi-cash-stack',c:'finance',f:['پرداخت آنلاین','اقساط','یادآوری بدهی','گزارش وصولی']},
+{n:'کتابخانه',d:'کتاب‌ها، امانت و بازگشت، دیرکرد و امانت سریع با بارکد',i:'bi-book',c:'services',f:['اسکن بارکد','دیرکرد','کاتالوگ']},
+{n:'پشتیبانی',d:'دکمهٔ گزارش خطا در همهٔ صفحات و درخواست فعال‌سازی ماژول',i:'bi-life-preserver',c:'communication',f:['گزارش با تصویر','پیگیری']},
+{n:'سرویس مدرسه',d:'مسیرها، راننده و خودرو، تخصیص دانش‌آموز و فهرست سرنشین',i:'bi-bus-front',c:'services',f:['مسیرها','فهرست چاپی']},
+{n:'گزارش‌ها و آمار',d:'گزارش‌های مدیریتی با نمودار: جمعیت، حضور، نمرات و بار کاری',i:'bi-graph-up-arrow',c:'system',f:['نمودار تعاملی','چاپ تمیز','CSV']},
+{n:'جستجوی سراسری',d:'جستجوی یکپارچه در کل سامانه با میانبر Ctrl+K',i:'bi-search',c:'system',f:['پیشنهاد زنده','میانبر']},
+{n:'تنظیمات و سیستم',d:'شخصی‌سازی، ماژول‌ها، پشتیبان خودکار، لاگ‌ها و به‌روزرسانی',i:'bi-gear',c:'system',f:['پشتیبان شبانه','حالت تاریک','PWA','به‌روزرسانی از پنل']},
+{n:'کاربران',d:'حساب‌ها، سمت‌های سازمانی با مجوز و بازنشانی رمز',i:'bi-person-gear',c:'system',f:['سمت و مجوز','پیامک رمز']},
+{n:'احراز هویت',d:'ورود امن با قفل تلاش، کپچا، تاریخچه و ورود به جای کاربر',i:'bi-shield-lock',c:'system',f:['قفل ورود','بازیابی رمز OTP','تاریخچهٔ ورود']},
+{n:'راهنما',d:'راهنمای نقش‌محور، چک‌لیست راه‌اندازی و راهنمای زمینه‌ای',i:'bi-question-circle',c:'system',f:['چک‌لیست زنده','راهنمای زمینه‌ای']}
+];
+const BENEFITS = [
+{r:'مدیران',tab:'مدیر',i:'bi-briefcase-fill',c:'#2563eb',
+ pitch:'کل مدرسه زیر یک سقف: آمار، مالی، اسناد و کارکنان — بدون کاغذ، بدون دفتر حساب، بدون انتظار برای گزارش کسی.',
+ hl:[['+۱۰ ساعت','صرفه‌جویی زمان در هر هفته'],['۱۰۰٪','کنترل داده نزد خودتان'],['۱ نگاه','کل مدرسه، لحظه‌ای']],
+ cards:[
+  {i:'bi-speedometer2',t:'داشبورد لحظه‌ای مدرسه',d:'حضور امروز، روند هفته، تولدها و کارهای در انتظار — بدون هیچ گزارش‌گیری دستی.'},
+  {i:'bi-graph-up-arrow',t:'گزارش‌های مدیریتی با نمودار',d:'ترکیب جمعیتی، نرخ غیبت کلاس‌ها، میانگین نمرات و بار کاری معلمان، همه قابل چاپ و خروجی.'},
+  {i:'bi-cash-stack',t:'کنترل کامل امور مالی',d:'صورت‌حساب گروهی، وصولی و معوقات با نمودار، یادآوری خودکار بدهکاران و پرداخت آنلاین.'},
+  {i:'bi-file-earmark-ruled',t:'صدور اسناد رسمی',d:'گواهی و کارنامه با سربرگ، سریال یکتا و صفحهٔ عمومی استعلام اصالت — ضد جعل.'},
+  {i:'bi-person-gear',t:'دسترسی‌های دقیق',d:'برای معاون، دفتردار و حسابدار سمت سازمانی با مجموعهٔ مجوزهای دلخواه بسازید.'},
+  {i:'bi-journal-text',t:'پایش کامل اقدامات',d:'گزارش فعالیت کاربران و تاریخچهٔ هر تغییر نمره با کاربر، زمان و دلیل — کسی نمی‌تواند بی‌ردپا تغییر بدهد.'},
+  {i:'bi-cloud-check',t:'خیال راحت از داده‌ها',d:'پشتیبان‌گیری خودکار شبانه و ارسال نسخهٔ پشتیبان به ایمیل، FTP یا WebDAV بیرون از سرور.'},
+  {i:'bi-person-check',t:'ورود به جای کاربر',d:'سامانه را از دید معلم یا دانش‌آموز ببینید — برای آموزش تیم و رفع ابهام بی‌نظیر است.'},
+  {i:'bi-arrow-repeat',t:'نصب و به‌روزرسانی آسان',d:'ویزارد نصب وب بدون دانش فنی و به‌روزرسانی با بارگذاری ZIP از خود پنل مدیریت.'}
+ ]},
+{r:'معلمان',tab:'معلم',i:'bi-person-video3-fill',c:'#059669',
+ pitch:'زمان شما باید صرف تدریس شود، نه نوشتن در دفترها. کار روزانهٔ معلم در این سامانه چند دقیقه بیشتری نمی‌برد.',
+ hl:[['۳۰ ثانیه','ثبت حضور یک کلاس'],['صفر','کاغذ و دفتر کلاسی'],['۲۴ ساعته','دسترسی از خانه و گوشی']],
+ cards:[
+  {i:'bi-clipboard-check',t:'حضور و غیاب در ۳۰ ثانیه',d:'«همه حاضر» با یک کلیک، ثبت غیبت و تأخیر با دقیقه — زنگ‌به‌زنگ یا روزانه.'},
+  {i:'bi-award',t:'ثبت نمرهٔ کل کلاس یکجا',d:'برگهٔ ورود نمره با ذخیرهٔ واحد، انتشار کنترل‌شده و قفل نمرات پس از نهایی شدن.'},
+  {i:'bi-journal-check',t:'تکلیف و جزوهٔ آنلاین',d:'تکلیف با مهلت بگذارید، پاسخ‌ها را ببینید، نمره و بازخورد بدهید و جزوه به اشتراک بگذارید.'},
+  {i:'bi-journal-bookmark',t:'دفتر کلاسی سریع',d:'گزارش هر جلسهٔ تدریس از دل همان برنامهٔ هفتگی ثبت می‌شود؛ پیشرفت بودجه‌بندی هم خودکار محاسبه می‌شود.'},
+  {i:'bi-calendar-week',t:'برنامهٔ من همیشه در دسترس',d:'برنامهٔ هفتگی، کلاس‌ها، دروس و جمع ساعات تدریس — همیشه به‌روز.'},
+  {i:'bi-megaphone',t:'ارتباط با کلاس',d:'اطلاعیه و نظرسنجی مخصوص کلاس‌های خودتان، با اعلان خودکار به دانش‌آموزان.'},
+  {i:'bi-person-badge',t:'مرخصی بدون برگهٔ گردان',d:'درخواست مرخصی آنلاین ثبت کنید و نتیجهٔ تأیید مدیر را همان‌جا ببینید.'},
+  {i:'bi-shield-check',t:'محافظت از معلم',d:'مهلت ویرایش حضور مشخص است، هر تغییر نمره با دلیل ثبت می‌شود و تاریخچه‌اش نگه داشته می‌شود.'}
+ ]},
+{r:'معاونان و کارکنان',tab:'معاونان',i:'bi-person-badge',c:'#7c3aed',
+ pitch:'دفترداری دیجیتال: گردش کار اداری بدون برگهٔ گردان، پروندهٔ گم‌شدنی و صف پشت میز.',
+ hl:[['۰','برگهٔ گردان و پروندهٔ فیزیکی'],['دقیق','مجوز = اندازهٔ مسئولیت'],['ثبت‌شده','هر اقدام، با ردپا']],
+ cards:[
+  {i:'bi-person-gear',t:'مجوز دقیقاً به اندازهٔ مسئولیت',d:'هر سمت سازمانی فقط به بخش‌های مربوط به خودش دسترسی دارد — نه کم، نه زیاد.'},
+  {i:'bi-archive',t:'دفترداری دیجیتال',d:'پروندهٔ کامل دانش‌آموز: هویتی، اولیا، پزشکی، مدارک و یادداشت‌ها — بدون پروندهٔ گم‌شدنی.'},
+  {i:'bi-person-badge',t:'گردش مرخصی آنلاین',d:'ثبت درخواست، تأیید مدیر و محاسبهٔ خودکار ماندهٔ سقف سالانه.'},
+  {i:'bi-person-check',t:'حضور کارکنان',d:'ثبت ورود و خروج معلمان و کادر اداری با ساعت دقیق.'},
+  {i:'bi-chat-left-text',t:'پیگیری تیکت‌ها',d:'ارجاع به مسئول، اولویت، یادداشت داخلی محرمانه و پاسخ‌های آماده — پشتیبانی منظم.'},
+  {i:'bi-megaphone',t:'اطلاعیهٔ هدفمند',d:'ارسال اطلاعیه به نقش یا کلاس مشخص، با سنجاق، زمان‌بندی انتشار و شمارش بازدید.'},
+  {i:'bi-life-preserver',t:'پشتیبانی بی‌دردسر',d:'هر مشکلی در هر صفحه، با یک تصویر گزارش می‌شود و مستقیم به کنسول سازنده می‌رسد.'}
+ ]},
+{r:'والدین',tab:'والدین',i:'bi-people-fill',c:'#d97706',
+ pitch:'خیال راحت: از کلاس درس تا شهریه، همه‌چیزِ فرزندتان لحظه‌به‌لحظه در جیب شماست — حتی سر کار.',
+ hl:[['< ۱ دقیقه','اطلاع غیبت پس از ثبت'],['۰ مراجعه','برای پرداخت و پیگیری'],['۱ حساب','همهٔ فرزندان با هم']],
+ cards:[
+  {i:'bi-chat-dots',t:'خبر غیبت، همان لحظه',d:'با ثبت غیبت، پیامک و اعلان خودکار دریافت می‌کنید — بدون تماس با مدرسه.'},
+  {i:'bi-award',t:'کارنامه و نمرات فرزند',d:'به محض انتشار نمرات، معدل، رتبه و نظر معلم را در پنل خود می‌بینید.'},
+  {i:'bi-credit-card',t:'پرداخت شهریه از گوشی',d:'درگاه آنلاین، پرداخت قسطی و رسید رسمی — بدون صف پشت دفتر مدرسه.'},
+  {i:'bi-envelope',t:'گفتگو با معلم',d:'پیام و تیکت مستقیم به معلمان فرزندتان با پاسخ‌های ثبت‌شده و قابل پیگیری.'},
+  {i:'bi-people',t:'همهٔ فرزندان، یک حساب',d:'با یک ورود، بین خواهر و برادرها جابه‌جا شوید — حساب ولی بر اساس موبایل ساخته می‌شود.'},
+  {i:'bi-qr-code',t:'پیگیری پیش‌ثبت‌نام',d:'وضعیت درخواست ثبت‌نام فرزندتان را با کد رهگیری آنلاین دنبال کنید.'},
+  {i:'bi-journal-bookmark',t:'امروز در کلاس چه گذشت؟',d:'ببینید چه تدریس شد و چه تکلیفی برای فردا گذاشته شده است.'},
+  {i:'bi-calendar3',t:'تقویم مدرسه در جیب شما',d:'رویدادها، آزمون‌ها، تعطیلات و حتی تولدها — با خروجی تقویم گوشی.'}
+ ]},
+{r:'دانش‌آموزان',tab:'دانش‌آموزان',i:'bi-backpack-fill',c:'#0891b2',
+ pitch:'کل مدرسه در گوشی تو: تکالیف، نمرات، کتابخانه و حتی درخواست مشاوره — منظم، سریع و بی‌کاغذ.',
+ hl:[['۱ اپ','کل مدرسه در جیب'],['۰ فراموشی','تکلیف و مهلت'],['۲۴ ساعته','دسترسی از هر جا']],
+ cards:[
+  {i:'bi-phone',t:'نصب روی گوشی',d:'سامانه مثل اپلیکیشن روی گوشی نصب می‌شود (PWA) — با آیکون مدرسه و پشتیبانی آفلاین.'},
+  {i:'bi-journal-check',t:'تکالیف و مهلت‌ها',d:'تکالیف با یادآوری نزدیک مهلت؛ پاسخ متنی یا فایل همان‌جا ارسال می‌شود.'},
+  {i:'bi-award',t:'نمرات و کارنامهٔ من',d:'نمرات به محض انتشار، همراه بازخورد معلم و کارنامه با معدل و رتبه.'},
+  {i:'bi-journal-bookmark',t:'امروز چه درس دادیم؟',d:'محتوای هر جلسه و تکلیف هر زنگ — اگر غایب بودی هم عقب نمی‌مانی.'},
+  {i:'bi-calendar-check',t:'حضورم را ببین',d:'تقویم ماهانهٔ حضور و غیاب خودت، شفاف و قابل بررسی.'},
+  {i:'bi-book',t:'کتابخانه و امانت‌ها',d:'جستجوی کتاب و موجودی، فهرست امانت‌ها و تاریخ بازگشت.'},
+  {i:'bi-chat-heart',t:'صدا به مدرسه',d:'تیکت به مدیر یا معلم، پیام و حتی درخواست جلسهٔ مشاوره — پاسخ‌ها ثبت می‌شوند.'},
+  {i:'bi-stars',t:'رویدادها و تولدها',d:'رویدادهای مدرسه، آزمون‌های پیش‌رو و تولد هم‌کلاسی‌ها در تقویم.'}
+ ]}
+];
+const FAQS = [
+['سامانه کجا نصب می‌شود؟ داده‌های ما کجاست؟','روی هاست یا سرور خودِ مدرسه (حتی هاست‌های اشتراکی cPanel) نصب می‌شود. تمام داده‌ها در پایگاه داده و فضای ذخیره‌سازی خودتان می‌ماند و مالکیت کامل آن با مدرسه است.'],
+['برای گوشی هم اپلیکیشن دارید؟','بله؛ سامانه به‌صورت PWA با یک کلیک روی صفحهٔ اصلی گوشی اندروید و آیفون نصب می‌شود — بدون هزینهٔ استور، با آیکون و رنگ برند مدرسه و پشتیبانی آفلاین از صفحهٔ اصلی.'],
+['پیامک‌ها از چه درگاهی ارسال می‌شود؟','درگاه کاوه‌نگار یا وب‌هوک دلخواه شما پشتیبانی می‌شود. گزارش مصرف و هزینهٔ پیامک، لاگ کامل ارسال‌ها و صف تلاش مجدد برای ارسال‌های ناموفق هم داخل سامانه است.'],
+['اگر داده‌ها از بین برود چه؟','پشتیبان‌گیری خودکار شبانه با نگه‌داری چند نسخهٔ آخر انجام می‌شود و نسخهٔ فشرده به‌طور خودکار به ایمیل، FTP یا WebDAV بیرون از سرور ارسال می‌گردد.'],
+['چطور به‌روزرسانی می‌کنید؟','نسخهٔ جدید به‌صورت ZIP از خود پنل مدیریت بارگذاری می‌شود؛ نصب وابستگی‌ها و همگام‌سازی پایگاه داده به‌صورت خودکار در پس‌زمینه انجام می‌گیرد.'],
+['برای چند مدرسه می‌شود استفاده کرد؟','بله؛ کنسول مدیریت جداگانه‌ای برای سازنده/میزبانی وجود دارد که وضعیت چند مدرسه را یک‌جا پایش می‌کند.']
+];
+
+/* ============ رندر ============ */
+const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+// نوار متحرک
+const mq = MODULES.map(m => `<span><i class="${m.i}"></i>${m.n}</span>`).join('');
+document.getElementById('marquee').innerHTML = mq + mq;
+
+// ماژول‌ها + فیلتر
+const grid = document.getElementById('modGrid');
+grid.innerHTML = MODULES.map((m,i) => `
+  <div class="mod" data-c="${m.c}" style="animation-delay:${Math.min(i*35,700)}ms">
+    <div class="top"><span class="ic"><i class="${m.i}"></i></span><h3>${m.n}</h3><span class="cnt num">${fa(m.f.length)}+</span></div>
+    <p>${m.d}</p>
+    <div class="feats">${m.f.map(f=>`<b>${f}</b>`).join('')}</div>
+  </div>`).join('');
+const cats = ['all', ...new Set(MODULES.map(m=>m.c))];
+document.getElementById('modFilter').innerHTML = cats.map(c =>
+  `<button data-c="${c}" class="${c==='all'?'on':''}">${c==='all'?'همهٔ ماژول‌ها':(CATS[c]||c)} <span class="num" style="opacity:.7">(${fa(c==='all'?MODULES.length:MODULES.filter(m=>m.c===c).length)})</span></button>`).join('');
+document.getElementById('modFilter').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#modFilter button').forEach(x=>x.classList.toggle('on', x===b));
+  document.querySelectorAll('.mod').forEach((m,i) => {
+    const show = b.dataset.c==='all' || m.dataset.c===b.dataset.c;
+    m.style.display = show ? '' : 'none';
+    if (show){ m.style.animation='none'; void m.offsetWidth; m.style.animation=`popIn .45s ${Math.min(i*30,600)}ms both`; }
+  });
+});
+
+// جواهرات پنهان — حذف شد (ادغام در مزایای نقش‌محور)
+
+// مزایای نقش‌محور با تب
+const tabsEl = document.getElementById('roleTabs'), panelsEl = document.getElementById('rolePanels');
+BENEFITS.forEach((b, idx) => {
+  tabsEl.insertAdjacentHTML('beforeend', `<button data-r="${idx}" class="${idx===0?'on':''}"><i class="${b.i}"></i>${b.tab}</button>`);
+  panelsEl.insertAdjacentHTML('beforeend', `
+    <div class="ben-panel ${idx===0?'on':''}" data-r="${idx}">
+      <div class="ben-head">
+        <span class="ben-ic" style="background:${b.c}14;border:1.5px solid ${b.c}40;color:${b.c}"><i class="${b.i}"></i></span>
+        <div><h3>مزایای سامانه برای ${b.r}</h3><p>${b.pitch}</p></div>
+      </div>
+      <div class="ben-hl">${b.hl.map(([v,l]) => `<div class="hl"><b>${v}</b><span>${l}</span></div>`).join('')}</div>
+      <div class="ben-grid">${b.cards.map(c => `
+        <div class="ben-card" style="--c:${b.c};--bc:${b.c}55"><i class="${c.i}"></i><b>${c.t}</b><span>${c.d}</span></div>`).join('')}</div>
+    </div>`);
+});
+function activatePanel(panel){
+  const b = BENEFITS[+panel.dataset.r];
+  panel.querySelectorAll('.ben-card').forEach((el, i) => {
+    el.style.animation = 'none'; void el.offsetWidth;
+    el.style.animation = `popIn .5s ${Math.min(i * 60, 700)}ms both`;
+  });
+  panel.querySelectorAll('.hl, .ben-ic, .ben-head').forEach((el, i) => {
+    el.style.animation = 'none'; void el.offsetWidth;
+    el.style.animation = `popIn .45s ${i * 90}ms both`;
+  });
+}
+activatePanel(document.querySelector('.ben-panel.on'));
+tabsEl.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn || btn.classList.contains('on')) return;
+  tabsEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === btn));
+  panelsEl.querySelectorAll('.ben-panel').forEach(p => p.classList.toggle('on', p.dataset.r === btn.dataset.r));
+  const on = panelsEl.querySelector('.ben-panel.on');
+  activatePanel(on);
+  if (innerWidth < 900) on.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// FAQ
+document.getElementById('faqList').innerHTML = FAQS.map(([q,a],i) =>
+  `<div class="qa ${i===0?'open':''}"><button>${q}<i class="bi bi-chevron-down"></i></button><div class="a"><p>${a}</p></div></div>`).join('');
+document.getElementById('faqList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const qa = b.parentElement, a = qa.querySelector('.a'), open = qa.classList.contains('open');
+  document.querySelectorAll('.qa').forEach(x => { x.classList.remove('open'); x.querySelector('.a').style.maxHeight = null; });
+  if (!open){ qa.classList.add('open'); a.style.maxHeight = a.scrollHeight + 'px'; }
+});
+document.querySelector('.qa.open .a').style.maxHeight = document.querySelector('.qa.open .a').scrollHeight + 'px';
+
+/* ============ انیمیشن اسکرول ============ */
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => es.forEach(en => {
+    if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+  }), { threshold: .12, rootMargin: '0px 0px -30px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+} else {
+  document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+}
+// هر عنصری که هنگام لود بالای صفحه یا داخل دید است، بدون انتظار آشکار شود
+addEventListener('load', () => document.querySelectorAll('.reveal').forEach(el => {
+  const r = el.getBoundingClientRect();
+  if (r.top < innerHeight && r.bottom > 0) el.classList.add('in');
+}));
+
+/* شمارنده‌ها */
+const fmt = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const cio = new IntersectionObserver(es => es.forEach(en => {
+  if (!en.isIntersecting) return;
+  const el = en.target, target = +el.dataset.count, t0 = performance.now(), dur = 1500;
+  const step = t => {
+    const p = Math.min((t - t0) / dur, 1), ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(Math.round(target * ease));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step); cio.unobserve(el);
+}), { threshold: .6 });
+document.querySelectorAll('.count').forEach(el => cio.observe(el));
+
+/* نوارهای پیشرفت */
+const pio = new IntersectionObserver(es => es.forEach(en => {
+  if (en.isIntersecting){ en.target.style.width = en.target.dataset.w; pio.unobserve(en.target); }
+}), { threshold: .5 });
+document.querySelectorAll('.jprog').forEach(el => pio.observe(el));
+
+/* ناوبری و بازگشت به بالا */
+const nav = document.getElementById('nav'), toTop = document.getElementById('toTop');
+addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', scrollY > 20);
+  toTop.classList.toggle('show', scrollY > 700);
+}, { passive: true });
+toTop.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+</script>
+</body>
+</html>
