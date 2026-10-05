@@ -16,6 +16,7 @@ const modules = require('../core/modules');
 const J = require('../core/jalali');
 const utils = require('../core/utils');
 const installer = require('./install');
+const pkg = require('../../package.json');
 
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
