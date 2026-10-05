@@ -28,3 +28,4 @@ tmp/*
 npm-debug.log*
 storage/update-state.json
 storage/maintenance.flag
+docs/per3.html
