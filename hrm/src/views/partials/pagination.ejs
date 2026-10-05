@@ -1,0 +1,20 @@
+<% if (result && result.pages > 1) {
+  var _base = (typeof baseUrl !== 'undefined' ? baseUrl : currentPath);
+  var _q = Object.assign({}, query); delete _q.page;
+  var _qs = Object.keys(_q).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(_q[k]); }).join('&');
+  var link = function (p) { return _base + '?' + (_qs ? _qs + '&' : '') + 'page=' + p; };
+  var start = Math.max(1, result.page - 2), end = Math.min(result.pages, result.page + 2);
+%>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-top">
+  <span class="text-secondary fs-7">نمایش <%= J.toPersianDigits(result.from) %> تا <%= J.toPersianDigits(result.to) %> از <%= J.toPersianDigits(result.total) %> مورد</span>
+  <ul class="pagination pagination-sm">
+    <li class="page-item<%= result.page <= 1 ? ' disabled' : '' %>"><a class="page-link" href="<%= link(result.page - 1) %>">&rsaquo;</a></li>
+    <% if (start > 1) { %><li class="page-item"><a class="page-link" href="<%= link(1) %>">۱</a></li><% if (start > 2) { %><li class="page-item disabled"><span class="page-link">…</span></li><% } } %>
+    <% for (var p = start; p <= end; p++) { %><li class="page-item<%= p === result.page ? ' active' : '' %>"><a class="page-link" href="<%= link(p) %>"><%= J.toPersianDigits(p) %></a></li><% } %>
+    <% if (end < result.pages) { if (end < result.pages - 1) { %><li class="page-item disabled"><span class="page-link">…</span></li><% } %><li class="page-item"><a class="page-link" href="<%= link(result.pages) %>"><%= J.toPersianDigits(result.pages) %></a></li><% } %>
+    <li class="page-item<%= result.page >= result.pages ? ' disabled' : '' %>"><a class="page-link" href="<%= link(result.page + 1) %>">&lsaquo;</a></li>
+  </ul>
+</div>
+<% } else if (result && result.total) { %>
+<div class="p-2 px-3 border-top text-secondary fs-7">مجموع <%= J.toPersianDigits(result.total) %> مورد</div>
+<% } %>
