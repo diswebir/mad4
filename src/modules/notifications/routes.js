@@ -13,7 +13,7 @@ const settings = require('../../core/settings');
 const router = express.Router();
 const v = (n) => path.join(__dirname, 'views', n + '.ejs');
 router.use(auth.requireAuth);
-const ICONS = { info: 'bi-info-circle', success: 'bi-check-circle', warning: 'bi-exclamation-triangle', danger: 'bi-x-octagon' };
+const ICONS = { info: 'bi-info-circle', success: 'bi-check-circle', warning: 'bi-exclamation-triangle', danger: 'bi-x-octagon', birthday: 'bi-cake2' };
 let lastCleanup = 0;
 async function cleanup() {
   if (!modules.isEnabled('notifications.cleanup') || Date.now() - lastCleanup < 6 * 3600 * 1000) return;

@@ -1,13 +1,95 @@
-<%- include('partials/page-header', { title: m.subject, subtitle: 'گفتگو با ' + other.name + ' (' + (ROLES[other.role] || other.role) + ')', icon: 'bi-envelope-open', breadcrumbs: [{ title: 'پیام‌ها', href: '/messages' }, { title: m.subject }], actions: [...(canReply ? [{ href: '/messages/compose?reply=' + m.id + '&to=' + other.id, label: 'پاسخ', icon: 'bi-reply', class: 'btn-primary' }] : []), { post: '/messages/' + m.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-light text-danger', confirm: 'پیام حذف شود؟' }] }) %>
-<div class="row justify-content-center"><div class="col-lg-9">
-<% var list = thread.length ? thread : [m]; list.forEach(function (x) { var mine = x.sender_id === currentUser.id; %>
-  <div class="card mb-3 <%= x.id === m.id ? 'border-primary' : '' %>"><div class="card-body">
-    <div class="d-flex gap-3 align-items-start"><%- include('partials/avatar', { user: { name: x.sender_name, avatar: x.sender_avatar }, size: 40 }) %>
-      <div class="flex-grow-1 mw-0"><div class="d-flex justify-content-between flex-wrap gap-2"><div><strong><%= mine ? 'شما' : x.sender_name %></strong> <span class="badge badge-soft-secondary"><%= ROLES[x.sender_role] || x.sender_role %></span></div><div class="fs-7 text-secondary"><%= J.formatDateTime(x.created_at) %><% if (mine && enabled('messages.read_receipt')) { %> · <%= x.is_read ? '<i class="bi bi-check2-all text-primary"></i> خوانده شده' + (x.read_at ? ' ' + J.timeAgo(x.read_at) : '') : '<i class="bi bi-check2"></i> ارسال شده' %><% } %></div></div>
-        <% if (x.subject && x.id !== list[0].id && x.subject !== list[0].subject) { %><div class="fw-semibold mt-1"><%= x.subject %></div><% } %>
-        <div class="msg-body mt-2" style="line-height:1.9"><%- utils.nl2br(utils.escapeHtml(x.body)) %></div></div></div>
-  </div></div>
-<% }); %>
-<% if (canReply) { %><form method="post" action="/messages/compose" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="mode" value="user"><input type="hidden" name="receiver_id" value="<%= other.id %>"><input type="hidden" name="parent_id" value="<%= rootId %>"><input type="hidden" name="subject" value="<%= m.subject.startsWith('پاسخ:') ? m.subject : 'پاسخ: ' + m.subject %>">
-  <div class="card-body"><textarea class="form-control" name="body" rows="4" placeholder="پاسخ سریع…" required></textarea></div><div class="card-footer bg-transparent text-end"><button class="btn btn-primary"><i class="bi bi-reply me-1"></i>ارسال پاسخ</button></div></form><% } %>
-</div></div>
+<%- include('partials/page-header', {
+  title: m.subject,
+  subtitle: 'گفتگو با ' + other.name + ' (' + (ROLES[other.role] || other.role) + ')',
+  icon: 'bi-envelope-paper-fill',
+  breadcrumbs: [{ title: 'پیام‌ها', href: '/messages' }, { title: m.subject }],
+  actions: [
+    ...(canReply ? [{ href: '/messages/compose?reply=' + m.id + '&to=' + other.id, label: 'پاسخ جدید', icon: 'bi-pencil-square', class: 'btn-outline-primary' }] : []),
+    { post: '/messages/' + m.id + '/delete', label: 'حذف گفتگو', icon: 'bi-trash3', class: 'btn-light text-danger', confirm: 'آیا این پیام حذف شود؟' }
+  ]
+}) %>
+
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="d-flex flex-column gap-3 mb-4">
+      <% var list = thread.length ? thread : [m]; list.forEach(function (x) {
+        var mine = x.sender_id === currentUser.id;
+        var isCurrent = x.id === m.id;
+      %>
+        <div class="card border <%= mine ? 'bg-primary-subtle border-primary-subtle' : 'bg-surface' %> shadow-sm rounded-4 overflow-hidden">
+          <div class="card-body p-3 p-md-4">
+            <div class="d-flex gap-3 align-items-start">
+              <%- include('partials/avatar', { user: { name: x.sender_name, avatar: x.sender_avatar }, size: 44 }) %>
+              
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="fs-6"><%= mine ? 'شما' : x.sender_name %></strong>
+                    <span class="badge <%= mine ? 'bg-primary text-white' : 'badge-soft-secondary' %> rounded-pill px-2 py-1 fs-8">
+                      <%= ROLES[x.sender_role] || x.sender_role %>
+                    </span>
+                  </div>
+
+                  <!-- زمان و وضعیت ارسال / رسید خوانده شدن -->
+                  <div class="fs-8 text-secondary d-flex align-items-center flex-wrap gap-1">
+                    <i class="bi bi-clock"></i>
+                    <span class="num"><%= J.formatDateTime(x.created_at) %></span>
+                    <% if (mine && enabled('messages.read_receipt')) { %>
+                      <span class="mx-1 text-muted">·</span>
+                      <% if (x.is_read) { %>
+                        <span class="text-primary fw-semibold d-inline-flex align-items-center gap-1" title="خوانده شده">
+                          <i class="bi bi-check2-all fs-6"></i>
+                          <span>خوانده شده <%= x.read_at ? J.timeAgo(x.read_at) : '' %></span>
+                        </span>
+                      <% } else { %>
+                        <span class="text-secondary d-inline-flex align-items-center gap-1" title="ارسال شده">
+                          <i class="bi bi-check2 fs-6"></i>
+                          <span>ارسال شده</span>
+                        </span>
+                      <% } %>
+                    <% } %>
+                  </div>
+                </div>
+
+                <% if (x.subject && x.id !== list[0].id && x.subject !== list[0].subject) { %>
+                  <div class="fw-bold mb-2 text-primary fs-7"><%= x.subject %></div>
+                <% } %>
+
+                <div class="msg-body mt-2 pt-2 border-top border-light-subtle" style="line-height: 1.85; word-break: break-word;">
+                  <%- utils.nl2br(utils.escapeHtml(x.body)) %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- فرم ارسال پاسخ سریع -->
+    <% if (canReply) { %>
+      <div class="card border shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-transparent py-3 d-flex align-items-center gap-2">
+          <i class="bi bi-reply-fill text-primary fs-5"></i>
+          <span class="fw-bold">ارسال پاسخ به <%= other.name %></span>
+        </div>
+        <form method="post" action="/messages/compose">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="mode" value="user">
+          <input type="hidden" name="receiver_id" value="<%= other.id %>">
+          <input type="hidden" name="parent_id" value="<%= rootId %>">
+          <input type="hidden" name="subject" value="<%= m.subject.startsWith('پاسخ:') ? m.subject : 'پاسخ: ' + m.subject %>">
+          <div class="card-body p-3 p-md-4">
+            <textarea class="form-control rounded-3" name="body" rows="4" placeholder="متن پاسخ خود را اینجا بنویسید…" required style="line-height: 1.7;"></textarea>
+          </div>
+          <div class="card-footer bg-transparent py-3 text-end d-flex align-items-center justify-content-between">
+            <span class="text-secondary fs-8">با زدن دکمه، پیام فوراً برای گیرنده ارسال می‌گردد.</span>
+            <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-4">
+              <i class="bi bi-send-fill"></i>
+              <span>ارسال پاسخ</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>

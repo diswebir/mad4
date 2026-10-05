@@ -1,11 +1,162 @@
-<%- include('partials/page-header', { title: 'اعلان‌ها', subtitle: unread ? J.toPersianDigits(unread) + ' اعلان خوانده‌نشده' : 'همهٔ اعلان‌ها خوانده شده‌اند', icon: 'bi-bell', actions: [...(unread ? [{ post: '/notifications/read-all', label: 'خواندن همه', icon: 'bi-check2-all', class: 'btn-primary' }] : []), { post: '/notifications/clear', label: 'پاک‌سازی خوانده‌شده‌ها', icon: 'bi-trash', class: 'btn-light', confirm: 'اعلان‌های خوانده‌شده حذف شوند؟' }] }) %>
-<ul class="nav nav-pills mb-3"><li class="nav-item"><a class="nav-link <%= !filter ? 'active' : '' %>" href="/notifications">همه</a></li><li class="nav-item"><a class="nav-link <%= filter === 'unread' ? 'active' : '' %>" href="/notifications?filter=unread">خوانده‌نشده <% if (unread) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(unread) %></span><% } %></a></li></ul>
-<div class="card"><div class="list-group list-group-flush">
-  <% result.data.forEach(function (n) { %>
-  <div class="list-group-item d-flex gap-3 align-items-start <%= n.is_read ? '' : 'bg-light-subtle border-start border-3 border-primary' %>">
-    <i class="bi <%= ICONS[n.type] || ICONS.info %> fs-4 text-<%= n.type || 'info' %>"></i>
-    <div class="flex-grow-1 mw-0"><a href="/notifications/<%= n.id %>/open" class="fw-semibold text-body d-block"><%= n.title %></a><% if (n.body) { %><div class="fs-7 text-secondary"><%= n.body %></div><% } %><div class="fs-7 text-secondary mt-1"><i class="bi bi-clock me-1"></i><%= J.timeAgo(n.created_at) %> · <%= J.formatDateTime(n.created_at) %></div></div>
-    <div class="d-flex gap-1"><% if (!n.is_read) { %><a href="#" data-post="/notifications/<%= n.id %>/read" class="btn btn-sm btn-light" title="خوانده شد"><i class="bi bi-check2"></i></a><% } %><a href="#" data-post="/notifications/<%= n.id %>/delete" class="btn btn-sm btn-light text-danger" title="حذف"><i class="bi bi-x"></i></a></div>
+<%
+  const typeConfigs = {
+    info: { icon: 'bi-info-circle', bgClass: 'bg-primary-subtle text-primary border-primary-subtle', label: 'اطلاعیه' },
+    success: { icon: 'bi-check-circle', bgClass: 'bg-success-subtle text-success border-success-subtle', label: 'موفقیت' },
+    warning: { icon: 'bi-exclamation-triangle', bgClass: 'bg-warning-subtle text-warning border-warning-subtle', label: 'هشدار' },
+    danger: { icon: 'bi-exclamation-octagon', bgClass: 'bg-danger-subtle text-danger border-danger-subtle', label: 'مهم / خطا' },
+    birthday: { icon: 'bi-cake2', bgClass: 'bg-danger-subtle text-danger border-danger-subtle', label: 'زادروز' },
+    secondary: { icon: 'bi-bell', bgClass: 'bg-secondary-subtle text-secondary border-secondary-subtle', label: 'اعلان' }
+  };
+%>
+
+<%- include('partials/page-header', {
+  title: 'مرکز اعلان‌ها',
+  subtitle: unread ? (J.toPersianDigits(unread) + ' اعلان خوانده‌نشده دارید که نیازمند توجه شماست.') : 'همهٔ اعلان‌های شما خوانده شده‌اند.',
+  icon: 'bi-bell-fill',
+  actions: [
+    ...(unread ? [{ post: '/notifications/read-all', label: 'خواندن همه', icon: 'bi-check2-all', class: 'btn-primary' }] : []),
+    { post: '/notifications/clear', label: 'پاک‌سازی خوانده‌شده‌ها', icon: 'bi-trash3', class: 'btn-light text-danger', confirm: 'آیا همهٔ اعلان‌های خوانده‌شده حذف شوند؟' }
+  ]
+}) %>
+
+<!-- نوار تب‌ها و فیلتر مدرن -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 notif-filter-bar">
+  <ul class="nav notif-nav-pills gap-1">
+    <li class="nav-item">
+      <a class="nav-link notif-pill <%= !filter ? 'active' : '' %>" href="/notifications">
+        <i class="bi bi-grid-fill me-1"></i>
+        <span>همهٔ اعلان‌ها</span>
+        <% if (result && result.total) { %>
+          <span class="badge notif-count-badge <%= !filter ? 'bg-white text-primary' : 'bg-secondary-subtle text-secondary' %>"><%= J.toPersianDigits(result.total) %></span>
+        <% } %>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link notif-pill <%= filter === 'unread' ? 'active' : '' %>" href="/notifications?filter=unread">
+        <i class="bi bi-bell-fill me-1"></i>
+        <span>خوانده‌نشده‌ها</span>
+        <% if (unread) { %>
+          <span class="badge notif-count-badge bg-danger text-white"><%= J.toPersianDigits(unread) %></span>
+        <% } %>
+      </a>
+    </li>
+  </ul>
+  
+  <div class="d-flex align-items-center gap-2 text-secondary fs-8 bg-surface px-3 py-2 rounded-3 border">
+    <i class="bi bi-shield-check text-success fs-6"></i>
+    <span>اعلان‌های خوانده‌شده پس از ۶۰ روز به‌صورت خودکار پاک‌سازی می‌شوند.</span>
   </div>
-  <% }); if (!result.data.length) { %><%- include('partials/empty', { message: 'اعلانی وجود ندارد', icon: 'bi-bell-slash' }) %><% } %>
-</div><%- include('partials/pagination', { result: result, query: query }) %></div>
+</div>
+
+<!-- فهرست کارت‌های مستقل اعلان (فاصله‌دار و مدرن) -->
+<div class="notif-feed mb-4">
+  <% result.data.forEach(function (n) {
+    const tCfg = typeConfigs[n.type] || typeConfigs.info;
+    const isUnread = !n.is_read;
+  %>
+    <div class="notif-card <%= isUnread ? 'is-unread' : 'is-read' %>">
+      <div class="p-3 p-md-4">
+        <div class="d-flex align-items-start gap-3">
+          
+          <!-- آیکون شاخص با پس‌زمینه رنگی ملایم -->
+          <div class="notif-icon-box <%= n.type || 'info' %>">
+            <i class="bi <%= tCfg.icon %>"></i>
+          </div>
+
+          <!-- محتوای اصلی اعلان -->
+          <div class="flex-grow-1 min-w-0">
+            <!-- ردیف عنوان، برچسب‌ها و زمان -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <div class="d-flex align-items-center gap-2 flex-wrap min-w-0">
+                <% if (isUnread) { %>
+                  <span class="notif-unread-dot" title="خوانده نشده"></span>
+                  <span class="badge notif-badge-new">جدید</span>
+                <% } %>
+                <span class="badge notif-badge-type <%= tCfg.bgClass %>"><%= tCfg.label %></span>
+                <a href="/notifications/<%= n.id %>/open" class="notif-title text-decoration-none">
+                  <%= n.title %>
+                </a>
+              </div>
+              
+              <!-- زمان نسبی -->
+              <span class="notif-time text-secondary fs-8 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-clock"></i>
+                <span class="num"><%= J.timeAgo(n.created_at) %></span>
+              </span>
+            </div>
+
+            <!-- بدنه اعلان (در صورت وجود) -->
+            <% if (n.body) { %>
+              <div class="notif-body mb-3">
+                <%= n.body %>
+              </div>
+            <% } %>
+
+            <!-- ردیف پایینی: تاریخ دقیق + دکمه‌های عملیات -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-light-subtle notif-footer">
+              <span class="notif-date text-secondary fs-8 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-calendar3"></i>
+                <span class="num"><%= J.formatDateTime(n.created_at) %></span>
+              </span>
+
+              <!-- دکمه‌های اقدام سریع -->
+              <div class="d-flex align-items-center gap-2">
+                <% if (n.link) { %>
+                  <a href="/notifications/<%= n.id %>/open" class="btn btn-sm btn-outline-primary notif-action-btn">
+                    <span>مشاهده جزئیات</span>
+                    <i class="bi bi-arrow-left"></i>
+                  </a>
+                <% } %>
+
+                <% if (isUnread) { %>
+                  <a href="#" data-post="/notifications/<%= n.id %>/read" class="btn btn-sm btn-light text-primary notif-action-btn" title="علامت به‌عنوان خوانده‌شده">
+                    <i class="bi bi-check2"></i>
+                    <span>خواندم</span>
+                  </a>
+                <% } %>
+
+                <a href="#" data-post="/notifications/<%= n.id %>/delete" class="btn btn-sm btn-light text-danger notif-icon-btn" title="حذف اعلان">
+                  <i class="bi bi-trash3"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  <% }); %>
+
+  <!-- حالت خالی (Empty State) -->
+  <% if (!result.data.length) { %>
+    <div class="card border-0 shadow-sm py-5 text-center my-3">
+      <div class="card-body">
+        <div class="mb-3">
+          <i class="bi <%= filter === 'unread' ? 'bi-check-circle-fill text-success' : 'bi-bell-slash text-secondary' %> fs-1 opacity-75"></i>
+        </div>
+        <h5 class="fw-bold mb-2">
+          <%= filter === 'unread' ? 'عالی است! هیچ اعلان خوانده‌نشده‌ای ندارید' : 'اعلانی برای نمایش وجود ندارد' %>
+        </h5>
+        <p class="text-secondary fs-7 mb-4">
+          <%= filter === 'unread' ? 'تمام اعلان‌ها توسط شما بررسی شده و نیازی به اقدام فوری نیست.' : 'هر زمان رویداد، اطلاعیه یا پیام جدیدی ارسال شود در این بخش نمایش داده خواهد شد.' %>
+        </p>
+        <% if (filter === 'unread') { %>
+          <a href="/notifications" class="btn btn-sm btn-primary">
+            <i class="bi bi-grid me-1"></i>مشاهده همهٔ اعلان‌ها
+          </a>
+        <% } %>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<!-- صفحه‌بندی مدرن -->
+<% if (result && result.pages > 1) { %>
+  <div class="card border-0 shadow-sm mt-3">
+    <%- include('partials/pagination', { result: result, query: query }) %>
+  </div>
+<% } else if (result && result.total) { %>
+  <div class="text-secondary fs-8 text-center mt-3">
+    مجموع <%= J.toPersianDigits(result.total) %> اعلان ثبت شده
+  </div>
+<% } %>

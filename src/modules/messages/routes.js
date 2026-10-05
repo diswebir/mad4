@@ -62,20 +62,43 @@ async function canSendTo(req, receiverId) {
   return groups.some((g) => g.users.some((u) => Number(u.id) === Number(receiverId)));
 }
 function listQuery(req, box) {
-  const q = db.table('messages as m').join('users as s', 's.id', 'm.sender_id').join('users as r', 'r.id', 'm.receiver_id').select('m.*', 's.name as sender_name', 's.role as sender_role', 's.avatar as sender_avatar', 'r.name as receiver_name', 'r.role as receiver_role');
-  if (box === 'sent') q.where('m.sender_id', req.user.id).where('m.deleted_by_sender', 0);
-  else q.where('m.receiver_id', req.user.id).where('m.deleted_by_receiver', 0);
+  const q = db.table('messages as m')
+    .join('users as s', 's.id', 'm.sender_id')
+    .join('users as r', 'r.id', 'm.receiver_id')
+    .select('m.*', 's.name as sender_name', 's.role as sender_role', 's.avatar as sender_avatar', 'r.name as receiver_name', 'r.role as receiver_role', 'r.avatar as receiver_avatar');
+  if (box === 'sent') {
+    q.where('m.sender_id', req.user.id).where('m.deleted_by_sender', 0);
+  } else if (box === 'all') {
+    q.where((b) => {
+      b.where((b1) => b1.where('m.receiver_id', req.user.id).where('m.deleted_by_receiver', 0))
+       .orWhere((b2) => b2.where('m.sender_id', req.user.id).where('m.deleted_by_sender', 0));
+    });
+  } else {
+    q.where('m.receiver_id', req.user.id).where('m.deleted_by_receiver', 0);
+  }
   return q;
 }
 
 router.get('/', async (req, res) => {
-  const box = req.query.box === 'sent' ? 'sent' : 'inbox';
+  const box = req.query.box === 'sent' ? 'sent' : (req.query.box === 'all' ? 'all' : 'inbox');
   const q = listQuery(req, box);
   if (req.query.q) q.search(utils.normalizePersian(req.query.q), ['m.subject', 'm.body', 's.name', 'r.name']);
-  if (req.query.unread === '1' && box === 'inbox') q.where('m.is_read', 0);
+  if (req.query.unread === '1') {
+    if (box === 'all') {
+      q.where('m.receiver_id', req.user.id).where('m.is_read', 0);
+    } else if (box === 'inbox') {
+      q.where('m.is_read', 0);
+    }
+  }
   const result = await q.orderBy('m.id', 'desc').paginate(req.query.page, 20);
   const unread = await db.count('messages', { receiver_id: req.user.id, is_read: 0, deleted_by_receiver: 0 });
-  res.render(v('index'), { title: 'پیام‌ها', result, box, unread, query: req.query, f: { q: req.query.q || '', unread: req.query.unread || '' }, canSend: req.user.role !== 'student' || E('messages.student_send') });
+  const counts = {
+    inbox: await db.count('messages', { receiver_id: req.user.id, deleted_by_receiver: 0 }),
+    sent: await db.count('messages', { sender_id: req.user.id, deleted_by_sender: 0 }),
+    unread
+  };
+  counts.all = counts.inbox + counts.sent;
+  res.render(v('index'), { title: 'پیام‌ها', result, box, unread, counts, query: req.query, f: { q: req.query.q || '', unread: req.query.unread || '' }, canSend: req.user.role !== 'student' || E('messages.student_send') });
 });
 router.get('/compose', async (req, res) => {
   if (req.user.role === 'student' && !E('messages.student_send')) return res.status(403).render('errors/403', { title: 'غیرمجاز' });

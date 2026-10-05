@@ -1,7 +1,11 @@
-<% (typeof flashMessages !== 'undefined' ? flashMessages : []).forEach(function (f) { %>
-<div class="alert alert-<%= f.type %> alert-dismissible fade show alert-auto d-flex align-items-center gap-2" role="alert">
-  <i class="bi <%= { success: 'bi-check-circle-fill', danger: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill' }[f.type] || 'bi-info-circle' %>"></i>
-  <div><%- f.message %></div>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+<% if (typeof flashMessages !== 'undefined' && flashMessages && flashMessages.length) { %>
+<div class="flash-toast-container" id="flashToastContainer" aria-live="polite">
+  <% flashMessages.forEach(function (f) { %>
+  <div class="alert alert-<%= f.type %> alert-dismissible fade show alert-auto flash-toast-item d-flex align-items-center gap-2 shadow-lg" role="alert">
+    <i class="bi <%= { success: 'bi-check-circle-fill', danger: 'bi-exclamation-octagon-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' }[f.type] || 'bi-info-circle-fill' %> fs-5 flash-toast-icon"></i>
+    <div class="flash-toast-msg"><%- f.message %></div>
+    <button type="button" class="btn-close flash-toast-close ms-2" data-bs-dismiss="alert" aria-label="بستن"></button>
+  </div>
+  <% }); %>
 </div>
-<% }); %>
+<% } %>

@@ -471,3 +471,532 @@ a { text-decoration: none; }
 .ssel .ssel-empty { padding: .5rem; font-size: .85rem; text-align: center; }
 .ssel-sm .ssel-btn { font-size: .875rem; }
 .modal .ssel .ssel-menu { z-index: 1060; }
+
+/* ============================================================
+   صفحه اعلان‌ها (Notifications Feed)
+   ============================================================ */
+.notif-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.notif-card {
+  position: relative;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.notif-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(16, 24, 40, 0.08);
+}
+
+/* کارت‌های خوانده‌نشده (Unread State) */
+.notif-card.is-unread {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, var(--surface) 100%);
+  border-color: rgba(37, 99, 235, 0.32) !important;
+  box-shadow: 0 2px 8px -2px rgba(37, 99, 235, 0.12), 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+
+.notif-card.is-unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--brand);
+  border-radius: 4px 0 0 4px;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+}
+
+.notif-card.is-unread .notif-title {
+  font-weight: 700;
+  color: var(--bs-body-color);
+  font-size: 0.98rem;
+}
+
+/* کارت‌های خوانده‌شده (Read State) */
+.notif-card.is-read {
+  background: var(--surface);
+  opacity: 0.9;
+}
+
+.notif-card.is-read:hover {
+  opacity: 1;
+}
+
+.notif-card.is-read .notif-title {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+/* آیکون باکس اختصاصی اعلان */
+.notif-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.notif-card:hover .notif-icon-box {
+  transform: scale(1.06);
+}
+
+.notif-icon-box.info {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.notif-icon-box.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.notif-icon-box.warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+
+.notif-icon-box.danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.notif-icon-box.birthday {
+  background: rgba(236, 72, 153, 0.14);
+  color: #db2777;
+}
+
+.notif-icon-box.secondary {
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+}
+
+/* نقطه تپنده اعلان جدید */
+.notif-unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--brand);
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+  animation: notifPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  flex-shrink: 0;
+}
+
+@keyframes notifPulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+/* بج جدید */
+.notif-badge-new {
+  background-color: rgba(37, 99, 235, 0.12) !important;
+  color: var(--brand) !important;
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.notif-badge-type {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* متن بدنه اعلان */
+.notif-body {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #475569;
+  word-break: break-word;
+}
+
+/* نوار فیلتر و تب‌ها */
+.notif-nav-pills {
+  background: var(--surface);
+  padding: 5px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+}
+
+.notif-pill {
+  border-radius: 10px !important;
+  padding: 0.45rem 1rem !important;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.notif-pill:hover {
+  color: var(--bs-body-color);
+  background: var(--surface-2);
+}
+
+.notif-pill.active {
+  background: var(--brand) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.notif-count-badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.notif-pill.active .notif-count-badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #fff !important;
+}
+
+/* دکمه‌های عملیات سریع */
+.notif-action-btn {
+  border-radius: 9px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.notif-icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.notif-icon-btn:hover {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+/* دارک مود (Dark Mode) */
+[data-bs-theme="dark"] .notif-card {
+  background: #111827;
+  border-color: #1f2937 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .notif-card.is-unread {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, #111827 100%);
+  border-color: rgba(59, 130, 246, 0.42) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(37, 99, 235, 0.18);
+}
+
+[data-bs-theme="dark"] .notif-card.is-unread .notif-title {
+  color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .notif-card.is-read .notif-title {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .notif-card .notif-body {
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .notif-nav-pills {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.info {
+  background: rgba(37, 99, 235, 0.22);
+  color: #60a5fa;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.success {
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.warning {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.danger {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.birthday {
+  background: rgba(236, 72, 153, 0.22);
+  color: #f472b6;
+}
+
+[data-bs-theme="dark"] .notif-icon-box.secondary {
+  background: rgba(100, 116, 139, 0.22);
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .notif-icon-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+}
+
+/* ============================================================
+   صفحه پیام‌ها (Messages Feed & Cards)
+   ============================================================ */
+.msg-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.msg-card {
+  position: relative;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.msg-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(16, 24, 40, 0.08);
+}
+
+.msg-card.is-unread {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, var(--surface) 100%);
+  border-color: rgba(37, 99, 235, 0.32) !important;
+  box-shadow: 0 2px 8px -2px rgba(37, 99, 235, 0.12), 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+
+.msg-card.is-unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--brand);
+  border-radius: 4px 0 0 4px;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+}
+
+.msg-card.is-unread .msg-title {
+  font-weight: 700;
+  color: var(--bs-body-color);
+  font-size: 0.98rem;
+}
+
+.msg-card.is-read {
+  background: var(--surface);
+  opacity: 0.92;
+}
+
+.msg-card.is-read:hover {
+  opacity: 1;
+}
+
+.msg-card.is-read .msg-title {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.msg-preview {
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #475569;
+  word-break: break-word;
+}
+
+[data-bs-theme="dark"] .msg-card {
+  background: #111827;
+  border-color: #1f2937 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .msg-card.is-unread {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, #111827 100%);
+  border-color: rgba(59, 130, 246, 0.42) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(37, 99, 235, 0.18);
+}
+
+[data-bs-theme="dark"] .msg-card.is-unread .msg-title {
+  color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .msg-card.is-read .msg-title {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .msg-card .msg-preview {
+  color: #94a3b8;
+}
+
+/* ============================================================
+   اعلان‌های شناور فلش (Floating Flash Toasts / Popups)
+   بدون شیفت محتوا (Zero Layout Shift)
+   ============================================================ */
+.flash-toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  width: auto;
+  max-width: min(540px, calc(100vw - 32px));
+}
+
+.flash-toast-item {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 100%;
+  border-radius: 14px !important;
+  padding: 0.8rem 1.25rem !important;
+  margin-bottom: 0 !important;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.16), 0 4px 12px -2px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: flashToastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+@keyframes flashToastSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.flash-toast-item.fade:not(.show) {
+  opacity: 0 !important;
+  transform: translateY(-16px) scale(0.95);
+  transition: opacity 0.25s ease, transform 0.25s ease !important;
+}
+
+/* رنگ‌بندی تم لایت */
+.flash-toast-item.alert-success {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0 !important;
+}
+.flash-toast-item.alert-success .flash-toast-icon {
+  color: #059669;
+}
+
+.flash-toast-item.alert-danger {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border-color: #fecaca !important;
+}
+.flash-toast-item.alert-danger .flash-toast-icon {
+  color: #dc2626;
+}
+
+.flash-toast-item.alert-warning {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border-color: #fde68a !important;
+}
+.flash-toast-item.alert-warning .flash-toast-icon {
+  color: #d97706;
+}
+
+.flash-toast-item.alert-info {
+  background-color: #eff6ff !important;
+  color: #1e40af !important;
+  border-color: #bfdbfe !important;
+}
+.flash-toast-item.alert-info .flash-toast-icon {
+  color: #2563eb;
+}
+
+.flash-toast-msg {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.flash-toast-close {
+  padding: 0.5rem !important;
+  font-size: 0.8rem;
+}
+
+/* دارک مود (Dark Mode) */
+[data-bs-theme="dark"] .flash-toast-item {
+  box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .flash-toast-item.alert-success {
+  background-color: #064e3b !important;
+  color: #a7f3d0 !important;
+  border-color: #047857 !important;
+}
+[data-bs-theme="dark"] .flash-toast-item.alert-success .flash-toast-icon {
+  color: #34d399;
+}
+
+[data-bs-theme="dark"] .flash-toast-item.alert-danger {
+  background-color: #7f1d1d !important;
+  color: #fecaca !important;
+  border-color: #b91c1c !important;
+}
+[data-bs-theme="dark"] .flash-toast-item.alert-danger .flash-toast-icon {
+  color: #f87171;
+}
+
+[data-bs-theme="dark"] .flash-toast-item.alert-warning {
+  background-color: #78350f !important;
+  color: #fde68a !important;
+  border-color: #b45309 !important;
+}
+[data-bs-theme="dark"] .flash-toast-item.alert-warning .flash-toast-icon {
+  color: #fbbf24;
+}
+
+[data-bs-theme="dark"] .flash-toast-item.alert-info {
+  background-color: #1e3a8a !important;
+  color: #bfdbfe !important;
+  border-color: #1d4ed8 !important;
+}
+[data-bs-theme="dark"] .flash-toast-item.alert-info .flash-toast-icon {
+  color: #60a5fa;
+}
+
+
+
