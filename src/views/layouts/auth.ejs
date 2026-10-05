@@ -13,17 +13,38 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
 </head>
 <body>
-<div class="login-wrap">
-  <div class="login-card">
-    <div class="text-center mb-4">
-      <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" style="height:72px" class="mb-2 rounded-3"><% } else { %><div class="d-inline-flex align-items-center justify-content-center rounded-4 bg-brand mb-2" style="width:64px;height:64px;font-size:2rem"><i class="bi bi-mortarboard-fill"></i></div><% } %>
-      <h4 class="mb-0"><%= school('school_name') %></h4>
-      <div class="text-secondary fs-7"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></div>
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <div class="auth-brand">
+      <% if (school('school_logo')) { %><span class="logo-tile"><img src="/files/<%= school('school_logo') %>" alt=""></span><% } else { %><span class="logo-tile"><i class="bi bi-mortarboard-fill"></i></span><% } %>
+      <div>
+        <h3><%= school('school_name') %></h3>
+        <div class="slogan"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></div>
+      </div>
     </div>
-    <%- include('../partials/flash') %>
-    <%- body %>
-    <p class="text-center text-secondary fs-7 mt-3"><%= J.formatLong(J.todayISO()) %></p>
-  </div>
+    <div class="auth-hero">
+      <h2>به سامانهٔ مدرسه<br>خوش آمدید</h2>
+      <p>یک پنل یکپارچه برای مدیریت آموزش، ارتباط و پیگیری — مخصوص مدیران، معلمان، دانش‌آموزان و اولیا.</p>
+      <ul class="auth-feats">
+        <li><i class="bi bi-people"></i><div><b>مدیریت کامل مدرسه</b><span>کلاس‌ها، حضور و غیاب و کارنامه در یک‌جا</span></div></li>
+        <li><i class="bi bi-chat-dots"></i><div><b>ارتباط با اولیا</b><span>پیام‌ها و اطلاعیه‌های لحظه‌ای</span></div></li>
+        <li><i class="bi bi-shield-check"></i><div><b>امن و خصوصی</b><span>دسترسی‌های کنترل‌شده و ورود محافظت‌شده</span></div></li>
+      </ul>
+    </div>
+    <div class="auth-aside-foot"><i class="bi bi-mortarboard me-1"></i> سامانه مدیریت مدرسه <span style="opacity:.55">· نسخهٔ <%= typeof pkgVersion !== 'undefined' ? pkgVersion : '' %></span></div>
+  </aside>
+  <main class="auth-main">
+    <div class="auth-box">
+      <div class="auth-mobile-head">
+        <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" class="auth-mobile-logo"><% } else { %><span class="auth-mobile-logo d-inline-flex align-items-center justify-content-center"><i class="bi bi-mortarboard-fill"></i></span><% } %>
+        <h4 class="mb-0 mt-2"><%= school('school_name') %></h4>
+        <div class="text-secondary fs-7"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></div>
+      </div>
+      <%- include('../partials/flash') %>
+      <%- body %>
+      <p class="text-center text-secondary fs-7 mt-3 mb-0"><%= J.formatLong(J.todayISO()) %></p>
+    </div>
+  </main>
 </div>
 <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/app.js?v=<%= appVersion %>"></script>

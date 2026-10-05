@@ -1,40 +1,43 @@
 <div class="card">
   <form method="post" action="/auth/login" class="card-body" data-no-lock>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <h5 class="mb-3">ورود به سامانه</h5>
+    <div class="form-head">
+      <h5 class="mb-1">ورود به سامانه</h5>
+      <div class="text-secondary fs-7">برای ادامه، اطلاعات حساب خود را وارد کنید</div>
+    </div>
     <div class="mb-3">
       <label class="form-label" for="f_username">نام کاربری</label>
-      <div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input class="form-control ltr" name="username" value="<%= old.username || '' %>" required autofocus autocomplete="username" id="f_username"></div>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input class="form-control ltr" name="username" value="<%= old.username || '' %>" required autofocus autocomplete="username" id="f_username" placeholder="نام کاربری یا شمارهٔ همراه"></div>
     </div>
     <div class="mb-3">
       <label class="form-label" for="pw">رمز عبور</label>
-      <div class="input-group"><span class="input-group-text"><i class="bi bi-key"></i></span><input class="form-control ltr" type="password" name="password" required autocomplete="current-password" id="pw"><button class="btn btn-outline-secondary" type="button" onclick="var p=document.getElementById('pw');p.type=p.type==='password'?'text':'password'" aria-label="مشاهده" title="مشاهده"><i class="bi bi-eye"></i></button></div>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-key"></i></span><input class="form-control ltr" type="password" name="password" required autocomplete="current-password" id="pw" placeholder="••••••••"><button class="btn btn-outline-secondary pw-toggle" type="button" onclick="var p=document.getElementById('pw');p.type=p.type==='password'?'text':'password';this.querySelector('i').className=p.type==='password'?'bi bi-eye':'bi bi-eye-slash'" aria-label="مشاهده" title="مشاهده"><i class="bi bi-eye"></i></button></div>
     </div>
     <% if (captcha) { %>
     <div class="mb-3">
-      <label class="form-label" for="f_captcha">پاسخ: <strong class="text-brand"><%= J.toPersianDigits(captcha.a) %> + <%= J.toPersianDigits(captcha.b) %> = ؟</strong></label>
-      <input class="form-control ltr" name="captcha" inputmode="numeric" data-digits required autocomplete="off" style="max-width:160px" id="f_captcha">
+      <label class="form-label d-block" for="f_captcha">تأیید امنیتی</label>
+      <div class="captcha-row"><span class="captcha-q"><%= J.toPersianDigits(captcha.a) %> + <%= J.toPersianDigits(captcha.b) %> = ؟</span><input class="form-control ltr" name="captcha" inputmode="numeric" data-digits required autocomplete="off" placeholder="پاسخ" id="f_captcha"></div>
     </div>
     <% } %>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <% if (enabled('auth.remember_me')) { %><div class="form-check"><input class="form-check-input" type="checkbox" name="remember" value="1" id="remember"><label class="form-check-label" for="remember">مرا به خاطر بسپار</label></div><% } else { %><span></span><% } %>
-      <% if (enabled('auth.password_reset') && S.getBool('password_reset_enabled')) { %><a href="/auth/forgot" class="fs-7"><i class="bi bi-question-circle me-1"></i>رمز عبور را فراموش کرده‌اید؟</a><% } %>
+      <% if (enabled('auth.password_reset') && S.getBool('password_reset_enabled')) { %><a href="/auth/forgot" class="fs-7"><i class="bi bi-question-circle me-1"></i>فراموشی رمز عبور</a><% } %>
     </div>
-    <button class="btn btn-primary w-100 py-2"><i class="bi bi-box-arrow-in-left me-1"></i>ورود</button>
+    <button class="btn btn-login w-100"><i class="bi bi-box-arrow-in-left me-2"></i>ورود</button>
   </form>
   <% if (enabled('admissions.login_link') && S.getBool('admissions_open')) { %><div class="text-center mt-3 pt-3 border-top fs-7">دانش‌آموز جدید هستید؟ <a href="/apply"><i class="bi bi-person-plus me-1"></i>پیش‌ثبت‌نام آنلاین</a><% if (enabled('admissions.tracking')) { %> · <a href="/apply/track">پیگیری درخواست</a><% } %></div><% } %>
 </div>
 <% if (demo) { %>
 <div class="demo-box mt-3">
-  <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i>حساب‌های نمایشی (برای ورود روی هر کدام کلیک کنید)</div>
+  <div class="fw-bold mb-2 d-flex align-items-center gap-2"><i class="bi bi-stars text-brand"></i>حساب‌های نمایشی <span class="text-secondary fw-normal">— برای ورود کلیک کنید</span></div>
   <div class="d-flex flex-wrap gap-2">
-    <a href="#" class="badge badge-soft-primary demo-login" data-u="<%= demo.admin %>" data-p="<%= demo.adminPass %>">مدیر: <%= demo.admin %></a>
-    <a href="#" class="badge badge-soft-success demo-login" data-u="<%= demo.teacher %>" data-p="<%= demo.pass %>">معلم: <%= demo.teacher %></a>
-    <a href="#" class="badge badge-soft-info demo-login" data-u="<%= demo.student %>" data-p="<%= demo.pass %>">دانش‌آموز: <%= demo.student %></a>
-    <% if (demo.staff) { %><a href="#" class="badge badge-soft-warning demo-login" data-u="<%= demo.staff %>" data-p="<%= demo.pass %>">معاون: <%= demo.staff %></a><% } %>
-    <% if (demo.parent) { %><a href="#" class="badge badge-soft-secondary demo-login" data-u="<%= demo.parent %>" data-p="<%= demo.pass %>">ولی: <%= demo.parent %></a><% } %>
+    <a href="#" class="badge badge-soft-primary demo-login" data-u="<%= demo.admin %>" data-p="<%= demo.adminPass %>"><i class="bi bi-shield-lock"></i>مدیر: <%= demo.admin %></a>
+    <a href="#" class="badge badge-soft-success demo-login" data-u="<%= demo.teacher %>" data-p="<%= demo.pass %>"><i class="bi bi-journal-bookmark-fill"></i>معلم: <%= demo.teacher %></a>
+    <a href="#" class="badge badge-soft-info demo-login" data-u="<%= demo.student %>" data-p="<%= demo.pass %>"><i class="bi bi-backpack"></i>دانش‌آموز: <%= demo.student %></a>
+    <% if (demo.staff) { %><a href="#" class="badge badge-soft-warning demo-login" data-u="<%= demo.staff %>" data-p="<%= demo.pass %>"><i class="bi bi-person-badge"></i>معاون: <%= demo.staff %></a><% } %>
+    <% if (demo.parent) { %><a href="#" class="badge badge-soft-secondary demo-login" data-u="<%= demo.parent %>" data-p="<%= demo.pass %>"><i class="bi bi-people"></i>ولی: <%= demo.parent %></a><% } %>
   </div>
-  <div class="text-secondary mt-1">رمز حساب‌های معلم، دانش‌آموز، معاون و ولی: 123456</div>
+  <div class="text-secondary mt-2">رمز حساب‌های معلم، دانش‌آموز، معاون و ولی: <bdi>123456</bdi></div>
 </div>
-<script>document.querySelectorAll('.demo-login').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();document.querySelector('[name=username]').value=a.dataset.u;document.querySelector('[name=password]').value=a.dataset.p;});});</script>
+<script>document.querySelectorAll('.demo-login').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();document.querySelector('[name=username]').value=a.dataset.u;document.querySelector('[name=password]').value=a.dataset.p;document.getElementById('pw').type='password';});});</script>
 <% } %>

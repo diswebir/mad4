@@ -110,7 +110,8 @@ function createApp() {
   // پیش از نصب: فقط ویزارد نصب در دسترس است
   const installer = require('./installer/routes');
   app.use((req, res, next) => {
-    res.locals.appVersion = pkg.version;
+    res.locals.appVersion = pkg.version + '.' + ['css/app.css', 'js/app.js'].map((f) => { try { return Math.floor(fs.statSync(path.join(ROOT, 'public', f)).mtimeMs); } catch (e) { return 0; } }).join('-');
+    res.locals.pkgVersion = pkg.version;
     res.locals.J = J;
     res.locals.utils = utils;
     res.locals.barcode = barcode;

@@ -18,7 +18,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL:', m); process.exitCode =
   const g = new Client();
   // هر اجرا با یک IP مجازی (trust proxy = 1) تا سقف ۹ درخواست در ساعت برای هر IP در اجراهای پیاپی تست مزاحم نشود
   g.headers = { 'x-forwarded-for': '10.' + [0, 0, 0].map(() => Math.floor(Math.random() * 254) + 1).join('.') };
-  r = await g.get('/auth/login'); assert(r.status === 200 && /فراموش کرده‌اید/.test(r.text) && /\/auth\/forgot/.test(r.text), 'login page has forgot link');
+  r = await g.get('/auth/login'); assert(r.status === 200 && /فراموشی رمز عبور/.test(r.text) && /\/auth\/forgot/.test(r.text), 'login page has forgot link');
   r = await g.get('/auth/forgot'); assert(r.status === 200 && /name="contact"/.test(r.text), 'forgot form');
   r = await g.get('/auth/forgot/verify'); assert(r.status === 302 && /\/auth\/forgot$/.test(r.location), 'verify without request redirects to forgot');
   const latestCode = async () => { const l = await a.get('/system/sms-log?context=password_reset'); const m = l.text.match(/کد بازیابی رمز عبور: ([0-9۰-۹]{6})/); return m ? J.toEnglishDigits(m[1]) : null; };

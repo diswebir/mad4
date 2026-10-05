@@ -28,7 +28,7 @@ class Client {
   post(path, body, opts) { return this.request('POST', path, body || {}, opts); }
   async login(username, password) {
     const page = await this.get('/auth/login');
-    const cm = /<strong class="text-brand">([^<]*)<\/strong>/.exec(page.text);
+    const cm = /<span class="captcha-q">([^<]*)<\/span>/.exec(page.text);
     const body = { username, password };
     if (cm) { const nums = en(cm[1]).match(/\d+/g); body.captcha = String(Number(nums[0]) + Number(nums[1])); }
     const res = await this.post('/auth/login', body);

@@ -19,7 +19,7 @@
       <td class="fs-7 ltr text-start text-truncate" style="max-width:180px"><%= r.page_url || '' %></td>
       <td class="fs-7 text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
       <td><span class="badge badge-soft-<%= STATUS_COLOR[r.status] || 'secondary' %>"><%= STATUSES[r.status] || r.status %></span></td>
-      <td class="text-nowrap"><a href="/console/reports/<%= r.id %>" class="btn btn-sm btn-light"><i class="bi bi-eye"></i></a></td>
+      <td class="text-nowrap"><a href="/console/reports/<%= r.id %>" class="btn btn-sm btn-light" title="جزئیات"><i class="bi bi-eye"></i></a></td>
     </tr>
     <% }); %>
   </tbody></table></div>
