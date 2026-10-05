@@ -1,0 +1,31 @@
+<%
+  /* ویجت تولد: b = خروجی nextBirthday، who = 'self' | 'child'، firstName */
+  var isSelf = who !== 'child';
+  var dayLabel = b.days === 0 ? 'امروز' : (b.days === 1 ? 'فردا' : J.toPersianDigits(b.days) + ' روز دیگر');
+%>
+<% if (b.days === 0) { %>
+<div class="card mb-3 border-0 text-white birthday-today">
+  <div class="card-body d-flex align-items-center gap-3">
+    <div class="display-6 lh-1">🎂</div>
+    <div class="flex-grow-1">
+      <div class="fw-bold fs-5"><%= isSelf ? (firstName + ' عزیز، تولدت مبارک!') : ('تولد ' + firstName + ' مبارک!') %></div>
+      <div class="fs-7 opacity-75"><%= isSelf ? 'امروز ' + J.toPersianDigits(b.turning) + ' ساله شدی. سالی پر از موفقیت برایت آرزو می‌کنیم.' : ('امروز ' + J.toPersianDigits(b.turning) + ' ساله می‌شود. از طرف خانوادهٔ مدرسه تبریک می‌گوییم.') %></div>
+    </div>
+    <div class="fs-2 lh-1">🎉</div>
+  </div>
+</div>
+<% } else { %>
+<div class="card mb-3 birthday-widget">
+  <div class="card-body d-flex align-items-center gap-3 py-2">
+    <div class="birthday-count text-center">
+      <div class="num"><%= J.toPersianDigits(b.days) %></div>
+      <div class="lbl">روز</div>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-semibold"><i class="bi bi-cake2 text-danger ms-1"></i><%= isSelf ? 'تا تولدت' : 'تا تولد ' + firstName %></div>
+      <div class="fs-7 text-secondary"><%= b.weekday %> <%= J.toPersianDigits(b.jd) %> <%= J.MONTHS[b.jm - 1] %> — <%= J.toPersianDigits(b.turning) %> ساله <%= isSelf ? 'می‌شوی' : 'می‌شود' %></div>
+    </div>
+    <span class="badge <%= b.days <= 7 ? 'text-bg-danger' : 'badge-soft-danger' %>"><%= dayLabel %></span>
+  </div>
+</div>
+<% } %>

@@ -1,0 +1,10 @@
+<%- include('partials/page-header', { title: 'بار کاری معلمان', subtitle: 'سقف مجاز: ' + J.toPersianDigits(max) + ' ساعت در هفته (قابل تنظیم در تنظیمات آموزشی)', icon: 'bi-bar-chart-steps', breadcrumbs: [{ title: 'معلمان', href: '/teachers' }, { title: 'بار کاری' }] }) %>
+<div class="card table-card"><div class="table-responsive"><table class="table align-middle mb-0 table-hover">
+  <thead><tr><th>معلم</th><th>نوع همکاری</th><th>کلاس‌ها</th><th>دروس</th><th>زنگ در برنامه</th><th style="width:30%">ساعت تدریس / هفته</th></tr></thead>
+  <tbody><% rows.forEach(function (r) { var pct = Math.min(100, Math.round((Number(r.hours) / max) * 100)); var color = pct > 100 ? 'danger' : pct >= 85 ? 'warning' : 'success'; %>
+    <tr><td class="fw-semibold"><a href="/teachers/<%= r.id %>"><%= r.name %></a><%- r.homeroom ? ' <span class="badge badge-soft-warning">راهنما</span>' : '' %></td>
+      <td class="fs-7"><%= { official: 'رسمی', contract: 'پیمانی', hourly: 'حق‌التدریس', parttime: 'پاره‌وقت' }[r.employment_type] || '—' %></td>
+      <td><%= J.toPersianDigits(r.classes) %></td><td><%= J.toPersianDigits(r.subjects) %></td><td><%= J.toPersianDigits(r.slots) %></td>
+      <td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:10px"><div class="progress-bar bg-<%= Number(r.hours) > max ? 'danger' : color %>" style="width:<%= pct %>%"></div></div><span class="fs-7 fw-semibold" style="min-width:48px"><%= J.toPersianDigits(r.hours) %> س</span></div></td></tr>
+  <% }); %></tbody>
+</table></div></div>

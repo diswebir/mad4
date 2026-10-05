@@ -1,0 +1,50 @@
+<%- include('partials/page-header', { title: 'پیش‌نمایش پایان سال تحصیلی', icon: 'bi-calendar-check', breadcrumbs: [{ title: 'سال‌های تحصیلی', href: '/academic/years' }, { title: 'پایان سال', href: '/academic/year-close' }, { title: 'پیش‌نمایش' }] }) %>
+<% const P = plan; const c = P.counts; %>
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>هنوز هیچ تغییری اعمال نشده است. موارد زیر را بررسی کنید و در صورت تأیید، عبارت «تایید» را در پایین صفحه وارد کنید.</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-3 fw-bold text-success"><%= J.toPersianDigits(c.promote) %></div><div class="fs-7 text-secondary">ارتقا</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-3 fw-bold text-primary"><%= J.toPersianDigits(c.graduate) %></div><div class="fs-7 text-secondary">فارغ‌التحصیل</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-3 fw-bold text-warning"><%= J.toPersianDigits(c.retain) %></div><div class="fs-7 text-secondary">تکرار پایه</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-3 fw-bold text-secondary"><%= J.toPersianDigits(c.keep) %></div><div class="fs-7 text-secondary">بدون تغییر</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-3 fw-bold"><%= J.toPersianDigits(c.newClasses) %></div><div class="fs-7 text-secondary">کلاس جدید</div></div></div></div>
+  <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-5 fw-bold pt-2"><%= P.target.title %></div><div class="fs-7 text-secondary"><%= P.target.create ? 'سال جدید ساخته می‌شود' : 'سال موجود' %></div></div></div></div>
+</div>
+<div class="card mb-3"><div class="card-header fw-bold">سال مقصد</div>
+  <div class="card-body fs-7">
+    <div><b><%= P.target.title %></b> — از <%= J.toJalali(P.target.start_date) %> تا <%= J.toJalali(P.target.end_date) %> <%= P.target.create ? '(جدید)' : '(موجود)' %></div>
+    <ul class="mb-0 mt-2">
+      <li>کپی نوبت‌ها: <%= P.copyTerms ? 'بله (در صورت نداشتن نوبت)' : 'خیر' %></li>
+      <li>بایگانی کلاس‌های سال جاری: <%= P.archiveOld ? 'بله' : 'خیر' %></li>
+      <li>تنظیم سال جاری: <%= P.setCurrent ? 'بله — ' + P.target.title + ' سال جاری می‌شود' : 'خیر' %></li>
+      <li>پشتیبان‌گیری خودکار قبل از اجرا: <%= P.backup ? 'بله' : 'خیر' %></li>
+    </ul>
+  </div></div>
+<div class="card mb-3"><div class="card-header fw-bold">کلاس‌ها</div>
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead class="table-light"><tr><th>کلاس فعلی</th><th>پایه</th><th>دانش‌آموز</th><th>اقدام</th><th>کلاس جدید</th><th>پایهٔ جدید</th><th>معلم‌ها</th><th>دروس</th><th>تکرار پایه</th></tr></thead>
+    <tbody>
+    <% P.classes.forEach(function (k) { %>
+      <tr><td class="fw-bold"><%= k.title %></td><td><%= k.grade_title || '—' %></td><td><%= J.toPersianDigits(k.students) %></td>
+        <td><% if (k.action === 'promote') { %><span class="badge bg-success">ارتقا</span><% } else if (k.action === 'graduate') { %><span class="badge bg-primary">فارغ‌التحصیلی</span><% } else { %><span class="badge bg-secondary">بدون تغییر</span><% } %></td>
+        <td><%= k.action === 'promote' ? k.newTitle : '—' %></td><td><%= k.action === 'promote' ? k.newGradeTitle : '—' %></td>
+        <td class="fs-7"><%= k.action === 'promote' ? (k.keepTeacher ? 'حفظ' : 'خالی') : '—' %></td><td class="fs-7"><%= k.action === 'promote' ? (k.copySubjects ? 'کپی' : 'خیر') : '—' %></td>
+        <td><%= k.retained ? J.toPersianDigits(k.retained) + ' نفر' : '—' %></td></tr>
+    <% }); %>
+    <% P.entryClasses.forEach(function (e) { %>
+      <tr class="table-light"><td class="fw-bold text-secondary">—</td><td>—</td><td>—</td><td><span class="badge bg-info text-dark">کلاس ورودی</span></td><td><%= e.title %></td><td><%= e.grade_title %></td><td class="fs-7">خالی</td><td class="fs-7">کپی</td><td>—</td></tr>
+    <% }); %>
+    </tbody></table></div></div>
+<% const retained = Object.values(P.retain); if (retained.length) { %>
+<div class="card mb-3"><div class="card-header fw-bold">دانش‌آموزان تکرار پایه (<%= J.toPersianDigits(retained.length) %>)</div>
+  <div class="card-body fs-7"><div class="row">
+    <% retained.forEach(function (r) { %><div class="col-md-4 mb-1"><i class="bi bi-arrow-repeat text-warning me-1"></i><%= r.name %> <span class="text-muted ltr"><%= J.toPersianDigits(r.student_number) %></span>: <%= r.from_title %> ← <b><%= r.targetTitle %></b></div><% }); %>
+  </div></div></div>
+<% } %>
+<form method="post" action="/academic/year-close/execute" class="card border-danger">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body d-flex flex-wrap align-items-end gap-3">
+    <div><label class="form-label fw-bold" for="f_confirm">برای اجرا عبارت «تایید» را وارد کنید</label><input class="form-control" name="confirm" autocomplete="off" required style="max-width:220px" id="f_confirm"></div>
+    <button class="btn btn-danger px-4"><i class="bi bi-check2-circle me-1"></i>اجرای پایان سال</button>
+    <button class="btn btn-light" formaction="/academic/year-close/cancel" formnovalidate>بازگشت و ویرایش</button>
+  </div>
+</form>

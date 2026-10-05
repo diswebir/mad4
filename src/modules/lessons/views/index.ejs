@@ -1,0 +1,41 @@
+<%- include('partials/page-header', { title: 'دفتر کلاسی', subtitle: isTeacher ? 'گزارش تدریس جلسات شما' + (enabled('lessons.edit_window') ? ' — مهلت ویرایش: ' + J.toPersianDigits(editDays) + ' روز پس از جلسه' : '') : 'گزارش تدریس همهٔ کلاس‌ها بر اساس برنامهٔ هفتگی', icon: 'bi-journal-bookmark', actions: [
+  { href: '/lessons/new', label: 'ثبت گزارش', icon: 'bi-plus-lg', class: 'btn-primary' },
+  ...(enabled('lessons.today') ? [{ href: '/lessons/today', label: isTeacher ? 'تدریس امروز' : 'وضعیت امروز', icon: 'bi-calendar-check', class: 'btn-light' }] : []),
+  ...(enabled('lessons.missing') ? [{ href: '/lessons/missing', label: 'جلسات ثبت‌نشده', icon: 'bi-exclamation-circle', class: 'btn-light' }] : []),
+  ...(enabled('lessons.coverage') ? [{ href: '/lessons/coverage', label: 'پیشرفت تدریس', icon: 'bi-bar-chart-steps', class: 'btn-light' }] : []),
+  ...(enabled('lessons.syllabus') ? [{ href: '/lessons/syllabus', label: 'سرفصل‌ها', icon: 'bi-list-check', class: 'btn-light' }] : []),
+  ...(enabled('lessons.export') ? [{ href: '/lessons/export.csv?' + new URLSearchParams(Object.fromEntries(Object.entries(f).filter(function (e) { return e[1]; }))).toString(), label: 'CSV', icon: 'bi-download', class: 'btn-light' }] : [])
+] }) %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-primary"><i class="bi bi-journal-text"></i></div><div><div class="fs-7 text-secondary">گزارش‌های این هفته</div><div class="fw-bold fs-5"><%= J.toPersianDigits(stats.week) %></div></div></div></div></div>
+  <% if (stats.missingWeek != null) { %>
+  <div class="col-6 col-md-3"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= stats.missingWeek ? 'danger' : 'success' %>"><i class="bi bi-exclamation-circle"></i></div><div><div class="fs-7 text-secondary">جلسات ثبت‌نشدهٔ این هفته</div><div class="fw-bold fs-5"><%= J.toPersianDigits(stats.missingWeek) %> <span class="fs-7 text-secondary fw-normal">از <%= J.toPersianDigits(stats.expectedWeek) %></span></div></div></div></div></div>
+  <% } %>
+  <div class="col-12 col-md-6"><div class="card h-100"><div class="card-body py-2 fs-7 d-flex flex-wrap gap-2 align-items-center"><span class="text-secondary"><i class="bi bi-book me-1"></i>دفتر کلاسی ماهانه:</span><% classes.forEach(function (c) { %><a href="/lessons/class/<%= c.id %>" class="badge badge-soft-primary text-decoration-none"><%= c.title %></a><% }); %><% if (!classes.length) { %><span class="text-secondary">کلاسی وجود ندارد</span><% } %></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header"><form method="get" class="row g-2 align-items-center">
+    <div class="col-md-2"><select class="form-select form-select-sm" name="class_id" onchange="this.form.submit()" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+    <div class="col-md-3"><select class="form-select form-select-sm" name="class_subject_id" aria-label="درس کلاس"><option value="">همهٔ درس‌ها</option><% subjects.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_subject_id) === String(c.id) ? 'selected' : '' %>><%= c.subject_title %> — <%= c.class_title %><%= !isTeacher && c.teacher_name ? ' (' + c.teacher_name + ')' : '' %></option><% }); %></select></div>
+    <% if (staff) { %><div class="col-md-2"><select class="form-select form-select-sm" name="teacher_id" aria-label="معلم"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div><% } %>
+    <div class="col-md-1"><input class="form-control form-control-sm jdate" name="from" value="<%= f.from %>" placeholder="از"></div>
+    <div class="col-md-1"><input class="form-control form-control-sm jdate" name="to" value="<%= f.to %>" placeholder="تا"></div>
+    <div class="col-md-2"><input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="جست‌وجو در موضوع/تکلیف"></div>
+    <div class="col-md-1 d-flex gap-1"><button class="btn btn-sm btn-primary flex-fill">فیلتر</button><a href="/lessons" class="btn btn-sm btn-light">پاک</a></div>
+  </form></div>
+  <div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>تاریخ</th><th>زنگ</th><th>کلاس / درس</th><% if (!isTeacher) { %><th>معلم</th><% } %><th>موضوع تدریس</th><th>تکلیف</th><th></th></tr></thead>
+    <tbody>
+    <% if (!result.data.length) { %><tr><td colspan="7"><%- include('partials/empty', { message: 'گزارشی ثبت نشده است' }) %></td></tr><% } %>
+    <% result.data.forEach(function (r) { %><tr>
+      <td class="text-nowrap"><%= J.formatDate(r.date) %><div class="fs-7 text-secondary"><%= J.weekdayName(r.date) %></div></td>
+      <td><%= J.toPersianDigits(r.period) %></td>
+      <td><span class="fw-semibold"><%= r.subject_title %></span><div class="fs-7 text-secondary"><%= r.class_title %></div></td>
+      <% if (!isTeacher) { %><td class="fs-7"><%= r.teacher_name || '—' %></td><% } %>
+      <td><%= r.topic %><% if (r.syllabus_title) { %><div class="fs-7 text-secondary"><i class="bi bi-list-check me-1"></i><%= r.syllabus_title %></div><% } %><% if (r.description) { %><div class="fs-7 text-secondary"><%= utils.truncate(r.description, 90) %></div><% } %></td>
+      <td class="fs-7"><%= r.homework ? utils.truncate(r.homework, 70) : '—' %></td>
+      <td class="actions"><a href="/lessons/<%= r.id %>/edit" class="btn btn-sm btn-light" title="ویرایش"><i class="bi bi-pencil"></i></a><form method="post" action="/lessons/<%= r.id %>/delete" class="d-inline" data-confirm="گزارش حذف شود؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-light text-danger" title="حذف"><i class="bi bi-trash"></i></button></form></td>
+    </tr><% }); %>
+    </tbody></table></div>
+  <% if (result.pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: result }) %></div><% } %>
+</div>

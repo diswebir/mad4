@@ -1,0 +1,111 @@
+<%- include('partials/page-header', { title: 'به‌روزرسانی سامانه', icon: 'bi-arrow-repeat', breadcrumbs: [{ title: 'به‌روزرسانی سامانه' }], actions: [{ href: '/system/info', label: 'اطلاعات سامانه', icon: 'bi-info-circle' }, { href: '/system/backup', label: 'پشتیبان‌گیری', icon: 'bi-cloud-arrow-down' }] }) %>
+<% var running = st.running; var statusCls = st.lastStatus === 'ok' ? 'success' : (st.lastStatus === 'failed' ? 'danger' : (running ? 'info' : 'secondary')); %>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0">وضعیت نسخه</h6>
+        <span id="updStatus" class="badge bg-<%= statusCls %>-subtle text-<%= statusCls %>-emphasis"><%= running ? 'در حال به‌روزرسانی…' : (st.lastStatus === 'ok' ? 'آخرین به‌روزرسانی موفق' : (st.lastStatus === 'failed' ? 'آخرین به‌روزرسانی ناموفق' : 'آماده')) %></span></div>
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-4 text-center"><div class="display-6 fw-bold text-brand ltr"><%= J.toPersianDigits(st.version) %></div><div class="fs-7 text-secondary">نسخهٔ نصب‌شده (package.json)</div></div>
+          <div class="col-md-8">
+            <div class="info-list">
+              <div class="item"><div class="k">نسخهٔ ثبت‌شده در پایگاه داده</div><div class="v"><%= st.lastVersion ? J.toPersianDigits(st.lastVersion) : '—' %><% if (st.lastVersion && st.lastVersion !== st.version) { %> <span class="badge bg-warning text-dark">نیاز به اجرای مراحل به‌روزرسانی</span><% } %></div></div>
+              <div class="item"><div class="k">آخرین به‌روزرسانی</div><div class="v"><%= st.updatedAt ? J.formatDateTime(st.updatedAt) : '—' %><%= st.lastMessage ? ' · ' + st.lastMessage : '' %></div></div>
+              <div class="item"><div class="k">Node.js / npm</div><div class="v ltr text-end"><%= st.node %> / <%= npm ? npm.version : 'npm در دسترس نیست' %></div></div>
+              <div class="item"><div class="k">محیط اجرا</div><div class="v"><%= st.passenger ? 'Passenger (cPanel) — ری‌استارت خودکار با tmp/restart.txt' : 'اجرای مستقیم Node — ری‌استارت دستی لازم است' %></div></div>
+              <div class="item"><div class="k">وابستگی‌ها (node_modules)</div><div class="v"><% if (st.missingDeps.length) { %><span class="text-danger"><i class="bi bi-x-circle me-1"></i><%= J.toPersianDigits(st.missingDeps.length) %> بستهٔ ناقص: <span class="ltr"><%= st.missingDeps.join(', ') %></span></span><% } else if (st.needsInstall) { %><span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>package-lock تغییر کرده؛ npm install پیشنهاد می‌شود</span><% } else { %><span class="text-success"><i class="bi bi-check-circle me-1"></i>کامل</span><% } %></div></div>
+              <div class="item"><div class="k">آخرین راه‌اندازی برنامه</div><div class="v"><%= J.formatDateTime(st.bootedAt) %><% if (st.restartRequested && new Date(st.restartRequested) > new Date(st.bootedAt)) { %> <span class="badge bg-warning text-dark">درخواست ری‌استارت در انتظار</span><% } %></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent d-flex flex-wrap gap-2 align-items-center">
+        <form method="post" action="/system/update/run" class="d-flex flex-wrap gap-2 align-items-center">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-primary" <%= running ? 'disabled' : '' %>><i class="bi bi-play-circle me-1"></i>اجرای مراحل به‌روزرسانی</button>
+          <div class="form-check form-check-inline fs-7 mb-0"><input class="form-check-input" type="checkbox" name="backup_first" value="1" id="bk1" checked><label class="form-check-label" for="bk1">ابتدا پشتیبان بگیر</label></div>
+          <div class="form-check form-check-inline fs-7 mb-0"><input class="form-check-input" type="checkbox" name="force_install" value="1" id="fi1"><label class="form-check-label" for="fi1">npm install اجباری</label></div>
+        </form>
+        <a href="#" data-post="/system/update/restart" data-confirm="برنامه دوباره راه‌اندازی می‌شود و کاربران چند ثانیه قطعی خواهند داشت. ادامه می‌دهید؟" class="btn btn-outline-secondary ms-auto"><i class="bi bi-bootstrap-reboot me-1"></i>ری‌استارت برنامه</a>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0">بارگذاری بستهٔ نسخهٔ جدید (ZIP)</h6></div>
+      <div class="card-body">
+        <p class="fs-7 text-secondary mb-2">فایل ZIP نسخهٔ جدید (همان بسته‌ای که برای نصب دریافت کرده‌اید یا خروجی GitHub) را انتخاب کنید. فایل‌های برنامه جایگزین می‌شوند اما <strong>پوشهٔ storage (داده‌ها، آپلودها، پشتیبان‌ها)، فایل .env، تنظیمات اتصال و node_modules دست نمی‌خورند</strong>. پیش از اعمال، یک نسخهٔ پشتیبان از پایگاه داده ساخته می‌شود و سپس npm install و همگام‌سازی جدول‌ها در پس‌زمینه اجرا می‌شود. در طول اجرا، سامانه برای کاربران در حالت نگهداری قرار می‌گیرد.</p>
+        <form method="post" action="/system/update/upload" enctype="multipart/form-data" class="row g-2 align-items-end" id="uploadForm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-7"><label class="form-label" for="pkgFile">بستهٔ نسخهٔ جدید</label><input type="file" class="form-control" name="package" id="pkgFile" accept=".zip,application/zip" required></div>
+          <div class="col-md-3"><div class="form-check fs-7"><input class="form-check-input" type="checkbox" name="force" value="1" id="forceV"><label class="form-check-label" for="forceV">اجازهٔ نسخهٔ مساوی/قدیمی‌تر</label></div></div>
+          <div class="col-md-2 d-grid"><button class="btn btn-warning" <%= running ? 'disabled' : '' %> onclick="return confirm('بستهٔ جدید روی فایل‌های برنامه نوشته می‌شود. ادامه می‌دهید؟')"><i class="bi bi-upload me-1"></i>اعمال</button></div>
+        </form>
+        <div class="fs-7 text-secondary mt-2"><i class="bi bi-shield-check me-1"></i>بسته فقط در صورتی پذیرفته می‌شود که نام برنامه در package.json آن با نسخهٔ نصب‌شده یکسان و شمارهٔ نسخه‌اش بزرگ‌تر یا مساوی باشد. آخرین پشتیبان: <%= lastBackup ? lastBackup.name + ' (' + J.formatDateTime(lastBackup.mtime) + ')' : 'هنوز پشتیبانی ساخته نشده' %></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0">گزارش اجرا <span class="fs-7 text-secondary fw-normal">(storage/logs/update.log)</span></h6>
+        <div class="d-flex align-items-center gap-2"><span id="updSpinner" class="spinner-border spinner-border-sm text-primary <%= running ? '' : 'd-none' %>" role="status"></span><button type="button" class="btn btn-sm btn-outline-secondary" id="updRefresh" title="تازه‌سازی وضعیت" aria-label="تازه‌سازی وضعیت"><i class="bi bi-arrow-clockwise"></i></button></div></div>
+      <pre id="updLog" class="mb-0 p-3 fs-7 ltr text-start" style="max-height:360px;overflow:auto;white-space:pre-wrap;direction:rtl;text-align:right"><%= log.length ? log.join('\n') : 'هنوز گزارشی ثبت نشده است.' %></pre>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0">روش به‌روزرسانی</h6></div>
+      <div class="card-body fs-7">
+        <ol class="mb-2 ps-3">
+          <li class="mb-1"><strong>پشتیبان بگیرید</strong> (صفحهٔ پشتیبان‌گیری → «پشتیبان کامل»).</li>
+          <li class="mb-1">بستهٔ نسخهٔ جدید را از همین صفحه بارگذاری کنید <em>یا</em> در cPanel → File Manager فایل‌های برنامه را جایگزین کنید (پوشهٔ <code>storage</code> و فایل <code>.env</code> را نگه دارید).</li>
+          <li class="mb-1">در صورت جایگزینی دستی، دکمهٔ «اجرای مراحل به‌روزرسانی» را بزنید یا در ترمینال: <code class="ltr d-inline-block">node scripts/update.js</code></li>
+          <li class="mb-1">این مراحل خودکار انجام می‌شود: نصب وابستگی‌های جدید (<code>npm install --omit=dev</code>)، افزودن جدول/ستون‌های جدید، ثبت شمارهٔ نسخه و درخواست ری‌استارت (<code>tmp/restart.txt</code>).</li>
+          <li>روی cPanel برنامه خودکار ری‌استارت می‌شود؛ در غیر این صورت سرویس را دوباره اجرا کنید.</li>
+        </ol>
+        <div class="alert alert-light border mb-0"><i class="bi bi-book me-1"></i>راهنمای کامل: <code>docs/UPDATE.md</code> · نوشتن ماژول جدید: <code>docs/MODULES.md</code></div>
+      </div>
+    </div>
+    <% if (healthInfo) { %>
+    <div class="card mb-3"><div class="card-body"><%- include('partials/disk-gauge', { h: healthInfo, compact: true }) %></div></div>
+    <% } %>
+    <% if (changelog) { %>
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0">تغییرات این نسخه (CHANGELOG.md)</h6></div>
+      <pre class="mb-0 p-3 fs-7" style="max-height:280px;overflow:auto;white-space:pre-wrap"><%= changelog %></pre>
+    </div>
+    <% } %>
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0">تاریخچهٔ به‌روزرسانی</h6></div>
+      <% if (!recent.length) { %><div class="card-body text-secondary fs-7">هنوز رخدادی ثبت نشده است.</div><% } else { %>
+      <ul class="list-group list-group-flush fs-7">
+        <% recent.forEach(function (r) { %><li class="list-group-item d-flex justify-content-between gap-2"><span><%= r.description %></span><span class="text-secondary text-nowrap"><%= J.formatDateTime(r.created_at) %></span></li><% }); %>
+      </ul>
+      <% } %>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var running = <%= running ? 'true' : 'false' %>;
+  var logEl = document.getElementById('updLog'), statusEl = document.getElementById('updStatus'), spin = document.getElementById('updSpinner');
+  var cls = { ok: 'success', failed: 'danger', running: 'info' };
+  function render(d) {
+    if (d.lines && d.lines.length) { logEl.textContent = d.lines.join('\n'); logEl.scrollTop = logEl.scrollHeight; }
+    var k = d.running ? 'running' : (d.status || 'secondary'); var c = cls[k] || 'secondary';
+    statusEl.className = 'badge bg-' + c + '-subtle text-' + c + '-emphasis';
+    statusEl.textContent = d.running ? 'در حال به‌روزرسانی…' : (d.status === 'ok' ? 'آخرین به‌روزرسانی موفق' : (d.status === 'failed' ? 'آخرین به‌روزرسانی ناموفق' : 'آماده'));
+    spin.classList.toggle('d-none', !d.running);
+    return d.running;
+  }
+  function poll() {
+    fetch('/system/update/log', { headers: { Accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+      var still = render(d);
+      if (still) setTimeout(poll, 3000);
+      else if (running) { running = false; setTimeout(function () { location.reload(); }, 1500); }
+    }).catch(function () { setTimeout(poll, 5000); });
+  }
+  document.getElementById('updRefresh').addEventListener('click', poll);
+  if (running) poll();
+})();
+</script>

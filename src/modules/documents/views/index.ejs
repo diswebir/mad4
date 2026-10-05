@@ -1,0 +1,44 @@
+<%- include('partials/page-header', { title: 'اسناد و گواهی‌ها', subtitle: 'بایگانی اسناد صادرشده با شمارهٔ سریال و کد استعلام', icon: 'bi-file-earmark-ruled', actions: [
+  ...(enabled('documents.certificates') ? [{ href: '/documents/new?type=certificate', label: 'گواهی اشتغال به تحصیل', icon: 'bi-patch-check', class: 'btn-primary' }] : []),
+  ...(enabled('documents.letters') ? [{ href: '/documents/new?type=letter', label: 'نامه / معرفی‌نامه', icon: 'bi-envelope-paper', class: 'btn-light' }] : []),
+  ...(enabled('documents.verify') ? [{ href: '/documents/verify', label: 'استعلام', icon: 'bi-shield-check', class: 'btn-light', target: '_blank' }] : [])
+] }) %>
+<div class="row g-3 mb-3">
+  <% types.forEach(function (t) { %><div class="col-6 col-md-4 col-xl"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-primary"><i class="bi <%= TYPES[t].icon %>"></i></div><div><div class="value"><%= J.toPersianDigits(stats[t] || 0) %></div><div class="label"><%= TYPES[t].title %></div></div></div></div></div><% }); %>
+</div>
+<% if (enabled('documents.roster') || enabled('documents.grade_sheet')) { %>
+<div class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center fs-7">
+  <% if (enabled('documents.roster')) { %><form method="get" action="#" class="d-flex gap-2 align-items-center" onsubmit="window.open('/documents/roster/' + this.class_id.value, '_blank'); return false;"><span class="text-secondary"><i class="bi bi-calendar-check me-1"></i>دفتر حضور و غیاب ماهانه:</span><select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %></option><% }); %></select><button class="btn btn-sm btn-outline-primary">چاپ</button></form><% } %>
+  <% if (enabled('documents.grade_sheet')) { %><span class="text-secondary"><i class="bi bi-table me-1"></i>ریزنمرات رسمی هر درس از صفحهٔ «ریزنمرات کلاس» در ماژول آزمون‌ها یا با نشانی <code>/documents/grade-sheet/&lt;شناسهٔ درس کلاس&gt;</code> قابل چاپ است.</span><% } %>
+</div></div>
+<% } %>
+<div class="card table-card">
+  <div class="card-header flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      <input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="سریال، نام دانش‌آموز، کد استعلام" style="width:240px">
+      <select class="form-select form-select-sm w-auto" name="type" aria-label="نوع"><option value="">همهٔ انواع</option><% Object.keys(TYPES).forEach(function (t) { %><option value="<%= t %>" <%= f.type === t ? 'selected' : '' %>><%= TYPES[t].title %></option><% }); %></select>
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همه</option><option value="valid" <%= f.status === 'valid' ? 'selected' : '' %>>معتبر</option><option value="revoked" <%= f.status === 'revoked' ? 'selected' : '' %>>باطل‌شده</option></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
+    </form>
+    <span class="fs-7 text-secondary"><%= J.toPersianDigits(result.total) %> سند</span>
+  </div>
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7"><thead><tr><th>شماره</th><th>نوع</th><th>عنوان / گیرنده</th><th>دانش‌آموز</th><th>تاریخ صدور</th><th>صادرکننده</th><th>وضعیت</th><th></th></tr></thead><tbody>
+  <% if (!result.data.length) { %><tr><td colspan="8"><%- include('partials/empty', { message: 'سندی صادر نشده است' }) %></td></tr><% } %>
+  <% result.data.forEach(function (d) { %>
+    <tr class="<%= d.status === 'revoked' ? 'table-light text-muted' : '' %>">
+      <td class="ltr text-end fw-bold"><a href="/documents/<%= d.id %>" target="_blank"><%= J.toPersianDigits(d.serial) %></a></td>
+      <td><i class="bi <%= (TYPES[d.type] || {}).icon %> me-1 text-secondary"></i><%= (TYPES[d.type] || {}).title || d.type %></td>
+      <td><div class="fw-500"><%= d.title %></div><% if (d.recipient) { %><div class="text-secondary">گیرنده: <%= d.recipient %></div><% } %></td>
+      <td><% if (d.student_id) { %><a href="/students/<%= d.student_id %>" class="text-body"><%= d.first_name %> <%= d.last_name %></a><div class="text-secondary ltr text-end"><%= J.toPersianDigits(d.student_number || '') %></div><% } else { %>—<% } %></td>
+      <td class="text-nowrap"><%= J.formatDate(d.issued_at) %></td>
+      <td><%= d.issuer_name || '—' %></td>
+      <td><% if (d.status === 'revoked') { %><span class="badge text-bg-danger" title="<%= d.revoke_reason || '' %>">باطل</span><% } else { %><span class="badge badge-soft-success">معتبر</span><% } %></td>
+      <td class="text-nowrap"><a href="/documents/<%= d.id %>" target="_blank" class="btn btn-sm btn-light" title="چاپ"><i class="bi bi-printer"></i></a>
+        <% if (d.status !== 'revoked' && enabled('documents.revoke')) { %><button type="button" class="btn btn-sm btn-light text-danger" title="ابطال" data-bs-toggle="collapse" data-bs-target="#rv<%= d.id %>"><i class="bi bi-x-octagon"></i></button><% } %>
+        <% if (d.status !== 'revoked' && enabled('documents.revoke')) { %><form method="post" action="/documents/<%= d.id %>/revoke" class="collapse mt-1 d-flex gap-1" id="rv<%= d.id %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm" name="reason" placeholder="دلیل ابطال" required style="width:160px"><button class="btn btn-sm btn-danger">ابطال</button></form><% } %>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody></table></div>
+  <% if (result.pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: result }) %></div><% } %>
+</div>

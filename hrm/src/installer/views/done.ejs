@@ -1,0 +1,35 @@
+<div class="card">
+  <div class="card-header"><h5><i class="bi bi-check-circle-fill text-success me-1"></i>نصب با موفقیت انجام شد</h5></div>
+  <div class="card-body">
+    <div class="alert alert-success">سامانه آمادهٔ استفاده است. اطلاعات ورود را یادداشت کنید.</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="demo-box h-100">
+          <div class="fw-bold mb-2"><i class="bi bi-shield-lock me-1"></i>حساب مدیر ارشد</div>
+          نام کاربری: <code class="ltr" data-copy><%= form.admin_username %></code><br>
+          رمز عبور: همان رمزی که وارد کردید
+        </div>
+      </div>
+      <% if (demo) { %>
+      <div class="col-md-6">
+        <div class="demo-box h-100">
+          <div class="fw-bold mb-2"><i class="bi bi-people me-1"></i>حساب‌های نمونه (رمز همه: <code data-copy>123456</code>)</div>
+          مدیر منابع انسانی: <code class="ltr" data-copy>hrmanager</code> · کارشناس: <code class="ltr" data-copy>hrstaff</code> · کارمند: <code class="ltr" data-copy>employee1</code><br>
+          متقاضیان با موبایل و کد پیامکی وارد می‌شوند (در حالت تست، کد روی صفحه نمایش داده می‌شود).
+        </div>
+      </div>
+      <% } %>
+    </div>
+    <div class="mt-4">
+      <div class="fw-bold mb-1">مراحل انجام‌شده:</div>
+      <ul class="fs-7 text-secondary mb-0"><% log.forEach(function (l) { %><li><%= l %></li><% }); %></ul>
+    </div>
+    <div class="alert alert-light border mt-4 fs-7 mb-0">
+      <strong>گام‌های بعدی:</strong> ۱) در «تنظیمات › پیامک» کلید API و شمارهٔ فرستندهٔ IPPanel را وارد کنید تا ورود متقاضیان با کد پیامکی فعال شود. ۲) موقعیت‌های شغلی را تعریف کنید. ۳) از «استخدام › لینک و QR دعوت» یک QR برای متقاضیان حضوری بسازید.<br>
+      <strong>نکتهٔ cPanel:</strong> اگر برنامه را از طریق «Setup Node.js App» اجرا کرده‌اید، یک‌بار دکمهٔ <em>Restart</em> را بزنید. تنظیمات در <code>storage/config.json</code> ذخیره شده است.
+    </div>
+  </div>
+  <div class="card-footer bg-transparent text-end">
+    <a href="/auth/login" class="btn btn-primary px-4"><i class="bi bi-box-arrow-in-left me-1"></i>ورود به سامانه</a>
+  </div>
+</div>

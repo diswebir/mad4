@@ -1,0 +1,109 @@
+<%- include('partials/page-header', { title: 'دانش‌آموزان', subtitle: J.toPersianDigits(result.total) + ' نفر', icon: 'bi-people', breadcrumbs: [{ title: 'دانش‌آموزان' }], actions: [
+  ...(canManage && enabled('students.import') ? [{ href: '/students/import', label: 'ورود گروهی', icon: 'bi-upload', class: 'btn-light' }] : []),
+  ...(enabled('students.export') && currentUser.role !== 'student' ? [{ href: '/students?' + new URLSearchParams(Object.assign({}, query, { export: '1' })).toString(), label: 'خروجی CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : []),
+  ...(canManage ? [{ href: '/students/new', label: 'ثبت‌نام دانش‌آموز', icon: 'bi-person-plus', class: 'btn-primary' }] : [])
+] }) %>
+<form method="get" class="card mb-3"><div class="card-body py-2">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-4"><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" name="q" value="<%= search %>" placeholder="<%= enabled('students.search') ? 'نام، شماره، کد ملی، نام پدر، تلفن…' : 'نام یا شماره دانش‌آموزی' %>"></div></div>
+    <div class="col-md-2"><select class="form-select" name="class_id" data-auto-submit aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="grade_level_id" data-auto-submit aria-label="پایه"><option value="">همهٔ پایه‌ها</option><% grades.forEach(function (g) { %><option value="<%= g.id %>" <%= String(f.grade_level_id) === String(g.id) ? 'selected' : '' %>><%= g.title %></option><% }); %></select></div>
+    <div class="col-md-2"><select class="form-select" name="status" data-auto-submit aria-label="وضعیت"><option value="" <%= f.status === '' ? 'selected' : '' %>>همهٔ وضعیت‌ها</option><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
+    <div class="col-md-1"><select class="form-select" name="gender" data-auto-submit aria-label="جنسیت"><option value="">جنسیت</option><option value="male" <%= f.gender === 'male' ? 'selected' : '' %>>پسر</option><option value="female" <%= f.gender === 'female' ? 'selected' : '' %>>دختر</option></select></div>
+    <div class="col-md-1 d-grid"><button class="btn btn-outline-primary">جستجو</button></div>
+  </div>
+  <% if (f.status === '') { %><input type="hidden" name="all" value="1"><% } %>
+</div></form>
+<div class="card table-card">
+  <% if (!result.data.length) { %><%- include('partials/empty', { message: 'دانش‌آموزی با این مشخصات یافت نشد', action: canManage ? { href: '/students/new', label: 'ثبت‌نام دانش‌آموز' } : null }) %><% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr>
+      <% if (canBulk) { %><th style="width:34px"><input type="checkbox" class="form-check-input" id="bulkAll" title="انتخاب همهٔ این صفحه"></th><% } %>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'student_number', dir: sort === 'student_number' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">شماره</a></th>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'last_name', dir: sort === 'last_name' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">نام</a></th>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'class_title', dir: sort === 'class_title' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">کلاس</a></th>
+      <% if (enabled('students.parents')) { %><th>ولی / تماس</th><% } %>
+      <th><a href="?<%= new URLSearchParams(Object.assign({}, query, { sort: 'birth_date', dir: sort === 'birth_date' && dir === 'asc' ? 'desc' : 'asc' })).toString() %>">تولد</a></th>
+      <th>وضعیت</th><th class="text-end">عملیات</th></tr></thead>
+    <tbody><% result.data.forEach(function (s) { %>
+      <tr>
+        <% if (canBulk) { %><td><input type="checkbox" class="form-check-input bulk-cb" value="<%= s.id %>" data-name="<%= s.first_name %> <%= s.last_name %>" aria-label="انتخاب <%= s.first_name %> <%= s.last_name %>"></td><% } %>
+        <td class="ltr text-end text-secondary"><%= J.toPersianDigits(s.student_number) %></td>
+        <td><a href="/students/<%= s.id %>" class="d-flex align-items-center gap-2 fw-semibold"><%- include('partials/avatar', { user: { name: s.first_name + ' ' + s.last_name, avatar: s.photo }, size: 32 }) %><span><%= s.first_name %> <%= s.last_name %><% if (s.gender) { %> <span class="fs-7 text-secondary fw-normal">(<%= utils.GENDERS[s.gender] %>)</span><% } %></span></a></td>
+        <td><% if (s.class_id) { %><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a><div class="fs-7 text-secondary"><%= s.grade_title || '' %></div><% } else { %><span class="badge badge-soft-warning">بدون کلاس</span><% } %></td>
+        <% if (enabled('students.parents')) { %><td class="fs-7"><%= s.father_name || s.guardian_name || '—' %><div class="ltr text-end text-secondary"><%= J.toPersianDigits(s.father_phone || s.guardian_phone || s.mother_phone || s.mobile || '') %></div></td><% } %>
+        <td class="fs-7"><%= s.birth_date ? J.formatDate(s.birth_date) : '—' %></td>
+        <td><%- utils.statusBadge(s.status, utils.STUDENT_STATUS) %></td>
+        <td class="text-end"><div class="btn-group">
+          <a href="/students/<%= s.id %>" class="btn btn-sm btn-light" title="پرونده"><i class="bi bi-folder2-open"></i></a>
+          <% if (enabled('students.id_card')) { %><a href="/students/<%= s.id %>/card" target="_blank" class="btn btn-sm btn-light" title="کارت"><i class="bi bi-person-badge"></i></a><% } %>
+          <% if (canManage) { %><a href="/students/<%= s.id %>/edit" class="btn btn-sm btn-light" title="ویرایش"><i class="bi bi-pencil"></i></a><% } %>
+        </div></td>
+      </tr>
+    <% }); %></tbody>
+  </table></div>
+  <%- include('partials/pagination', { result: result, query: query }) %>
+  <% } %>
+</div>
+<% if (canManage && f.class_id && enabled('students.id_card')) { %><div class="mt-2 text-end"><a href="/students/cards/class/<%= f.class_id %>" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer me-1"></i>چاپ کارت‌های این کلاس</a></div><% } %>
+<% if (canBulk && result.data.length) { var qs = new URLSearchParams(Object.assign({}, query)).toString(); %>
+<form method="post" action="/students/bulk" id="bulkForm" class="card border-primary shadow mt-3" style="display:none;position:sticky;bottom:12px;z-index:5">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="filter_qs" value="<%= qs %>"><input type="hidden" name="select_all" value="0" id="bulkSelectAll"><div id="bulkIds"></div>
+  <div class="card-body py-2">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="fw-bold"><i class="bi bi-check2-square me-1 text-primary"></i><span id="bulkCount">۰</span> دانش‌آموز انتخاب شده</span>
+      <a href="#" id="bulkPickAll" class="fs-7">انتخاب همهٔ <%= J.toPersianDigits(result.total) %> نتیجهٔ فیلتر</a>
+      <select class="form-select form-select-sm w-auto" name="action" id="bulkAction" required aria-label="عملیات">
+        <option value="">— عملیات —</option>
+        <% if (enabled('students.transfer')) { %><option value="transfer">انتقال به کلاس</option><% } %>
+        <% if (enabled('students.status')) { %><option value="status">تغییر وضعیت تحصیلی</option><% } %>
+        <% if (enabled('notifications.inapp')) { %><option value="notify">اعلان درون‌برنامه‌ای</option><% } %>
+        <% if (enabled('notifications.sms')) { %><option value="sms">پیامک به اولیا</option><% } %>
+        <% if (enabled('students.export')) { %><option value="export">خروجی CSV منتخب</option><% } %>
+        <% if (enabled('students.id_card')) { %><option value="cards">چاپ کارت‌های منتخب</option><% } %>
+        <% if (enabled('students.user_account')) { %><option value="reset_password">بازنشانی رمز عبور</option><% } %>
+      </select>
+      <div class="bulk-opt d-none" data-for="transfer"><select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">— کلاس مقصد —</option><% classes.forEach(function (c) { %><option value="<%= c.id %>"><%= c.title %><%= c.grade_title ? ' (' + c.grade_title + ')' : '' %></option><% }); %></select></div>
+      <div class="bulk-opt d-none" data-for="status"><select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><% Object.keys(utils.STUDENT_STATUS).forEach(function (k) { %><option value="<%= k %>"><%= utils.STUDENT_STATUS[k] %></option><% }); %></select></div>
+      <div class="bulk-opt d-none" data-for="transfer status"><input class="form-control form-control-sm" name="note" placeholder="دلیل / توضیح (اختیاری)" style="min-width:200px"></div>
+      <div class="bulk-opt d-none" data-for="notify"><input class="form-control form-control-sm" name="title" placeholder="عنوان اعلان" style="min-width:160px"></div>
+      <div class="bulk-opt d-none" data-for="notify sms"><input class="form-control form-control-sm" name="message" placeholder="متن پیام" style="min-width:260px"></div>
+      <div class="bulk-opt d-none fs-7" data-for="notify"><label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="to_parents" value="1"> به اولیا هم ارسال شود</label></div>
+      <div class="bulk-opt d-none" data-for="reset_password"><select class="form-select form-select-sm w-auto" name="pw_mode" aria-label="روش بازنشانی رمز"><option value="student_number">رمز = شماره دانش‌آموزی</option><option value="national">رمز = کد ملی</option><option value="custom">رمز دلخواه</option></select></div>
+      <div class="bulk-opt d-none" data-for="reset_password"><input class="form-control form-control-sm ltr" name="password" placeholder="رمز دلخواه (حداقل ۶)" style="min-width:160px"></div>
+      <button class="btn btn-sm btn-primary px-3" id="bulkSubmit"><i class="bi bi-play-fill me-1"></i>اجرا</button>
+      <button type="button" class="btn btn-sm btn-light" id="bulkClear">لغو</button>
+    </div>
+  </div>
+</form>
+<script>
+(function () {
+  var form = document.getElementById('bulkForm'), all = document.getElementById('bulkAll'), cbs = Array.prototype.slice.call(document.querySelectorAll('.bulk-cb'));
+  var fa = '۰۱۲۳۴۵۶۷۸۹', pd = function (n) { return String(n).replace(/\d/g, function (d) { return fa[d]; }); };
+  var selectAll = false;
+  function sync() {
+    var sel = cbs.filter(function (c) { return c.checked; });
+    document.getElementById('bulkCount').textContent = selectAll ? pd(<%= result.total %>) : pd(sel.length);
+    form.style.display = sel.length || selectAll ? '' : 'none';
+    all.checked = sel.length === cbs.length && cbs.length > 0; all.indeterminate = sel.length > 0 && sel.length < cbs.length;
+    document.getElementById('bulkSelectAll').value = selectAll ? '1' : '0';
+    document.getElementById('bulkPickAll').style.display = selectAll ? 'none' : '';
+  }
+  cbs.forEach(function (c) { c.addEventListener('change', function () { selectAll = false; sync(); }); });
+  all.addEventListener('change', function () { selectAll = false; cbs.forEach(function (c) { c.checked = all.checked; }); sync(); });
+  document.getElementById('bulkPickAll').addEventListener('click', function (e) { e.preventDefault(); selectAll = true; cbs.forEach(function (c) { c.checked = true; }); sync(); });
+  document.getElementById('bulkClear').addEventListener('click', function () { selectAll = false; cbs.forEach(function (c) { c.checked = false; }); sync(); });
+  var act = document.getElementById('bulkAction');
+  function syncOpts() { document.querySelectorAll('.bulk-opt').forEach(function (d) { d.classList.toggle('d-none', d.dataset.for.split(' ').indexOf(act.value) < 0); }); }
+  act.addEventListener('change', syncOpts); syncOpts();
+  form.addEventListener('submit', function (e) {
+    var box = document.getElementById('bulkIds'); box.innerHTML = '';
+    cbs.filter(function (c) { return c.checked; }).forEach(function (c) { var h = document.createElement('input'); h.type = 'hidden'; h.name = 'ids'; h.value = c.value; box.appendChild(h); });
+    var labels = { transfer: 'انتقال', status: 'تغییر وضعیت', notify: 'ارسال اعلان', sms: 'ارسال پیامک', reset_password: 'بازنشانی رمز عبور' };
+    if (labels[act.value] && !confirm(labels[act.value] + ' برای ' + document.getElementById('bulkCount').textContent + ' دانش‌آموز انجام شود؟')) { e.preventDefault(); return; }
+    if (act.value === 'cards') form.target = '_blank'; else form.target = '';
+  });
+  sync();
+})();
+</script>
+<% } %>

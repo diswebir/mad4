@@ -1,0 +1,35 @@
+<form method="post" action="/auth/login" data-no-lock>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <h5 class="mb-3 text-center">ورود کارکنان</h5>
+  <div class="mb-3">
+    <label class="form-label" for="f_username">نام کاربری</label>
+    <div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input class="form-control ltr" name="username" value="<%= old.username || '' %>" required autofocus autocomplete="username" id="f_username"></div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="pw">رمز عبور</label>
+    <div class="input-group"><span class="input-group-text"><i class="bi bi-key"></i></span><input class="form-control ltr" type="password" name="password" required autocomplete="current-password" id="pw"><button class="btn btn-outline-secondary" type="button" onclick="var p=document.getElementById('pw');p.type=p.type==='password'?'text':'password'" title="نمایش رمز"><i class="bi bi-eye"></i></button></div>
+  </div>
+  <% if (captcha) { %>
+  <div class="mb-3">
+    <label class="form-label" for="f_captcha">پاسخ: <strong class="text-brand"><%= J.toPersianDigits(captcha.a) %> + <%= J.toPersianDigits(captcha.b) %> = ؟</strong></label>
+    <input class="form-control ltr" name="captcha" inputmode="numeric" data-digits required autocomplete="off" style="max-width:160px" id="f_captcha">
+  </div>
+  <% } %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="remember" value="1" id="remember"><label class="form-check-label" for="remember">مرا به خاطر بسپار</label></div>
+  </div>
+  <button class="btn btn-primary w-100 py-2"><i class="bi bi-box-arrow-in-left me-1"></i>ورود</button>
+</form>
+<% if (enabled('recruitment') && S.getBool('recruitment_open')) { %><div class="text-center mt-3 pt-3 border-top fs-7">متقاضی استخدام هستید؟ <a href="/apply"><i class="bi bi-person-plus me-1"></i>ورود با شمارهٔ موبایل</a></div><% } %>
+<% if (demo) { %>
+<div class="demo-box mt-3">
+  <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i>حساب‌های نمایشی (برای ورود کلیک کنید)</div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="#" class="badge badge-soft-primary demo-login" data-u="hrmanager" data-p="<%= demo.pass %>">مدیر منابع انسانی: hrmanager</a>
+    <a href="#" class="badge badge-soft-info demo-login" data-u="hrstaff" data-p="<%= demo.pass %>">کارشناس: hrstaff</a>
+    <a href="#" class="badge badge-soft-success demo-login" data-u="employee1" data-p="<%= demo.pass %>">کارمند: employee1</a>
+  </div>
+  <div class="text-secondary mt-1">رمز همهٔ حساب‌های نمونه: 123456</div>
+</div>
+<script>document.querySelectorAll('.demo-login').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();document.querySelector('[name=username]').value=a.dataset.u;document.querySelector('[name=password]').value=a.dataset.p;});});</script>
+<% } %>

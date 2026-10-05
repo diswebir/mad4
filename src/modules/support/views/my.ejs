@@ -1,0 +1,17 @@
+<%- include('partials/page-header', { title: 'گزارش‌های من', icon: 'bi-life-preserver', breadcrumbs: [{ title: 'پشتیبانی' }, { title: 'گزارش‌های من' }], subtitle: 'گزارش‌های خطا، پیشنهادها و سؤال‌هایی که با دکمهٔ «گزارش خطا» (پایین صفحه) ارسال کرده‌اید، همراه با پاسخ تیم فنی' }) %>
+<div class="card table-card">
+  <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>#</th><th>نوع</th><th>عنوان</th><th>صفحه</th><th>تاریخ</th><th>وضعیت</th><th>پاسخ</th></tr></thead><tbody>
+    <% if (!rows.length) { %><tr><td colspan="7" class="text-center text-secondary py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>هنوز گزارشی ارسال نکرده‌اید. <% if (enabled('support.widget')) { %>برای ارسال، روی دکمهٔ <span class="badge text-bg-warning"><i class="bi bi-exclamation-triangle-fill"></i></span> پایین صفحه کلیک کنید.<% } %></td></tr><% } %>
+    <% rows.forEach(function (r) { %>
+    <tr>
+      <td class="text-secondary fs-7"><%= J.toPersianDigits(r.id) %></td>
+      <td><span class="badge badge-soft-<%= r.kind === 'bug' ? 'danger' : r.kind === 'suggestion' ? 'info' : 'secondary' %>"><%= KINDS[r.kind] || r.kind %></span></td>
+      <td><div class="fw-500"><%= r.subject %></div><div class="text-secondary fs-7 text-truncate" style="max-width:360px"><%= r.message %></div><% if (r.image) { %><a class="fs-7" href="/files/<%= r.image %>" target="_blank" rel="noopener"><i class="bi bi-image me-1"></i>تصویر پیوست</a><% } %></td>
+      <td class="fs-7 ltr text-start text-secondary"><%= r.page_url || '—' %></td>
+      <td class="fs-7 text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><span class="badge badge-soft-<%= STATUS_COLOR[r.status] || 'secondary' %>"><%= STATUSES[r.status] || r.status %></span></td>
+      <td class="fs-7" style="max-width:300px"><% if (r.reply) { %><div class="bg-light rounded p-2"><i class="bi bi-reply me-1 text-brand"></i><%= r.reply %><div class="text-secondary mt-1" style="font-size:.7rem"><%= r.replied_at ? J.formatDateTime(r.replied_at) : '' %></div></div><% } else { %><span class="text-secondary">—</span><% } %></td>
+    </tr>
+    <% }); %>
+  </tbody></table></div>
+</div>

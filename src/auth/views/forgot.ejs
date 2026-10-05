@@ -1,0 +1,25 @@
+<div class="card">
+  <form method="post" action="/auth/forgot" class="card-body" data-no-lock>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h5 class="mb-1"><i class="bi bi-key me-1"></i>بازیابی رمز عبور</h5>
+    <p class="text-secondary fs-7 mb-3">نام کاربری و <%= smsOn && emailOn ? 'شمارهٔ موبایل یا ایمیل' : smsOn ? 'شمارهٔ موبایل' : 'ایمیل' %> ثبت‌شده در پروندهٔ خود را وارد کنید تا کد یک‌بارمصرف برایتان ارسال شود.<% if (!smsOn && !emailOn) { %> <span class="text-danger">در حال حاضر هیچ کانال ارسالی فعال نیست؛ لطفاً با مدیر مدرسه تماس بگیرید.</span><% } %></p>
+    <div class="mb-3">
+      <label class="form-label" for="f_username">نام کاربری</label>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input class="form-control ltr" name="username" value="<%= old.username || '' %>" required autofocus autocomplete="username" placeholder="مثال: 40001" id="f_username"></div>
+      <div class="form-text">دانش‌آموزان: شمارهٔ دانش‌آموزی · معلمان: نام کاربری · اولیا: نام کاربری اعلام‌شده</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="f_contact"><%= smsOn && emailOn ? 'شمارهٔ موبایل یا ایمیل' : smsOn ? 'شمارهٔ موبایل ثبت‌شده' : 'ایمیل ثبت‌شده' %></label>
+      <div class="input-group"><span class="input-group-text"><i class="bi <%= smsOn ? 'bi-phone' : 'bi-envelope' %>"></i></span><input class="form-control ltr" name="contact" value="<%= old.contact || '' %>" required autocomplete="tel" placeholder="<%= smsOn ? '09xxxxxxxxx' : 'name@example.com' %>" id="f_contact"></div>
+      <% if (smsOn) { %><div class="form-text">برای دانش‌آموز: موبایل خود یا شمارهٔ پدر/مادر/سرپرست ثبت‌شده در پرونده</div><% } %>
+    </div>
+    <% if (captcha) { %>
+    <div class="mb-3">
+      <label class="form-label" for="f_captcha">پاسخ: <strong class="text-brand"><%= J.toPersianDigits(captcha.a) %> + <%= J.toPersianDigits(captcha.b) %> = ؟</strong></label>
+      <input class="form-control ltr" name="captcha" inputmode="numeric" data-digits required autocomplete="off" style="max-width:160px" id="f_captcha">
+    </div>
+    <% } %>
+    <button class="btn btn-primary w-100 py-2" <%= (!smsOn && !emailOn) ? 'disabled' : '' %>><i class="bi bi-send me-1"></i>ارسال کد</button>
+    <div class="text-center mt-3"><a href="/auth/login" class="fs-7"><i class="bi bi-arrow-right me-1"></i>بازگشت به ورود</a></div>
+  </form>
+</div>

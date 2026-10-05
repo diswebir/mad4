@@ -1,0 +1,44 @@
+<%- include('partials/page-header', { title: title, subtitle: weekday + ' ' + J.toPersianDigits(jdate) + (sessions.length ? ' — ' + J.toPersianDigits(done) + ' از ' + J.toPersianDigits(sessions.length) + ' جلسه ثبت شده' : ''), icon: 'bi-calendar-check', actions: [
+  { href: '/lessons/today?date=' + prev + (f.teacher_id ? '&teacher_id=' + f.teacher_id : '') + (f.class_id ? '&class_id=' + f.class_id : ''), label: 'روز قبل', icon: 'bi-chevron-right', class: 'btn-light' },
+  ...(next ? [{ href: '/lessons/today?date=' + next + (f.teacher_id ? '&teacher_id=' + f.teacher_id : '') + (f.class_id ? '&class_id=' + f.class_id : ''), label: 'روز بعد', icon: 'bi-chevron-left', class: 'btn-light' }] : []),
+  { href: '/lessons/new?date=' + jdate, label: 'ثبت خارج از برنامه', icon: 'bi-plus-lg', class: 'btn-light' },
+  { href: '/lessons', label: 'دفتر کلاسی', icon: 'bi-journal-bookmark', class: 'btn-light' }
+] }) %>
+<% if (!isTeacher) { %>
+<div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
+  <input type="hidden" name="date" value="<%= jdate %>">
+  <div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id" aria-label="معلم"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div>
+  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="date" value="<%= J.toPersianDigits(jdate) %>" aria-label="تاریخ"></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
+  <div class="col-md-5 fs-7 text-secondary text-md-end">وضعیت ثبت گزارش تدریس توسط معلمان در این روز</div>
+</form></div></div>
+<% if (Object.keys(byTeacher).length) { %><div class="d-flex flex-wrap gap-2 mb-3 fs-7"><% Object.keys(byTeacher).forEach(function (k) { const t = byTeacher[k]; %><span class="badge <%= t.done === t.total ? 'badge-soft-success' : t.done ? 'badge-soft-warning' : 'badge-soft-danger' %>"><%= k %>: <%= J.toPersianDigits(t.done) %>/<%= J.toPersianDigits(t.total) %></span><% }); %></div><% } %>
+<% } %>
+<% if (holiday) { %><div class="alert alert-warning py-2"><i class="bi bi-calendar-x me-1"></i>این روز در تقویم مدرسه تعطیل ثبت شده است.</div><% } else if (!isSchoolDay) { %><div class="alert alert-light border py-2"><i class="bi bi-info-circle me-1"></i>این روز جزو روزهای کاری مدرسه نیست.</div><% } %>
+<% if (!sessions.length) { %><div class="card"><div class="card-body"><%- include('partials/empty', { message: isTeacher ? 'بر اساس برنامهٔ هفتگی، در این روز جلسه‌ای برای شما ثبت نشده است. در صورت نیاز از «ثبت خارج از برنامه» استفاده کنید.' : 'جلسه‌ای در برنامهٔ هفتگی این روز وجود ندارد.' }) %></div></div><% } %>
+<div class="row g-3">
+<% sessions.forEach(function (s, idx) { const l = s.log; const syl = sylBy[s.subject_id] || []; %>
+  <div class="col-lg-6"><div class="card h-100 <%= l ? 'border-success' : '' %>">
+    <div class="card-header d-flex align-items-center gap-2">
+      <span class="badge text-bg-<%= l ? 'success' : 'secondary' %>">زنگ <%= J.toPersianDigits(s.period) %></span>
+      <span class="fw-bold"><%= s.subject_title %></span><span class="text-secondary">— <%= s.class_title %></span>
+      <span class="fs-7 text-secondary ms-auto"><%= s.start_time ? J.toPersianDigits(String(s.start_time).slice(0, 5)) + '–' + J.toPersianDigits(String(s.end_time || '').slice(0, 5)) : '' %><% if (!isTeacher) { %> · <%= s.teacher_name || 'بدون معلم' %><% } %></span>
+    </div>
+    <% if (isTeacher || currentUser.role === 'admin' || can('lessons.manage')) { %>
+    <form method="post" action="/lessons/quick" class="card-body py-2">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="class_subject_id" value="<%= s.class_subject_id %>"><input type="hidden" name="date" value="<%= jdate %>"><input type="hidden" name="period" value="<%= s.period %>">
+      <div class="row g-2">
+        <div class="col-12"><input class="form-control form-control-sm" name="topic" value="<%= l ? l.topic : '' %>" placeholder="موضوع تدریس این جلسه *" required maxlength="200"></div>
+        <% if (enabled('lessons.syllabus') && syl.length) { %><div class="col-md-6"><select class="form-select form-select-sm" name="syllabus_item_id" aria-label="سرفصل"><option value="">سرفصل مرتبط…</option><% syl.forEach(function (i) { %><option value="<%= i.id %>" <%= l && l.syllabus_item_id === i.id ? 'selected' : '' %>><%= i.sort_order ? J.toPersianDigits(i.sort_order) + '. ' : '' %><%= i.title %></option><% }); %></select></div><% } %>
+        <div class="<%= enabled('lessons.syllabus') && syl.length ? 'col-md-6' : 'col-12' %>"><input class="form-control form-control-sm" name="homework" value="<%= l ? (l.homework || '') : '' %>" placeholder="تکلیف (اختیاری)" maxlength="1000"></div>
+        <div class="col-12"><textarea class="form-control form-control-sm" name="description" rows="1" placeholder="شرح فعالیت‌ها (اختیاری)" maxlength="2000"><%= l ? (l.description || '') : '' %></textarea></div>
+      </div>
+      <div class="d-flex align-items-center gap-2 mt-2">
+        <button class="btn btn-sm <%= l ? 'btn-outline-success' : 'btn-primary' %>"><i class="bi bi-check-lg me-1"></i><%= l ? 'به‌روزرسانی' : 'ثبت گزارش' %></button>
+        <% if (l) { %><span class="fs-7 text-success"><i class="bi bi-check-circle me-1"></i>ثبت‌شده</span><a href="/lessons/<%= l.id %>/edit" class="btn btn-sm btn-light ms-auto" title="ویرایش کامل"><i class="bi bi-pencil"></i></a><% } %>
+      </div>
+    </form>
+    <% } else { %><div class="card-body py-2 fs-7"><%= l ? l.topic : '<span class="text-secondary">ثبت نشده</span>' %></div><% } %>
+  </div></div>
+<% }); %>
+</div>

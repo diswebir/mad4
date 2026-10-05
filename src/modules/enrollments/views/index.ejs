@@ -1,0 +1,40 @@
+<%- include('partials/page-header', { title: 'سوابق تحصیلی', icon: 'bi-mortarboard', subtitle: 'یک ردیف برای هر دانش‌آموز در هر سال تحصیلی؛ مبنای کارنامهٔ تجمعی و ارتقای پایه', actions: [] }) %>
+<div class="row g-3 mb-3">
+  <% [['active', 'bi-person-check'], ['promoted', 'bi-arrow-up-circle'], ['retained', 'bi-arrow-repeat'], ['graduated', 'bi-mortarboard'], ['transferred', 'bi-box-arrow-right'], ['dropped', 'bi-person-x']].forEach(function (k) { %>
+  <div class="col-6 col-md-4 col-xl-2"><a href="?year=<%= yearId %>&status=<%= k[0] %>" class="card stat-card text-<%= COLORS[k[0]] %> d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= COLORS[k[0]] %>"><i class="bi <%= k[1] %>"></i></div><div><div class="value"><%= J.toPersianDigits(stats[k[0]] || 0) %></div><div class="label"><%= STATUS[k[0]] %></div></div></div></a></div>
+  <% }) %>
+</div>
+<% if (missing > 0 && enabled('enrollments.backfill')) { %><div class="alert alert-warning d-flex justify-content-between align-items-center"><span><i class="bi bi-exclamation-triangle me-1"></i><%= J.toPersianDigits(missing) %> دانش‌آموز فعال برای سال جاری سابقهٔ تحصیلی ندارند.</span><form method="post" action="/enrollments/backfill"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-warning">ساخت خودکار سوابق</button></form></div><% } %>
+<div class="card table-card">
+  <div class="card-header flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      <select class="form-select form-select-sm w-auto" name="year" onchange="this.form.submit()" aria-label="سال تحصیلی"><% years.forEach(function (y) { %><option value="<%= y.id %>" <%= y.id === yearId ? 'selected' : '' %>><%= y.title %><%= y.is_current ? ' (جاری)' : '' %></option><% }) %></select>
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= filters.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select>
+      <select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(filters.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }) %></select>
+      <input class="form-control form-control-sm" name="q" value="<%= filters.q %>" placeholder="نام یا شماره" style="width:160px">
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
+    </form>
+    <div class="d-flex gap-2">
+      <% if (enabled('enrollments.export')) { %><a href="?year=<%= yearId %>&status=<%= filters.status %>&class_id=<%= filters.class_id %>&export=1" class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-csv me-1"></i>CSV</a><% } %>
+      <% if (enabled('enrollments.promote')) { %><a href="/enrollments/promote" class="btn btn-sm btn-primary"><i class="bi bi-arrow-up-circle me-1"></i>ارتقای پایان سال</a><% } %>
+    </div>
+  </div>
+  <div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>دانش‌آموز</th><th>پایه</th><th>کلاس</th><th>وضعیت</th><th>از</th><th>تا</th><th>توضیح</th><th></th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="8"><%- include('partials/empty', { message: 'سابقه‌ای با این فیلترها یافت نشد' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { %><tr>
+    <td><a href="/students/<%= r.student_id %>?tab=enrollments" class="fw-bold"><%= r.first_name %> <%= r.last_name %></a> <span class="text-muted fs-7"><%= J.toPersianDigits(r.student_number) %></span></td>
+    <td><%= r.grade_title || '—' %></td><td><%= r.class_title || '—' %></td>
+    <td><span class="badge text-bg-<%= COLORS[r.status] || 'secondary' %>"><%= STATUS[r.status] || r.status %></span></td>
+    <td class="fs-7"><%= J.formatDate(r.enrolled_at, true) %></td><td class="fs-7"><%= r.left_at ? J.formatDate(r.left_at, true) : '—' %></td>
+    <td class="fs-7 text-muted"><%= r.note || '' %></td>
+    <td><button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#ed<%= r.id %>" aria-label="ویرایش" title="ویرایش"><i class="bi bi-pencil"></i></button></td>
+  </tr>
+  <tr class="collapse" id="ed<%= r.id %>"><td colspan="8" class="bg-light"><form method="post" action="/enrollments/<%= r.id %>?back=<%= encodeURIComponent(currentPath + '?year=' + yearId) %>" class="row g-2 align-items-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="col-md-3"><label class="form-label fs-7" for="f_status_<%= r.id %>">وضعیت</label><select class="form-select form-select-sm" name="status" id="f_status_<%= r.id %>"><% Object.entries(STATUS).forEach(function (s) { %><option value="<%= s[0] %>" <%= r.status === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }) %></select></div>
+    <div class="col-md-3"><label class="form-label fs-7" for="f_left_at_<%= r.id %>">تاریخ پایان</label><input class="form-control form-control-sm jdate" name="left_at" value="<%= r.left_at ? J.toJalali(r.left_at) : '' %>" placeholder="۱۴۰۵/۰۳/۳۱" id="f_left_at_<%= r.id %>"></div>
+    <div class="col-md-4"><label class="form-label fs-7" for="f_note_<%= r.id %>">توضیح</label><input class="form-control form-control-sm" name="note" value="<%= r.note || '' %>" id="f_note_<%= r.id %>"></div>
+    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">ذخیره</button></div></form></td></tr>
+  <% }) %>
+  </tbody></table></div>
+  <% if (pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: { page: page, pages: pages } }) %></div><% } %>
+</div>

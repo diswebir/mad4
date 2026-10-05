@@ -1,0 +1,53 @@
+<%- include('partials/page-header', { title: 'گزارش مصرف پیامک', icon: 'bi-graph-up', subtitle: J.formatDate(from) + ' تا ' + J.formatDate(to), breadcrumbs: [{ title: 'لاگ پیامک', href: '/system/sms-log' }, { title: 'گزارش مصرف' }], actions: [{ label: 'خروجی CSV', href: '/system/sms-log/report?from=' + J.formatDate(from) + '&to=' + J.formatDate(to) + '&export=csv', icon: 'bi-filetype-csv', class: 'btn-outline-secondary' }, { label: 'لاگ پیامک', href: '/system/sms-log', icon: 'bi-chat-left-dots', class: 'btn-light' }] }) %>
+<form method="get" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-end">
+  <div><label class="form-label fs-7 mb-0" for="f_from">از</label><input class="form-control form-control-sm jdate" name="from" value="<%= J.formatDate(from) %>" id="f_from"></div>
+  <div><label class="form-label fs-7 mb-0" for="f_to">تا</label><input class="form-control form-control-sm jdate" name="to" value="<%= J.formatDate(to) %>" id="f_to"></div>
+  <button class="btn btn-sm btn-primary">نمایش</button>
+  <% var cur = J.currentJalali(); var prevM = cur.jm === 1 ? { jy: cur.jy - 1, jm: 12 } : { jy: cur.jy, jm: cur.jm - 1 }; var pr = J.jalaliMonthRange(prevM.jy, prevM.jm); var cr = J.jalaliMonthRange(cur.jy, cur.jm); %>
+  <a class="btn btn-sm btn-light" href="/system/sms-log/report?from=<%= J.formatDate(cr.start) %>&to=<%= J.formatDate(J.todayISO()) %>">ماه جاری</a>
+  <a class="btn btn-sm btn-light" href="/system/sms-log/report?from=<%= J.formatDate(pr.start) %>&to=<%= J.formatDate(pr.end) %>">ماه قبل</a>
+  <a class="btn btn-sm btn-light" href="/system/sms-log/report?from=<%= J.formatDate(J.addDays(J.todayISO(), -90)) %>&to=<%= J.formatDate(J.todayISO()) %>">۹۰ روز اخیر</a>
+  <span class="ms-auto fs-7 text-secondary">درگاه: <strong><%= provider %></strong><%= smsEnabled ? '' : ' (ارسال پیامک غیرفعال است)' %><% if (!price) { %> — برای برآورد هزینه، نرخ هر بخش را در <a href="/system/settings?tab=sms">تنظیمات پیامک</a> وارد کنید<% } %></span>
+</div></form>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-primary"><i class="bi bi-chat-left-text"></i></div><div><div class="value"><%= J.toPersianDigits(tot.count) %></div><div class="label">کل پیامک‌ها</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-send-check"></i></div><div><div class="value"><%= J.toPersianDigits(tot.sent) %></div><div class="label">موفق<%= tot.count ? ' (' + J.toPersianDigits(Math.round(tot.sent / tot.count * 100)) + '٪)' : '' %></div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-danger"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-danger"><i class="bi bi-send-x"></i></div><div><div class="value"><%= J.toPersianDigits(tot.failed) %></div><div class="label">ناموفق</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-stack"></i></div><div><div class="value"><%= J.toPersianDigits(tot.partsSent) %></div><div class="label">بخش ارسال‌شده<% if (price) { %> ≈ <%= utils.money(tot.cost, S.get('currency_unit', 'تومان')) %><% } %></div></div></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header"><h6>روند روزانه</h6><span class="fs-7 text-secondary"><%= J.toPersianDigits(days.length) %> روز دارای ارسال</span></div>
+      <div class="card-body"><% if (!days.length) { %><div class="text-center text-secondary py-4">در این بازه پیامکی ارسال نشده است</div><% } else { %><canvas id="chDays" height="110" aria-label="نمودار پیامک‌های روزانه" role="img"></canvas><% } %></div>
+    </div>
+    <div class="card table-card">
+      <div class="card-header"><h6>به تفکیک نوع پیامک</h6></div>
+      <table class="table"><thead><tr><th>نوع</th><th>تعداد</th><th>موفق</th><th>ناموفق</th><th>بخش‌ها</th><% if (price) { %><th>هزینهٔ تقریبی</th><% } %><th class="actions"></th></tr></thead><tbody>
+        <% if (!contexts.length) { %><tr><td colspan="7" class="text-center text-secondary py-4">—</td></tr><% } %>
+        <% contexts.forEach(function (c) { %><tr><td><%= c.title %></td><td><%= J.toPersianDigits(c.count) %></td><td class="text-success"><%= J.toPersianDigits(c.sent) %></td><td class="<%= c.failed ? 'text-danger' : '' %>"><%= J.toPersianDigits(c.failed) %></td><td><%= J.toPersianDigits(c.parts) %></td><% if (price) { %><td><%= utils.money(c.cost, S.get('currency_unit', 'تومان')) %></td><% } %><td class="actions"><% if (c.key !== 'other') { %><a class="btn btn-sm btn-light" href="/system/sms-log?context=<%= c.key %>" title="مشاهده در لاگ" aria-label="مشاهده در لاگ"><i class="bi bi-list-ul"></i></a><% } %></td></tr><% }); %>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card table-card mb-3">
+      <div class="card-header"><h6>پرمصرف‌ترین شماره‌ها</h6><span class="fs-7 text-secondary">۱۰ شمارهٔ اول</span></div>
+      <table class="table"><thead><tr><th>شماره</th><th>تعداد</th><th>ناموفق</th><th>بخش‌ها</th></tr></thead><tbody>
+        <% if (!recipients.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">—</td></tr><% } %>
+        <% recipients.forEach(function (r) { %><tr><td class="ltr text-start"><a href="/system/sms-log?q=<%= encodeURIComponent(r.key) %>"><%= J.toPersianDigits(r.key) %></a></td><td><%= J.toPersianDigits(r.count) %></td><td class="<%= r.failed ? 'text-danger' : '' %>"><%= J.toPersianDigits(r.failed) %></td><td><%= J.toPersianDigits(r.parts) %></td></tr><% }); %>
+      </tbody></table>
+    </div>
+    <div class="card table-card">
+      <div class="card-header"><h6>به تفکیک درگاه</h6></div>
+      <table class="table"><thead><tr><th>درگاه</th><th>تعداد</th><th>موفق</th><th>ناموفق</th></tr></thead><tbody>
+        <% if (!providers.length) { %><tr><td colspan="4" class="text-center text-secondary py-4">—</td></tr><% } %>
+        <% providers.forEach(function (p) { %><tr><td class="ltr text-start"><%= p.key %></td><td><%= J.toPersianDigits(p.count) %></td><td class="text-success"><%= J.toPersianDigits(p.sent) %></td><td class="<%= p.failed ? 'text-danger' : '' %>"><%= J.toPersianDigits(p.failed) %></td></tr><% }); %>
+      </tbody></table>
+      <div class="card-footer bg-transparent fs-7 text-secondary">شمارش بخش‌ها بر اساس استاندارد پیامک فارسی (UCS-2): تا ۷۰ نویسه یک بخش، بیش از آن هر ۶۷ نویسه یک بخش. هزینهٔ واقعی را از پنل درگاه خود بررسی کنید.</div>
+    </div>
+  </div>
+</div>
+<% if (days.length) { %>
+<script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
+<script>new Chart(document.getElementById('chDays'),{type:'bar',data:{labels:<%- JSON.stringify(days.map(function (d) { return J.formatDate(d.key); })) %>,datasets:[{label:'موفق',data:<%- JSON.stringify(days.map(function (d) { return d.sent; })) %>,backgroundColor:'rgba(22,163,74,.7)',stack:'a'},{label:'ناموفق',data:<%- JSON.stringify(days.map(function (d) { return d.failed; })) %>,backgroundColor:'rgba(220,38,38,.7)',stack:'a'}]},options:{plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Vazirmatn'}}}},scales:{x:{stacked:true,ticks:{font:{family:'Vazirmatn'}}},y:{stacked:true,beginAtZero:true,ticks:{precision:0,font:{family:'Vazirmatn'}}}}}})</script>
+<% } %>

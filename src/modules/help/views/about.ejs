@@ -1,0 +1,25 @@
+<%- include('partials/page-header', { title: 'دربارهٔ سامانه', icon: 'bi-info-circle', breadcrumbs: [{ title: 'راهنما', href: '/help' }, { title: 'دربارهٔ سامانه' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-body">
+      <h5 class="mb-1"><%= school('school_name') %></h5>
+      <div class="text-secondary fs-7 mb-3">سامانهٔ مدیریت مدرسه — نسخهٔ <%= J.toPersianDigits(version) %></div>
+      <table class="table table-sm mb-0 fs-7">
+        <tr><th class="text-secondary fw-normal">ماژول‌ها</th><td><%= J.toPersianDigits(stats.modulesEnabled) %> فعال از <%= J.toPersianDigits(stats.modules) %></td></tr>
+        <tr><th class="text-secondary fw-normal">قابلیت‌ها</th><td><%= J.toPersianDigits(stats.featuresEnabled) %> فعال از <%= J.toPersianDigits(stats.features) %></td></tr>
+        <% if (isAdmin) { %><tr><th class="text-secondary fw-normal">Node.js</th><td class="ltr text-end"><%= node %></td></tr>
+        <tr><th class="text-secondary fw-normal">پایگاه داده</th><td class="ltr text-end"><%= dialect %></td></tr><% } %>
+      </table>
+    </div></div>
+    <% if (isAdmin) { %><div class="card"><div class="card-header"><h6><i class="bi bi-arrow-repeat me-1"></i>به‌روزرسانی</h6></div><div class="card-body fs-7 lh-lg">
+      <ol class="mb-0 ps-3"><li>از سیستم ← پشتیبان‌گیری نسخهٔ پشتیبان بگیرید.</li><li>فایل‌های نسخهٔ جدید را جایگزین کنید؛ پوشهٔ <code>storage</code> (پایگاه داده، تنظیمات، فایل‌ها) را دست نزنید.</li><li>در cPanel «Run NPM Install» و سپس «Restart» بزنید (یا <code>npm install</code> و راه‌اندازی مجدد).</li><li>جدول‌ها و ستون‌های جدید هنگام راه‌اندازی خودکار ساخته می‌شوند.</li></ol>
+    </div></div><% } %>
+  </div>
+  <div class="col-lg-8">
+    <div class="card table-card"><div class="card-header"><h6><i class="bi bi-grid-1x2 me-1"></i>ماژول‌ها</h6><% if (isSuper) { %><a href="/system/modules" class="btn btn-sm btn-outline-primary">مدیریت ماژول‌ها</a><% } else if (isAdmin && enabled('support') && enabled('support.module_requests')) { %><a href="/support/modules" class="btn btn-sm btn-outline-primary">ماژول‌ها و درخواست فعال‌سازی</a><% } %></div>
+      <div class="table-responsive"><table class="table table-hover mb-0 fs-7 align-middle"><thead><tr><th>ماژول</th><th>قابلیت‌ها</th><th>وضعیت</th></tr></thead><tbody>
+        <% mods.forEach(function (m) { %><tr><td><i class="bi <%= m.icon || 'bi-box' %> me-1 text-brand"></i><%= m.name %></td><td><%= J.toPersianDigits(m.featuresOn) %> / <%= J.toPersianDigits(m.features) %></td><td><% if (m.enabled) { %><span class="badge text-bg-success">فعال</span><% } else { %><span class="badge text-bg-secondary">غیرفعال</span><% } %></td></tr><% }); %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>

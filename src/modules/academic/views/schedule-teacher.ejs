@@ -1,0 +1,51 @@
+<% if (!print) { %>
+<%- include('partials/page-header', { title: 'برنامه هفتگی ' + teacher.name, subtitle: J.toPersianDigits(totalHours) + ' زنگ در هفته', icon: 'bi-table', breadcrumbs: [{ title: 'برنامه هفتگی', href: '/academic/schedule' }, { title: teacher.name }], actions: [
+  ...(enabled('academic.schedule_print') ? [{ href: '/academic/schedule/teacher/' + teacher.id + '?print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-outline-secondary', target: '_blank' }] : [])
+] }) %>
+<% if (canEditAvail) { %><div class="alert alert-light border d-flex align-items-start gap-2 fs-7"><i class="bi bi-calendar-x text-warning fs-5"></i><div>برای اعلام زنگ‌هایی که <%= currentUser.role === 'teacher' ? 'در مدرسه حضور ندارید' : 'معلم در مدرسه حضور ندارد' %> روی خانهٔ خالی کلیک کنید. این زنگ‌ها در چیدن دستی و خودکار برنامه رعایت می‌شوند. <span class="d-inline-block px-3 border rounded unavail">&nbsp;</span> = در دسترس نیست</div></div><% } %>
+<% } else { %><h5 class="mb-3">برنامهٔ هفتگی <%= teacher.name %> (<%= J.toPersianDigits(totalHours) %> زنگ در هفته)</h5><% } %>
+<div class="card"><div class="table-responsive"><table class="table table-bordered schedule-table mb-0 text-center align-middle">
+  <thead><tr><th style="width:90px">روز / زنگ</th><% for (var p = 1; p <= periods; p++) { %><th>زنگ <%= J.toPersianDigits(p) %><div class="fs-7 fw-normal text-secondary ltr"><%= J.toPersianDigits(times[p-1] || '') %></div></th><% } %></tr></thead>
+  <tbody><% days.forEach(function (d) { %>
+    <tr><th class="bg-light"><%= J.WEEKDAYS[d] %></th>
+    <% for (var p = 1; p <= periods; p++) { var s = grid[d] && grid[d][p]; var un = availability[d + ':' + p]; %>
+      <td class="<%= s ? 'has-slot' : '' %> <%= un ? 'unavail' : '' %> <%= canEditAvail ? 'avail-cell' : '' %>" <% if (canEditAvail) { %>data-day="<%= d %>" data-period="<%= p %>" data-un="<%= un ? '1' : '0' %>" data-note="<%= un ? (un.note || '') : '' %>" role="button" tabindex="0" aria-label="<%= J.WEEKDAYS[d] %> زنگ <%= J.toPersianDigits(p) %>"<% } %> title="<%= un ? 'در دسترس نیست' + (un.note ? ': ' + un.note : '') : '' %>">
+        <% if (s) { %><div class="fw-semibold"><%= s.subject_title %></div><div class="fs-7"><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a></div><% if (s.room_title) { %><div class="fs-7 text-muted"><%= s.room_title %></div><% } %><% if (un) { %><div class="fs-7 text-danger"><i class="bi bi-exclamation-triangle"></i> در دسترس نیست</div><% } %>
+        <% } else if (un) { %><div class="fs-7 text-warning-emphasis"><i class="bi bi-calendar-x"></i><% if (un.note) { %><div class="truncate" style="max-width:110px"><%= un.note %></div><% } %></div><% } %>
+      </td>
+    <% } %></tr>
+  <% }); %></tbody>
+</table></div></div>
+<% if (canEditAvail) { %>
+<div class="modal fade" id="availModal" tabindex="-1" aria-labelledby="availTitle"><div class="modal-dialog modal-sm"><form class="modal-content" id="availForm">
+  <div class="modal-header"><h6 class="modal-title" id="availTitle">در دسترس‌بودن</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+  <div class="modal-body">
+    <label class="form-label" for="availNote">توضیح (اختیاری)</label><input class="form-control form-control-sm" id="availNote" maxlength="120" placeholder="مثلاً تدریس در مدرسهٔ دیگر">
+  </div>
+  <div class="modal-footer justify-content-between">
+    <button type="button" class="btn btn-sm btn-outline-success" id="availFree"><i class="bi bi-check2 ms-1"></i>در دسترس است</button>
+    <button type="submit" class="btn btn-sm btn-warning"><i class="bi bi-calendar-x ms-1"></i>در دسترس نیست</button>
+  </div>
+</form></div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modal = new bootstrap.Modal(document.getElementById('availModal')); var days = <%- JSON.stringify(J.WEEKDAYS) %>; var td = null;
+  function open(cell) { td = cell; document.getElementById('availTitle').textContent = days[cell.dataset.day] + ' — زنگ ' + App.fa(cell.dataset.period); document.getElementById('availNote').value = cell.dataset.note || ''; document.getElementById('availFree').style.display = cell.dataset.un === '1' ? '' : 'none'; modal.show(); }
+  document.querySelectorAll('.avail-cell').forEach(function (c) { c.addEventListener('click', function () { open(c); }); c.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(c); } }); });
+  function save(status) {
+    var note = document.getElementById('availNote').value;
+    fetch('/academic/schedule/teacher/<%= teacher.id %>/availability', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': App.csrf }, credentials: 'same-origin', body: JSON.stringify({ _csrf: App.csrf, day: td.dataset.day, period: td.dataset.period, status: status, note: note }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { App.toast(d.message || 'خطا', 'danger'); return; }
+        td.dataset.un = status === 'unavailable' ? '1' : '0'; td.dataset.note = status === 'unavailable' ? note : '';
+        td.classList.toggle('unavail', status === 'unavailable'); td.title = status === 'unavailable' ? 'در دسترس نیست' + (note ? ': ' + note : '') : '';
+        if (!td.classList.contains('has-slot')) td.innerHTML = status === 'unavailable' ? '<div class="fs-7 text-warning-emphasis"><i class="bi bi-calendar-x"></i>' + (note ? '<div class="truncate" style="max-width:110px">' + note.replace(/[<>&]/g, '') + '</div>' : '') + '</div>' : '';
+        else { var w = td.querySelector('.text-danger'); if (status === 'unavailable' && !w) td.insertAdjacentHTML('beforeend', '<div class="fs-7 text-danger"><i class="bi bi-exclamation-triangle"></i> در دسترس نیست</div>'); else if (status !== 'unavailable' && w) w.remove(); }
+        modal.hide(); App.toast(d.warning || 'ذخیره شد', d.warning ? 'warning' : 'success');
+      }).catch(function () { App.toast('خطا در ارتباط', 'danger'); });
+  }
+  document.getElementById('availForm').addEventListener('submit', function (e) { e.preventDefault(); save('unavailable'); });
+  document.getElementById('availFree').addEventListener('click', function () { save('available'); });
+});
+</script>
+<% } %>

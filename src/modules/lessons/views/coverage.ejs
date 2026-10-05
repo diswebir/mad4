@@ -1,0 +1,32 @@
+<%- include('partials/page-header', { title: 'پیشرفت تدریس', subtitle: 'درصد سرفصل‌های تدریس‌شده (بر اساس گزارش‌های تدریس با سرفصل مرتبط) و مقایسه با بودجه‌بندی', icon: 'bi-bar-chart-steps', breadcrumbs: [{ title: 'دفتر کلاسی', href: '/lessons' }, { title: 'پیشرفت تدریس' }], actions: enabled('lessons.syllabus') && (currentUser.role === 'admin' || can('lessons.manage')) ? [{ href: '/lessons/syllabus', label: 'مدیریت سرفصل‌ها', icon: 'bi-list-check', class: 'btn-light' }] : [] }) %>
+<div class="card mb-3"><div class="card-body py-2"><form method="get" class="d-flex gap-2 align-items-center flex-wrap"><label class="fs-7 text-secondary">کلاس:</label><select class="form-select form-select-sm w-auto" name="class_id" onchange="this.form.submit()" aria-label="کلاس"><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= Number(classId) === c.id ? 'selected' : '' %>><%= c.title %></option><% }); %></select></form></div></div>
+<div class="card mb-3"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>درس</th><% if (!isTeacher) { %><th>معلم</th><% } %><th>جلسات ثبت‌شده</th><th>سرفصل‌ها</th><th style="min-width:200px">پیشرفت</th><th>عقب‌افتاده</th><th>آخرین گزارش</th><th></th></tr></thead>
+  <tbody>
+  <% if (!rows.length) { %><tr><td colspan="8"><%- include('partials/empty', { message: 'درسی برای این کلاس تعریف نشده است' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { %><tr class="<%= detail && detail.cs.id === r.cs.id ? 'table-active' : '' %>">
+    <td class="fw-semibold"><%= r.cs.subject_title %><div class="fs-7 text-secondary fw-normal"><%= J.toPersianDigits(r.cs.weekly_hours || 0) %> ساعت در هفته</div></td>
+    <% if (!isTeacher) { %><td class="fs-7"><%= r.cs.teacher_name || '—' %></td><% } %>
+    <td><%= J.toPersianDigits(r.sessions) %><% if (r.plannedHours) { %> <span class="fs-7 text-secondary">/ <%= J.toPersianDigits(r.plannedHours) %> ساعت برنامه</span><% } %></td>
+    <td><%= r.total ? J.toPersianDigits(r.done) + ' از ' + J.toPersianDigits(r.total) : '<span class="text-secondary">تعریف نشده</span>' %></td>
+    <td><% if (r.percent != null) { %><div class="progress" style="height:14px"><div class="progress-bar <%= r.percent >= 70 ? 'bg-success' : r.percent >= 40 ? 'bg-warning' : 'bg-danger' %>" style="width:<%= r.percent %>%"><%= J.toPersianDigits(r.percent) %>٪</div></div><% } else { %>—<% } %></td>
+    <td><% if (r.late) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(r.late) %> سرفصل</span><% } else if (r.total) { %><span class="badge text-bg-success">طبق برنامه</span><% } else { %>—<% } %></td>
+    <td class="fs-7"><%= r.lastLog ? J.formatDate(r.lastLog.date) : '—' %></td>
+    <td class="actions"><a href="/lessons/coverage?class_id=<%= classId %>&class_subject_id=<%= r.cs.id %>" class="btn btn-sm btn-light" title="جزئیات"><i class="bi bi-list-ul"></i></a><a href="/lessons?class_subject_id=<%= r.cs.id %>" class="btn btn-sm btn-light" title="گزارش‌ها"><i class="bi bi-journal-text"></i></a></td>
+  </tr><% }); %>
+  </tbody></table></div></div>
+<% if (detail) { const STATE = { done: ['success', 'تدریس شده'], late: ['danger', 'عقب‌افتاده'], current: ['warning', 'در حال تدریس'], upcoming: ['secondary', 'آینده'] }; %>
+<div class="card"><div class="card-header"><i class="bi bi-list-check me-1"></i>سرفصل‌های <%= detail.cs.subject_title %> — <%= detail.cs.class_title %></div>
+  <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+    <thead><tr><th>#</th><th>سرفصل</th><th>ساعت برنامه</th><th>بازهٔ برنامه‌ریزی</th><th>جلسات</th><th>اولین تدریس</th><th>وضعیت</th></tr></thead>
+    <tbody>
+    <% if (!detail.items.length) { %><tr><td colspan="7" class="text-center text-secondary py-3">سرفصلی برای این درس تعریف نشده است.</td></tr><% } %>
+    <% detail.items.forEach(function (i, k) { %><tr>
+      <td><%= J.toPersianDigits(i.sort_order || k + 1) %></td><td><%= i.title %><% if (i.description) { %><div class="fs-7 text-secondary"><%= utils.truncate(i.description, 100) %></div><% } %></td>
+      <td><%= i.planned_hours ? J.toPersianDigits(i.planned_hours) : '—' %></td>
+      <td class="fs-7"><%= i.planned_from ? J.formatDate(i.planned_from) : '…' %> تا <%= i.planned_to ? J.formatDate(i.planned_to) : '…' %></td>
+      <td><%= J.toPersianDigits(i.sessions) %></td><td class="fs-7"><%= i.first_date ? J.formatDate(i.first_date) : '—' %></td>
+      <td><span class="badge text-bg-<%= STATE[i.state][0] %>"><%= STATE[i.state][1] %></span></td>
+    </tr><% }); %>
+    </tbody></table></div></div>
+<% } %>

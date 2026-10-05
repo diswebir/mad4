@@ -1,0 +1,11 @@
+<%- include('partials/page-header', { title: 'اعلان‌ها', subtitle: unread ? J.toPersianDigits(unread) + ' اعلان خوانده‌نشده' : 'همهٔ اعلان‌ها خوانده شده‌اند', icon: 'bi-bell', actions: [...(unread ? [{ post: '/notifications/read-all', label: 'خواندن همه', icon: 'bi-check2-all', class: 'btn-primary' }] : []), { post: '/notifications/clear', label: 'پاک‌سازی خوانده‌شده‌ها', icon: 'bi-trash', class: 'btn-light', confirm: 'اعلان‌های خوانده‌شده حذف شوند؟' }] }) %>
+<ul class="nav nav-pills mb-3"><li class="nav-item"><a class="nav-link <%= !filter ? 'active' : '' %>" href="/notifications">همه</a></li><li class="nav-item"><a class="nav-link <%= filter === 'unread' ? 'active' : '' %>" href="/notifications?filter=unread">خوانده‌نشده <% if (unread) { %><span class="badge text-bg-danger"><%= J.toPersianDigits(unread) %></span><% } %></a></li></ul>
+<div class="card"><div class="list-group list-group-flush">
+  <% result.data.forEach(function (n) { %>
+  <div class="list-group-item d-flex gap-3 align-items-start <%= n.is_read ? '' : 'bg-light-subtle border-start border-3 border-primary' %>">
+    <i class="bi <%= ICONS[n.type] || ICONS.info %> fs-4 text-<%= n.type || 'info' %>"></i>
+    <div class="flex-grow-1 mw-0"><a href="/notifications/<%= n.id %>/open" class="fw-semibold text-body d-block"><%= n.title %></a><% if (n.body) { %><div class="fs-7 text-secondary"><%= n.body %></div><% } %><div class="fs-7 text-secondary mt-1"><i class="bi bi-clock me-1"></i><%= J.timeAgo(n.created_at) %> · <%= J.formatDateTime(n.created_at) %></div></div>
+    <div class="d-flex gap-1"><% if (!n.is_read) { %><a href="#" data-post="/notifications/<%= n.id %>/read" class="btn btn-sm btn-light" title="خوانده شد"><i class="bi bi-check2"></i></a><% } %><a href="#" data-post="/notifications/<%= n.id %>/delete" class="btn btn-sm btn-light text-danger" title="حذف"><i class="bi bi-x"></i></a></div>
+  </div>
+  <% }); if (!result.data.length) { %><%- include('partials/empty', { message: 'اعلانی وجود ندارد', icon: 'bi-bell-slash' }) %><% } %>
+</div><%- include('partials/pagination', { result: result, query: query }) %></div>

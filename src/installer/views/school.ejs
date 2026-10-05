@@ -1,0 +1,46 @@
+<form method="post" action="/install/run" class="card" data-no-lock>
+  <input type="hidden" name="db_client" value="<%= dbCfg.client %>">
+  <input type="hidden" name="db_host" value="<%= dbCfg.host %>"><input type="hidden" name="db_port" value="<%= dbCfg.port %>">
+  <input type="hidden" name="db_name" value="<%= dbCfg.database %>"><input type="hidden" name="db_user" value="<%= dbCfg.user %>"><input type="hidden" name="db_password" value="<%= dbCfg.password %>">
+  <div class="card-header"><h5><i class="bi bi-building me-1 text-brand"></i>اطلاعات مدرسه و حساب مدیر</h5><% if (driver) { %><span class="badge badge-soft-success">اتصال موفق: <span class="ltr"><%= driver %></span></span><% } %></div>
+  <div class="card-body">
+    <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+    <h6 class="text-brand border-bottom pb-2">مدرسه</h6>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6"><label class="form-label required" for="f_school_name">نام مدرسه</label><input class="form-control" name="school_name" value="<%= form.school_name || '' %>" required placeholder="مثال: دبیرستان شهید بهشتی" id="f_school_name"></div>
+      <div class="col-md-3"><label class="form-label" for="f_school_type">مقطع</label><select class="form-select" name="school_type" id="f_school_type"><% ['ابتدایی','متوسطه اول','متوسطه دوم','هنرستان','چند مقطعی'].forEach(function (t) { %><option <%= form.school_type === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
+      <div class="col-md-3"><label class="form-label" for="f_school_gender">جنسیت</label><select class="form-select" name="school_gender" id="f_school_gender"><option value="boys" <%= form.school_gender === 'boys' ? 'selected' : '' %>>پسرانه</option><option value="girls" <%= form.school_gender === 'girls' ? 'selected' : '' %>>دخترانه</option><option value="mixed" <%= !form.school_gender || form.school_gender === 'mixed' ? 'selected' : '' %>>مختلط</option></select></div>
+      <div class="col-md-4"><label class="form-label" for="f_school_phone">تلفن مدرسه</label><input class="form-control ltr" name="school_phone" value="<%= form.school_phone || '' %>" id="f_school_phone"></div>
+      <div class="col-md-8"><label class="form-label" for="f_school_address">آدرس</label><input class="form-control" name="school_address" value="<%= form.school_address || '' %>" id="f_school_address"></div>
+      <div class="col-md-4"><label class="form-label" for="f_timezone_offset">منطقهٔ زمانی</label><select class="form-select ltr" name="timezone_offset" id="f_timezone_offset"><% ['+03:30','+04:30','+00:00','+01:00','+02:00','+03:00','+04:00','+05:00'].forEach(function (t) { %><option <%= (form.timezone_offset || '+03:30') === t ? 'selected' : '' %>><%= t %></option><% }); %></select></div>
+      <div class="col-md-8"><label class="form-label" for="f_default_year">سال تحصیلی جاری</label><input class="form-control" id="f_default_year" value="<%= J.toPersianDigits(defaultYear) %>" disabled><div class="form-text">به‌صورت خودکار بر اساس تاریخ امروز ساخته می‌شود و بعداً قابل ویرایش است.</div></div>
+    </div>
+    <h6 class="text-brand border-bottom pb-2">حساب مدیر سامانه</h6>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6"><label class="form-label required" for="f_admin_name">نام و نام خانوادگی</label><input class="form-control" name="admin_name" value="<%= form.admin_name || '' %>" required id="f_admin_name"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_username">نام کاربری</label><input class="form-control ltr" name="admin_username" value="<%= form.admin_username || 'admin' %>" required pattern="[a-zA-Z0-9_.]{3,30}" id="f_admin_username"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_password">رمز عبور</label><input class="form-control ltr" type="password" name="admin_password" required minlength="6" id="f_admin_password"></div>
+      <div class="col-md-6"><label class="form-label required" for="f_admin_password2">تکرار رمز عبور</label><input class="form-control ltr" type="password" name="admin_password2" required minlength="6" id="f_admin_password2"></div>
+      <div class="col-md-6"><label class="form-label" for="f_admin_email">ایمیل</label><input class="form-control ltr" type="email" name="admin_email" value="<%= form.admin_email || '' %>" id="f_admin_email"></div>
+      <div class="col-md-6"><label class="form-label" for="f_admin_phone">موبایل</label><input class="form-control ltr" name="admin_phone" value="<%= form.admin_phone || '' %>" id="f_admin_phone"></div>
+    </div>
+    <h6 class="text-brand border-bottom pb-2 d-flex justify-content-between align-items-center">حساب سازنده / پشتیبانی فنی <span class="fs-7 fw-normal text-secondary">اختیاری</span></h6>
+    <div class="row g-3 mb-4">
+      <div class="col-12 fs-7 text-secondary">یک حساب فنی جداگانه که برای کاربران مدرسه نامرئی است و فقط از نشانی <code>/console</code> وارد می‌شود؛ مدیریت ماژول‌ها، تنظیمات فنی و گزارش‌های خطا با آن انجام می‌شود. اگر مدرسه را خودتان پشتیبانی می‌کنید، اینجا بسازید (بعداً هم با <code class="ltr">scripts/superadmin.js</code> ممکن است).</div>
+      <div class="col-md-4"><label class="form-label" for="f_super_username">نام کاربری سازنده</label><input class="form-control ltr" name="super_username" value="<%= form.super_username || '' %>" pattern="[a-zA-Z0-9_.]{3,40}" id="f_super_username" autocomplete="off"></div>
+      <div class="col-md-4"><label class="form-label" for="f_super_password">رمز عبور (حداقل ۱۰ کاراکتر)</label><input class="form-control ltr" type="password" name="super_password" minlength="10" id="f_super_password" autocomplete="new-password"></div>
+      <div class="col-md-4"><label class="form-label" for="f_super_name">نام نمایشی</label><input class="form-control" name="super_name" value="<%= form.super_name || '' %>" placeholder="پشتیبانی سامانه" id="f_super_name"></div>
+    </div>
+    <h6 class="text-brand border-bottom pb-2">دادهٔ نمونه</h6>
+    <div class="form-check form-switch">
+      <input type="hidden" name="demo" value="0">
+      <input class="form-check-input" type="checkbox" role="switch" name="demo" value="1" id="demo" <%= form.demo === '0' ? '' : 'checked' %>>
+      <label class="form-check-label" for="demo">بارگذاری دادهٔ نمایشی (معلمان، کلاس‌ها، ۲۰۰+ دانش‌آموز، حضور و غیاب، نمرات، تیکت‌ها و…) — برای آشنایی با سامانه توصیه می‌شود. بعداً می‌توانید از تنظیمات آن را پاک کنید.</label>
+    </div>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-between">
+    <a href="/install/database" class="btn btn-light"><i class="bi bi-arrow-right me-1"></i>قبلی</a>
+    <button class="btn btn-primary px-4" id="runBtn"><i class="bi bi-rocket-takeoff me-1"></i>نصب سامانه</button>
+  </div>
+</form>
+<script>document.querySelector('form[action="/install/run"]').addEventListener('submit', function () { var b = document.getElementById('runBtn'); setTimeout(function () { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>در حال نصب… لطفاً صبر کنید'; }, 10); });</script>

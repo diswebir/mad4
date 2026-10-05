@@ -1,0 +1,28 @@
+<%- include('partials/page-header', { title: 'ارتقای پایان سال', icon: 'bi-arrow-up-circle', breadcrumbs: [{ title: 'سوابق تحصیلی', href: '/enrollments' }, { title: 'ارتقا' }], actions: [] }) %>
+<div class="alert alert-info fs-7"><i class="bi bi-info-circle me-1"></i>ابتدا سال تحصیلی جدید و کلاس‌های آن را در «آموزش» بسازید؛ سپس برای هر کلاس مبدأ، دانش‌آموزان را انتخاب و «ارتقا»، «تکرار پایه» یا «فارغ‌التحصیلی» را ثبت کنید. سابقهٔ سال جاری بسته و ردیف سال جدید ساخته می‌شود.</div>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card"><div class="card-header"><h6>۱) کلاس مبدأ</h6></div>
+      <div class="list-group list-group-flush">
+      <% classes.forEach(function (c) { %><a href="?class_id=<%= c.id %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center <%= c.id === fromId ? 'active' : '' %>"><span><%= c.title %> <span class="opacity-75 fs-7">(<%= c.grade_title || '—' %>)</span></span><span class="badge text-bg-light"><%= J.toPersianDigits(counts[c.id] || 0) %></span></a><% }) %>
+      </div></div>
+  </div>
+  <div class="col-lg-8">
+    <% if (!fromId) { %><div class="card"><div class="card-body text-center text-muted py-5">یک کلاس را از فهرست انتخاب کنید</div></div><% } else { %>
+    <form method="post" action="/enrollments/promote" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="from_class_id" value="<%= fromId %>">
+      <div class="card-header"><h6>۲) دانش‌آموزان و مقصد</h6><label class="fs-7"><input type="checkbox" class="form-check-input me-1" onchange="document.querySelectorAll('.pick').forEach(function(c){c.checked=event.target.checked})">انتخاب همه</label></div>
+      <div class="table-responsive"><table class="table mb-0"><thead><tr><th style="width:40px"></th><th>دانش‌آموز</th><th>شماره</th><th>معدل سال (از ۲۰)</th><th>پیشنهاد</th></tr></thead><tbody>
+      <% if (!students.length) { %><tr><td colspan="5" class="text-center text-muted py-4">دانش‌آموز فعالی در این کلاس نیست</td></tr><% } %>
+      <% students.forEach(function (s) { var a = avgs[s.id]; var pass = a == null || a >= passScore; %><tr><td><input type="checkbox" class="form-check-input pick" name="student_ids[]" value="<%= s.id %>" checked aria-label="شناسه‌های دانش‌آموزان"></td><td><%= s.first_name %> <%= s.last_name %></td><td><%= J.toPersianDigits(s.student_number) %></td><td><%= a != null ? J.toPersianDigits(a) : '—' %></td><td><span class="badge text-bg-<%= pass ? 'success' : 'warning' %>"><%= pass ? 'ارتقا' : 'بررسی/تکرار پایه' %></span></td></tr><% }) %>
+      </tbody></table></div>
+      <div class="card-body border-top row g-2 align-items-end">
+        <div class="col-md-3"><label class="form-label">اقدام</label><select class="form-select" name="action" id="act" aria-label="عملیات"><option value="promote">ارتقا به پایهٔ بالاتر</option><option value="retain">تکرار پایه</option><option value="graduate">فارغ‌التحصیلی</option></select></div>
+        <div class="col-md-3"><label class="form-label" for="f_academic_year_id">سال تحصیلی مقصد</label><select class="form-select" name="academic_year_id" id="f_academic_year_id"><% years.forEach(function (y) { %><option value="<%= y.id %>" <%= current && y.id === current.id ? 'selected' : '' %>><%= y.title %></option><% }) %></select></div>
+        <div class="col-md-4"><label class="form-label">کلاس مقصد</label><select class="form-select" name="to_class_id" id="toClass" aria-label="به کلاس"><% classes.forEach(function (c) { if (c.id === fromId) return; %><option value="<%= c.id %>"><%= c.title %> (<%= c.grade_title || '—' %>)</option><% }) %></select></div>
+        <div class="col-md-2"><button class="btn btn-primary w-100" onclick="return confirm('عملیات برای دانش‌آموزان انتخاب‌شده انجام شود؟')"><i class="bi bi-check2-all me-1"></i>اجرا</button></div>
+      </div>
+    </form>
+    <% } %>
+  </div>
+</div>
+<script>(function(){var a=document.getElementById('act'),t=document.getElementById('toClass');if(!a||!t)return;function u(){t.disabled=a.value==='graduate';}a.addEventListener('change',u);u();})();</script>

@@ -1,0 +1,43 @@
+<%- include('../../views/partials/page-header', { title: 'پروفایل من', icon: 'bi-person-circle', breadcrumbs: [{ title: 'پروفایل' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <%- include('../../views/partials/avatar', { user: currentUser, size: 'avatar-xl mb-2' }) %>
+        <h5 class="mb-0"><%= currentUser.name %></h5>
+        <div class="text-secondary"><%= utils.ROLES[currentUser.role] %><% if (currentUser.role !== 'applicant') { %> · <span class="ltr"><%= currentUser.username %></span><% } %></div>
+        <% if (roleRow && roleRow.key !== currentUser.role) { %><div class="mt-2"><span class="badge badge-soft-purple">سطح دسترسی: <%= roleRow.title %></span></div><% } %>
+        <hr>
+        <div class="text-secondary fs-7 text-start">
+          <div><i class="bi bi-clock-history me-1"></i>آخرین ورود: <%= currentUser.last_login_at ? J.formatDateTime(currentUser.last_login_at) : '—' %></div>
+          <div><i class="bi bi-door-open me-1"></i>تعداد ورود: <%= J.toPersianDigits(currentUser.login_count || 0) %></div>
+          <% if (currentUser.mobile) { %><div><i class="bi bi-phone me-1"></i>موبایل: <span class="ltr"><%= J.toPersianDigits(currentUser.mobile) %></span></div><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <form method="post" action="/auth/profile" enctype="multipart/form-data" class="card">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6>ویرایش اطلاعات</h6></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label" for="f_name">نام و نام خانوادگی</label><input class="form-control" name="name" value="<%= currentUser.name || '' %>" id="f_name"></div>
+          <div class="col-md-6"><label class="form-label" for="f_email">ایمیل</label><input class="form-control ltr" type="email" name="email" value="<%= currentUser.email || '' %>" id="f_email"></div>
+          <% if (currentUser.role !== 'applicant') { %><div class="col-md-6"><label class="form-label" for="f_mobile">موبایل</label><input class="form-control ltr" type="tel" name="mobile" value="<%= currentUser.mobile || '' %>" id="f_mobile"></div><% } %>
+          <div class="col-md-6"><label class="form-label" for="f_avatar">تصویر پروفایل</label><input class="form-control" type="file" name="avatar" accept="image/*" id="f_avatar"></div>
+          <div class="col-md-6"><label class="form-label" for="f_theme">پوستهٔ پیش‌فرض</label><select class="form-select" name="theme" id="f_theme"><option value="">پیش‌فرض سامانه</option><option value="light" <%= currentUser.theme === 'light' ? 'selected' : '' %>>روشن</option><option value="dark" <%= currentUser.theme === 'dark' ? 'selected' : '' %>>تیره</option></select></div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent text-end"><button class="btn btn-primary px-4">ذخیره</button></div>
+    </form>
+    <% if (logins && logins.length) { %>
+    <div class="card mt-3">
+      <div class="card-header"><h6><i class="bi bi-shield-check me-1"></i>تاریخچهٔ ورود اخیر</h6></div>
+      <div class="table-responsive"><table class="table table-sm"><thead><tr><th>زمان</th><th>IP</th><th>مرورگر</th><th>نتیجه</th></tr></thead><tbody>
+        <% logins.forEach(function (l) { %><tr><td><%= J.formatDateTime(l.created_at) %></td><td class="ltr"><%= l.ip %></td><td class="fs-7 text-secondary truncate" style="max-width:260px"><%= l.user_agent %></td><td><%- l.success ? '<span class="badge badge-soft-success">موفق</span>' : '<span class="badge badge-soft-danger">ناموفق</span>' %></td></tr><% }); %>
+      </tbody></table></div>
+    </div>
+    <% } %>
+  </div>
+</div>

@@ -1,0 +1,32 @@
+<%- include('partials/page-header', { title: 'کارنامهٔ رسمی — ' + data.student.name, subtitle: (data.student.class || '') + ' · ' + data.term.title, icon: 'bi-file-earmark-text', breadcrumbs: [{ title: 'اسناد و گواهی‌ها', href: '/documents' }, { title: 'کارنامهٔ رسمی' }], actions: [
+  { href: '/students/' + data.student.id, label: 'پرونده', icon: 'bi-person-vcard', class: 'btn-light' },
+  ...(enabled('exams.report_card') ? [{ href: '/exams/report-card/' + data.student.id + '?term_id=' + termId, label: 'کارنامهٔ کاری', icon: 'bi-journal-text', class: 'btn-light' }] : [])
+] }) %>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card"><div class="card-body" style="background:#fff">
+      <div class="official-doc" style="max-width:820px;margin:0 auto">
+        <%- include('partials/letterhead', { lh: lh, serial: issued ? issued.serial : 'پیش‌نمایش', date: J.todayISO() }) %>
+        <h5 class="text-center fw-bold mb-1">کارنامهٔ تحصیلی <%= data.term.title %> — سال تحصیلی <%= J.toPersianDigits(data.term.year) %> <% if (data.term.is_locked) { %><span class="badge text-bg-success align-middle" style="font-size:.7rem">نهایی</span><% } else { %><span class="badge text-bg-secondary align-middle" style="font-size:.7rem">موقت</span><% } %></h5>
+        <%- include('_rc', { data: data }) %>
+        <%- include('partials/signature', { lh: lh, verifyCode: issued ? issued.verify_code : null }) %>
+      </div>
+    </div></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-body">
+      <form method="get" class="mb-3"><label class="form-label fs-7" for="f_term_id">نوبت</label><select class="form-select form-select-sm" name="term_id" data-auto-submit id="f_term_id"><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(termId) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' — نهایی' : '' %></option><% }); %></select></form>
+      <% if (issued) { %>
+        <div class="alert alert-success py-2 fs-7 mb-2"><i class="bi bi-check-circle me-1"></i>برای این نوبت کارنامهٔ رسمی با شمارهٔ <strong class="ltr d-inline-block"><%= J.toPersianDigits(issued.serial) %></strong> در <%= J.formatDate(issued.issued_at) %> صادر شده است.</div>
+        <a href="/documents/<%= issued.id %>" target="_blank" class="btn btn-primary w-100 mb-2"><i class="bi bi-printer me-1"></i>چاپ نسخهٔ صادرشده</a>
+      <% } %>
+      <% if (canIssue) { %>
+        <form method="post" action="/documents/report-card/<%= data.student.id %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="term_id" value="<%= termId %>">
+          <% if (!data.term.is_locked) { %><div class="alert alert-warning py-2 fs-7"><i class="bi bi-exclamation-triangle me-1"></i>نمرات این نوبت هنوز نهایی (قفل) نشده‌اند؛ کارنامه با نشان «موقت» صادر می‌شود.</div><% } %>
+          <button class="btn <%= issued ? 'btn-outline-secondary' : 'btn-success' %> w-100" <%= issued ? 'onclick="return confirm(\'نسخهٔ جدیدی با شمارهٔ سریال تازه صادر شود؟\')"' : '' %>><i class="bi bi-patch-check me-1"></i><%= issued ? 'صدور نسخهٔ جدید' : 'صدور رسمی (ثبت سریال)' %></button>
+        </form>
+      <% } %>
+    </div></div>
+    <div class="card"><div class="card-body fs-7 text-secondary">هنگام صدور، نسخهٔ ثابتی از نمرات (snapshot) ذخیره می‌شود تا تغییرات بعدی روی سند صادرشده اثر نگذارد. اصالت سند با کد چاپ‌شده قابل استعلام است.</div></div>
+  </div>
+</div>

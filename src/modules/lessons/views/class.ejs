@@ -1,0 +1,27 @@
+<% if (!print) { %>
+<%- include('partials/page-header', { title: 'دفتر کلاسی ' + cls.title, subtitle: m.label + ' — ' + J.toPersianDigits(done) + ' از ' + J.toPersianDigits(total) + ' جلسهٔ برنامه ثبت شده', icon: 'bi-book', breadcrumbs: [{ title: 'دفتر کلاسی', href: '/lessons' }, { title: cls.title }], actions: [
+  { href: '/lessons/class/' + cls.id + '?month=' + m.prev, label: 'ماه قبل', icon: 'bi-chevron-right', class: 'btn-light' },
+  { href: '/lessons/class/' + cls.id + '?month=' + m.next, label: 'ماه بعد', icon: 'bi-chevron-left', class: 'btn-light' },
+  { href: '/lessons/class/' + cls.id + '?month=' + m.key + '&print=1', label: 'چاپ', icon: 'bi-printer', class: 'btn-light', target: '_blank' },
+  ...(enabled('lessons.coverage') ? [{ href: '/lessons/coverage?class_id=' + cls.id, label: 'پیشرفت تدریس', icon: 'bi-bar-chart-steps', class: 'btn-light' }] : [])
+] }) %>
+<% } else { %><style>@media print { @page { size: A4 landscape; margin: 8mm; } } .register td, .register th { padding: 2px 3px !important; vertical-align: top; }</style><h5 class="text-center fw-bold mb-1">دفتر کلاسی <%= cls.title %> — <%= m.label %></h5><div class="text-center fs-7 text-secondary mb-2"><%= J.toPersianDigits(done) %> از <%= J.toPersianDigits(total) %> جلسهٔ برنامهٔ هفتگی دارای گزارش</div><% } %>
+<div class="<%= print ? '' : 'card' %>"><div class="table-responsive">
+<table class="table table-bordered table-sm mb-0 register" style="font-size:<%= print ? '10.5px' : '12.5px' %>">
+  <thead><tr><th style="width:90px">روز</th><% for (let p = 1; p <= periods; p++) { %><th>زنگ <%= J.toPersianDigits(p) %></th><% } %></tr></thead>
+  <tbody>
+  <% if (!dates.length) { %><tr><td colspan="<%= periods + 1 %>" class="text-center text-secondary py-4">در این ماه جلسه‌ای در برنامه/گزارش‌ها وجود ندارد.</td></tr><% } %>
+  <% dates.forEach(function (d) { %><tr>
+    <td class="text-nowrap"><div class="fw-semibold"><%= J.weekdayName(d) %></div><div class="fs-7 text-secondary"><%= J.formatDate(d) %></div></td>
+    <% for (let p = 1; p <= periods; p++) { const s = grid[d][p]; %>
+      <td class="<%= s ? (s.log ? '' : 'table-warning') : '' %>">
+        <% if (s) { %><div class="fw-semibold"><%= s.subject_title %><% if (s.unscheduled) { %> <span class="badge text-bg-light" title="خارج از برنامهٔ هفتگی">خ.ب</span><% } %></div>
+          <% if (s.log) { %><div><%= s.log.topic %></div><% if (s.log.homework) { %><div class="fs-7 text-secondary"><i class="bi bi-pencil-square me-1"></i><%= utils.truncate(s.log.homework, 60) %></div><% } %><% if (!print) { %><a href="/lessons/<%= s.log.id %>/edit" class="fs-7">ویرایش</a><% } %>
+          <% } else { %><div class="fs-7 text-danger">بدون گزارش</div><% if (!print && (isTeacher || currentUser.role === 'admin' || can('lessons.manage'))) { %><a href="/lessons/new?class_subject_id=<%= s.class_subject_id %>&date=<%= J.toJalali(d) %>&period=<%= p %>" class="fs-7">ثبت</a><% } %><% } %>
+          <% if (!isTeacher) { %><div class="fs-7 text-secondary"><%= s.teacher_name || '' %></div><% } %>
+        <% } else { %><span class="text-secondary">—</span><% } %>
+      </td>
+    <% } %>
+  </tr><% }); %>
+  </tbody>
+</table></div></div>

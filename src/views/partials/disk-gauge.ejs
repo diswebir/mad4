@@ -1,0 +1,23 @@
+<%
+/* نمایش وضعیت دیسک: include('partials/disk-gauge', { h: healthInfo, fmtBytes: health.fmt, compact: false }) */
+var _h = typeof h !== 'undefined' ? h : null; var _fmt = typeof fmtBytes === 'function' ? fmtBytes : function (n) { return utils.fileSize(n); }; var _compact = typeof compact !== 'undefined' && compact;
+%>
+<% if (!_h || !_h.disk) { %>
+  <div class="text-secondary fs-7"><i class="bi bi-hdd me-1"></i>اطلاعات فضای دیسک در این سرور در دسترس نیست.</div>
+<% } else { var d = _h.disk; var color = _h.level === 'critical' ? 'danger' : (_h.level === 'warning' ? 'warning' : 'success'); %>
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <div><i class="bi bi-hdd-network me-1 text-<%= color %>"></i><strong>فضای دیسک</strong> <span class="badge bg-<%= color %>-subtle text-<%= color %>-emphasis ms-1"><%= _h.level === 'ok' ? 'عادی' : (_h.level === 'critical' ? 'بحرانی' : 'هشدار') %></span></div>
+    <div class="fs-7 text-secondary"><%= _fmt(d.free) %> آزاد از <%= _fmt(d.total) %></div>
+  </div>
+  <div class="progress" style="height:10px" role="progressbar" aria-valuenow="<%= d.percent %>" aria-valuemin="0" aria-valuemax="100" title="<%= J.toPersianDigits(d.percent) %>٪ استفاده‌شده"><div class="progress-bar bg-<%= color %>" style="width:<%= d.percent %>%"></div></div>
+  <div class="d-flex justify-content-between fs-7 text-secondary mt-1"><span><%= J.toPersianDigits(d.percent) %>٪ استفاده‌شده</span><span>آستانهٔ هشدار: <%= J.toPersianDigits(_h.thresholds.minMb) %> مگابایت یا <%= J.toPersianDigits(_h.thresholds.percent) %>٪</span></div>
+  <% if (!_compact && _h.usage) { var u = _h.usage; var items = [['uploads', 'فایل‌های بارگذاری‌شده', 'bi-folder2-open'], ['backups', 'نسخه‌های پشتیبان', 'bi-cloud-arrow-down'], ['database', 'پایگاه دادهٔ SQLite', 'bi-database'], ['logs', 'فایل‌های لاگ', 'bi-journal-text'], ['tmp', 'فایل‌های موقت', 'bi-hourglass-split']]; %>
+    <div class="row g-2 mt-2">
+      <% items.forEach(function (it) { var r = u[it[0]] || { bytes: 0, files: 0 }; if (it[0] === 'database' && !r.bytes) return; %>
+        <div class="col-6 col-md-4"><div class="border rounded-3 p-2 h-100"><div class="fs-7 text-secondary"><i class="bi <%= it[2] %> me-1"></i><%= it[1] %></div><div class="fw-bold"><%= _fmt(r.bytes) %></div><div class="fs-7 text-secondary"><%= J.toPersianDigits(r.files) %> فایل</div></div></div>
+      <% }); %>
+      <div class="col-6 col-md-4"><div class="border rounded-3 p-2 h-100 bg-body-tertiary"><div class="fs-7 text-secondary"><i class="bi bi-pie-chart me-1"></i>مجموع پوشهٔ storage</div><div class="fw-bold"><%= _fmt(u.total) %></div></div></div>
+    </div>
+  <% } %>
+  <% if (_h.message) { %><div class="alert alert-<%= color %> fs-7 mt-2 mb-0 py-2"><i class="bi bi-exclamation-triangle me-1"></i><%= _h.message %></div><% } %>
+<% } %>

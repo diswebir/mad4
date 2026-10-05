@@ -1,0 +1,91 @@
+<%# دکمهٔ شناور «گزارش خطا» (پایین-چپ همهٔ صفحات) + مودال ارسال گزارش به کنسول سازنده — ماژول support %>
+<button type="button" class="support-fab" id="supportFab" title="گزارش خطا یا مشکل" aria-label="گزارش خطا یا مشکل" data-bs-toggle="modal" data-bs-target="#supportModal"><i class="bi bi-exclamation-triangle-fill"></i></button>
+<div class="modal fade" id="supportModal" tabindex="-1" aria-labelledby="supportModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="supportForm" action="/support/report" method="post" enctype="multipart/form-data" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="supportModalTitle"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>گزارش خطا یا مشکل</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="hidden" name="page_url" id="supportPageUrl" value="">
+        <input type="hidden" name="screen" id="supportScreen" value="">
+        <p class="text-secondary fs-7 mb-3">مشکلی دیدید؟ همین‌جا شرح دهید تا تیم فنی سامانه بررسی و رفع کند. نشانی همین صفحه به‌صورت خودکار ضمیمه می‌شود.</p>
+        <div class="row g-2">
+          <div class="col-4">
+            <label class="form-label" for="supportKind">نوع</label>
+            <select class="form-select" name="kind" id="supportKind"><option value="bug">خطا / مشکل</option><option value="suggestion">پیشنهاد</option><option value="question">سؤال</option></select>
+          </div>
+          <div class="col-8">
+            <label class="form-label" for="supportSubject">عنوان کوتاه</label>
+            <input class="form-control" name="subject" id="supportSubject" maxlength="200" placeholder="مثلاً: دکمهٔ ذخیره کار نمی‌کند">
+          </div>
+          <div class="col-12">
+            <label class="form-label required" for="supportMessage">شرح مشکل</label>
+            <textarea class="form-control" name="message" id="supportMessage" rows="4" required maxlength="4000" placeholder="چه کاری انجام می‌دادید، چه انتظاری داشتید و چه اتفاقی افتاد؟"></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="supportImage">تصویر (اختیاری — فقط یک تصویر، حداکثر ۵ مگابایت)</label>
+            <input class="form-control" type="file" name="image" id="supportImage" accept="image/png,image/jpeg,image/webp,image/gif">
+            <div class="form-text" id="supportImageInfo"></div>
+            <img id="supportPreview" alt="" class="d-none rounded border mt-2" style="max-height:120px;max-width:100%">
+          </div>
+          <div class="col-12 form-check ms-1">
+            <input class="form-check-input" type="checkbox" name="tech" value="1" id="supportTech" checked>
+            <label class="form-check-label fs-7" for="supportTech">اطلاعات فنی صفحه (نشانی، مرورگر، اندازهٔ نمایشگر) ضمیمه شود</label>
+          </div>
+        </div>
+        <div class="alert alert-danger mt-3 mb-0 d-none fs-7" id="supportError"></div>
+        <% if (S.get('support_contact_text')) { %><div class="alert alert-light border mt-3 mb-0 fs-7"><i class="bi bi-headset me-1"></i><%= S.get('support_contact_text') %></div><% } %>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <% if (enabled('support.my_reports')) { %><a href="/support/my" class="fs-7"><i class="bi bi-list-check me-1"></i>گزارش‌های قبلی من</a><% } else { %><span></span><% } %>
+        <div>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-warning" id="supportSubmit"><i class="bi bi-send me-1"></i>ارسال گزارش</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function () {
+  var MAX = 5 * 1024 * 1024;
+  var form = document.getElementById('supportForm'); if (!form) return;
+  var img = document.getElementById('supportImage'), info = document.getElementById('supportImageInfo'), prev = document.getElementById('supportPreview'), err = document.getElementById('supportError'), btn = document.getElementById('supportSubmit');
+  function fail(msg) { err.textContent = msg; err.classList.remove('d-none'); }
+  function fa(n) { return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
+  document.getElementById('supportModal').addEventListener('show.bs.modal', function () {
+    document.getElementById('supportPageUrl').value = location.pathname + location.search;
+    document.getElementById('supportScreen').value = (window.innerWidth || 0) + 'x' + (window.innerHeight || 0);
+    err.classList.add('d-none');
+  });
+  img.addEventListener('change', function () {
+    var f = img.files && img.files[0]; info.textContent = ''; prev.classList.add('d-none'); err.classList.add('d-none');
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { img.value = ''; return fail('فقط فایل تصویری مجاز است.'); }
+    if (f.size > MAX) { img.value = ''; return fail('حجم تصویر بیشتر از ۵ مگابایت است (' + fa((f.size / 1048576).toFixed(1)) + ' MB).'); }
+    info.textContent = f.name + ' — ' + fa((f.size / 1024).toFixed(0)) + ' KB';
+    try { prev.src = URL.createObjectURL(f); prev.classList.remove('d-none'); } catch (e) { /* ignore */ }
+  });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); err.classList.add('d-none');
+    var msg = document.getElementById('supportMessage');
+    if (!msg.value.trim() || msg.value.trim().length < 5) { msg.focus(); return fail('لطفاً شرح مشکل را (حداقل ۵ کاراکتر) بنویسید.'); }
+    var f = img.files && img.files[0]; if (f && f.size > MAX) return fail('حجم تصویر بیشتر از ۵ مگابایت است.');
+    var fd = new FormData(form);
+    btn.disabled = true; var old = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>در حال ارسال…';
+    fetch(form.action, { method: 'POST', body: fd, headers: { 'Accept': 'application/json', 'X-CSRF-Token': fd.get('_csrf') || '' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'پاسخ نامعتبر از سرور (' + r.status + ')' }; }); })
+      .then(function (d) {
+        btn.disabled = false; btn.innerHTML = old;
+        if (!d.ok) return fail(d.error || 'ارسال ناموفق بود.');
+        form.reset(); prev.classList.add('d-none'); info.textContent = '';
+        var m = bootstrap.Modal.getInstance(document.getElementById('supportModal')); if (m) m.hide();
+        if (window.App && App.toast) App.toast('گزارش شما با شمارهٔ ' + fa(d.id) + ' ثبت شد. ممنون از همکاری شما.', 'success'); else alert('گزارش ثبت شد');
+      })
+      .catch(function () { btn.disabled = false; btn.innerHTML = old; fail('خطا در ارتباط با سرور.'); });
+  });
+})();
+</script>

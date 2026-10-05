@@ -1,0 +1,15 @@
+<%- include('partials/page-header', { title: hw.id ? 'ویرایش تکلیف' : 'تکلیف جدید', icon: 'bi-journal-check', breadcrumbs: [{ title: 'تکالیف', href: '/homework' }, { title: hw.id ? 'ویرایش' : 'جدید' }] }) %>
+<% var old = typeof oldInput !== 'undefined' && oldInput ? oldInput : {}; var val = function (k, d) { return old[k] !== undefined ? old[k] : (hw[k] !== undefined && hw[k] !== null ? hw[k] : (d !== undefined ? d : '')); }; %>
+<div class="row justify-content-center"><div class="col-lg-8">
+<form method="post" action="<%= hw.id ? '/homework/' + hw.id : '/homework' %>" enctype="multipart/form-data" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body"><div class="row g-3">
+    <div class="col-md-6"><label class="form-label required" for="f_class_subject_id">درس / کلاس</label><select class="form-select" name="class_subject_id" required id="f_class_subject_id"><% cs.forEach(function (x) { %><option value="<%= x.id %>" <%= String(val('class_subject_id', prefill.class_subject_id)) === String(x.id) ? 'selected' : '' %>><%= x.subject_title %> — <%= x.class_title %></option><% }); %></select></div>
+    <div class="col-md-3"><label class="form-label required" for="f_due_date">مهلت تحویل</label><input class="form-control jdate" name="due_date" required value="<%= val('due_date') ? J.formatDate(val('due_date')) : '' %>" id="f_due_date"></div>
+    <div class="col-md-3"><label class="form-label" for="f_max_score">بارم</label><input type="number" class="form-control ltr" name="max_score" min="1" max="100" value="<%= val('max_score', 20) %>" id="f_max_score"></div>
+    <div class="col-12"><label class="form-label required" for="f_title">عنوان</label><input class="form-control" name="title" required maxlength="150" value="<%= val('title') %>" id="f_title"></div>
+    <div class="col-12"><label class="form-label" for="f_description">شرح تکلیف</label><textarea class="form-control" name="description" rows="5" id="f_description"><%= val('description') %></textarea></div>
+    <div class="col-md-8"><label class="form-label" for="f_file">فایل پیوست (حداکثر ۲۰ مگابایت)</label><input type="file" class="form-control" name="file" id="f_file"><% if (hw.file_path) { %><div class="form-text d-flex gap-2 align-items-center">فعلی: <a href="/files/<%= hw.file_path %>" target="_blank"><%= hw.file_name || 'فایل' %></a><label class="form-check fs-7 mb-0"><input type="checkbox" class="form-check-input" name="remove_file" value="1" aria-label="حذف فایل"> حذف</label></div><% } %></div>
+    <% if (enabled('homework.submit')) { %><div class="col-md-4 d-flex align-items-end"><label class="form-check"><input type="checkbox" class="form-check-input" name="allow_submission" value="1" <%= (hw.id ? Number(val('allow_submission')) : 1) ? 'checked' : '' %> aria-label="امکان ارسال پاسخ"> دانش‌آموزان پاسخ ارسال کنند</label></div><% } %>
+  </div></div>
+  <div class="card-footer bg-transparent d-flex justify-content-between"><a href="/homework" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4">ذخیره</button></div>
+</form></div></div>

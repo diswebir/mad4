@@ -1,0 +1,80 @@
+<%- include('partials/page-header', { title: t.subject, subtitle: '<span class="ltr d-inline-block font-monospace">' + t.code + '</span> · ' + J.formatDateTime(t.created_at) + (t.class_title ? ' · کلاس ' + t.class_title : ''), icon: 'bi-chat-left-text', breadcrumbs: [{ title: 'تیکت‌ها', href: '/tickets' }, { title: t.code }], actions: [
+  ...(currentUser.role === 'admin' || can('tickets.assign') ? [{ post: '/tickets/' + t.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-outline-danger', confirm: 'این تیکت و همهٔ پاسخ‌ها حذف شود؟' }] : [])
+] }) %>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <% replies.forEach(function (r, i) { var mine = r.user_id === currentUser.id; var staffMsg = r.role !== 'student'; %>
+    <div class="card mb-2 <%= r.is_internal ? 'border-warning' : (staffMsg ? 'border-primary-subtle' : '') %>" id="<%= i === replies.length - 1 ? 'last' : 'r' + r.id %>">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <%- include('partials/avatar', { user: { name: r.name, avatar: r.avatar }, size: 34 }) %>
+          <div class="lh-sm"><div class="fw-semibold"><%= r.name %> <span class="badge badge-soft-<%= staffMsg ? 'primary' : 'secondary' %> fw-normal"><%= utils.ROLES[r.role] %></span><% if (r.is_internal) { %> <span class="badge text-bg-warning fw-normal"><i class="bi bi-lock"></i> یادداشت داخلی</span><% } %></div><div class="fs-7 text-secondary" title="<%= J.formatDateTime(r.created_at) %>"><%= J.formatDateTime(r.created_at) %> · <%= J.timeAgo(r.created_at) %></div></div>
+        </div>
+        <div class="msg-body"><%- utils.nl2br(utils.escapeHtml(r.message)) %></div>
+        <% if (r.file_path) { %><div class="mt-2"><a href="/files/<%= r.file_path %>" target="_blank" class="btn btn-sm btn-light"><i class="bi bi-paperclip me-1"></i><%= r.file_name || 'پیوست' %></a></div><% } %>
+      </div>
+    </div>
+    <% }); %>
+    <% if (canReply) { %>
+    <form method="post" action="/tickets/<%= t.id %>/reply" enctype="multipart/form-data" class="card mt-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6><i class="bi bi-reply me-1"></i>پاسخ</h6><% if (canned.length) { %><select class="form-select form-select-sm w-auto" id="cannedSel"><option value="">پاسخ آماده…</option><% canned.forEach(function (c) { %><option value="<%= c.id %>" data-body="<%= c.body %>"><%= c.title %></option><% }); %></select><% } %></div>
+      <div class="card-body">
+        <textarea class="form-control" name="message" id="replyMsg" rows="5" required placeholder="متن پاسخ…"></textarea>
+        <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+          <% if (enabled('tickets.attachments')) { %><input type="file" class="form-control form-control-sm w-auto" name="file" accept="image/*,.pdf,.doc,.docx" aria-label="فایل"><% } %>
+          <% if (staffUser && enabled('tickets.internal_notes')) { %><label class="form-check fs-7 mb-0"><input type="checkbox" class="form-check-input" name="is_internal" value="1"> یادداشت داخلی (دانش‌آموز نمی‌بیند)</label><% } %>
+          <% if (staffUser && enabled('tickets.status')) { %><label class="form-check fs-7 mb-0"><input type="checkbox" class="form-check-input" name="close" value="1"> پاسخ و بستن تیکت</label><% } %>
+          <button class="btn btn-primary ms-auto"><i class="bi bi-send me-1"></i>ارسال</button>
+        </div>
+      </div>
+    </form>
+    <% } else { %><div class="alert alert-secondary mt-3"><i class="bi bi-lock me-1"></i>این تیکت بسته شده است. برای موضوع جدید، <a href="/tickets/new">تیکت جدیدی</a> ثبت کنید.</div><% } %>
+    <% if (enabled('tickets.rating') && isOwner && t.status === 'closed' && !t.rating) { %>
+    <form method="post" action="/tickets/<%= t.id %>/rate" class="card mt-3 border-warning"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><div class="card-body d-flex flex-wrap align-items-center gap-2"><span>از پاسخ‌دهی راضی بودید؟</span><div class="rating-stars">
+      <% for (var i = 5; i >= 1; i--) { %><input type="radio" name="rating" id="st<%= i %>" value="<%= i %>" required><label for="st<%= i %>" title="<%= i %>"><i class="bi bi-star-fill"></i></label><% } %></div><button class="btn btn-sm btn-warning">ثبت امتیاز</button></div></form>
+    <% } %>
+  </div>
+  <div class="col-lg-4">
+    <% if (isStaff && enabled('tickets.sla') && t.sla) { %>
+    <div class="card mb-3 border-<%= t.sla.state === 'overdue' ? 'danger' : t.sla.state === 'warning' ? 'warning' : 'light' %>" id="sla"><div class="card-header"><h6><i class="bi bi-stopwatch me-1"></i>مهلت پاسخ (SLA)</h6></div>
+      <ul class="list-group list-group-flush fs-7">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">مهلت پاسخ اول (<%= utils.PRIORITIES[t.priority] || t.priority %>)</span><span><%= t.sla.targetLabel %></span></li>
+        <% if (t.sla.state !== 'na') { %>
+        <li class="list-group-item d-flex justify-content-between align-items-center"><span class="text-secondary">وضعیت</span><span class="badge badge-soft-<%= t.sla.badge %>"><%= t.sla.state === 'overdue' ? 'خارج از مهلت — ' : t.sla.state === 'warning' ? 'نزدیک مهلت — ' : 'در مهلت — ' %><%= t.sla.label %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">در انتظار پاسخ از</span><span><%= J.formatDateTime(t.status === 'open' && t.last_reply_at ? t.last_reply_at : t.created_at) %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">سررسید</span><span class="<%= t.sla.state === 'overdue' ? 'text-danger fw-bold' : '' %>"><%= J.formatDateTime(t.sla.dueAt) %></span></li>
+        <% } %>
+        <% if (t.first_reply_at) { %><li class="list-group-item d-flex justify-content-between"><span class="text-secondary">اولین پاسخ کارکنان</span><span><%= J.toPersianDigits(t.first_reply_hours) %> ساعت پس از ثبت<% if (t.first_reply_hours > t.sla.target) { %> <span class="badge badge-soft-danger">دیرتر از مهلت</span><% } else { %> <span class="badge badge-soft-success">در مهلت</span><% } %></span></li><% } %>
+        <% if (t.sla.resolveOverdue) { %><li class="list-group-item text-danger"><i class="bi bi-clock-history me-1"></i>این تیکت <%= J.toPersianDigits(t.sla.resolveElapsedDays) %> روز است که حل نشده (هدف: <%= J.toPersianDigits(t.sla.resolveDays) %> روز).</li><% } %>
+      </ul></div>
+    <% } %>
+    <div class="card mb-3"><div class="card-header"><h6>مشخصات</h6></div>
+      <ul class="list-group list-group-flush fs-7">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">وضعیت</span><%- include('_status', { status: t.status }) %></li>
+        <% if (enabled('tickets.priority')) { %><li class="list-group-item d-flex justify-content-between align-items-center"><span class="text-secondary">اولویت</span><% if (staffUser) { %><form method="post" action="/tickets/<%= t.id %>/priority" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><select class="form-select form-select-sm w-auto d-inline" name="priority" data-auto-submit aria-label="اولویت"><% Object.keys(utils.PRIORITIES).forEach(function (k) { %><option value="<%= k %>" <%= t.priority === k ? 'selected' : '' %>><%= utils.PRIORITIES[k] %></option><% }); %></select></form><% } else { %><%- utils.priorityBadge(t.priority) %><% } %></li><% } %>
+        <% if (enabled('tickets.categories')) { %><li class="list-group-item d-flex justify-content-between align-items-center"><span class="text-secondary">دسته</span><% if (staffUser) { %><form method="post" action="/tickets/<%= t.id %>/category" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><select class="form-select form-select-sm w-auto d-inline" name="category" data-auto-submit aria-label="دسته"><% Object.keys(CATEGORIES).forEach(function (k) { %><option value="<%= k %>" <%= t.category === k ? 'selected' : '' %>><%= CATEGORIES[k] %></option><% }); %></select></form><% } else { %><span><%= CATEGORIES[t.category] || '—' %></span><% } %></li><% } %>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">گیرنده</span><span><%= DEPARTMENTS[t.department] || t.department %></span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">ایجادکننده</span><span><%= t.creator_name %> <span class="text-secondary">(<%= utils.ROLES[t.creator_role] %>)</span></span></li>
+        <% if (enabled('tickets.assign')) { %><li class="list-group-item"><div class="d-flex justify-content-between align-items-center"><span class="text-secondary">مسئول پاسخ</span><span><%= t.assignee_name || '—' %></span></div>
+          <% if (isStaff) { %><form method="post" action="/tickets/<%= t.id %>/assign" class="mt-2 d-flex gap-1"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><select class="form-select form-select-sm" name="assigned_to"><option value="">— بدون مسئول —</option><% people.forEach(function (u) { %><option value="<%= u.id %>" <%= t.assigned_to === u.id ? 'selected' : '' %>><%= u.name %> (<%= utils.ROLES[u.role] %>)</option><% }); %></select><button class="btn btn-sm btn-outline-primary">ارجاع</button></form><% } %></li><% } %>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-secondary">آخرین پاسخ</span><span><%= J.formatDateTime(t.last_reply_at) %></span></li>
+        <% if (t.closed_at) { %><li class="list-group-item d-flex justify-content-between"><span class="text-secondary">بسته شده در</span><span><%= J.formatDateTime(t.closed_at) %></span></li><% } %>
+        <% if (t.rating) { %><li class="list-group-item d-flex justify-content-between"><span class="text-secondary">امتیاز</span><span class="text-warning"><% for (var i = 1; i <= 5; i++) { %><i class="bi bi-star<%= i <= t.rating ? '-fill' : '' %>"></i><% } %></span></li><% } %>
+      </ul>
+      <% if (enabled('tickets.status')) { %><div class="card-footer bg-transparent d-flex gap-1 flex-wrap">
+        <% if (t.status !== 'closed') { %><a href="#" data-post="/tickets/<%= t.id %>/status" data-params='{"status":"closed"}' data-confirm="تیکت بسته شود؟" class="btn btn-sm btn-outline-secondary"><i class="bi bi-check2-circle me-1"></i>بستن</a><% } %>
+        <% if (staffUser && t.status !== 'pending') { %><a href="#" data-post="/tickets/<%= t.id %>/status" data-params='{"status":"pending"}' class="btn btn-sm btn-outline-warning">در انتظار کاربر</a><% } %>
+        <% if (staffUser && t.status === 'closed') { %><a href="#" data-post="/tickets/<%= t.id %>/status" data-params='{"status":"open"}' class="btn btn-sm btn-outline-primary">بازگشایی</a><% } %>
+      </div><% } %>
+    </div>
+    <% if (student && currentUser.role !== 'student') { %>
+    <div class="card mb-3"><div class="card-header"><h6>دانش‌آموز مرتبط</h6></div><div class="card-body d-flex align-items-center gap-3">
+      <%- include('partials/avatar', { user: { name: student.first_name + ' ' + student.last_name, avatar: student.photo }, size: 48 }) %>
+      <div class="fs-7"><a href="/students/<%= student.id %>" class="fw-semibold fs-6"><%= student.first_name %> <%= student.last_name %></a><div class="text-secondary"><%= student.class_title || '—' %> · <%= J.toPersianDigits(student.student_number) %></div><% if (student.father_phone || student.mother_phone) { %><div class="ltr text-end"><%= J.toPersianDigits(student.father_phone || student.mother_phone) %></div><% } %></div></div></div>
+    <% } %>
+    <% if (others.length) { %><div class="card"><div class="card-header"><h6>تیکت‌های دیگر این کاربر</h6></div><ul class="list-group list-group-flush fs-7"><% others.forEach(function (o) { %><li class="list-group-item d-flex justify-content-between gap-2"><a href="/tickets/<%= o.id %>" class="truncate"><%= o.subject %></a><%- include('_status', { status: o.status }) %></li><% }); %></ul></div><% } %>
+  </div>
+</div>
+<script>
+(function () { var sel = document.getElementById('cannedSel'); if (!sel) return; sel.addEventListener('change', function () { var o = sel.options[sel.selectedIndex]; if (o && o.dataset.body) { var ta = document.getElementById('replyMsg'); ta.value = (ta.value ? ta.value + '\n' : '') + o.dataset.body; ta.focus(); } sel.value = ''; }); })();
+</script>

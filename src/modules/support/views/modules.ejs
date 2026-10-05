@@ -1,0 +1,70 @@
+<%- include('partials/page-header', { title: 'ماژول‌های سامانه', icon: 'bi-grid-1x2', breadcrumbs: [{ title: 'سیستم' }, { title: 'ماژول‌های سامانه' }], subtitle: 'وضعیت ماژول‌ها و قابلیت‌های این سامانه. فعال‌سازی بخش‌های جدید توسط سازندهٔ سامانه انجام می‌شود؛ برای هر مورد می‌توانید «درخواست فعال‌سازی» بفرستید.' }) %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-toggle-on"></i></div><div><div class="value"><%= J.toPersianDigits(stats.modulesEnabled) %><span class="text-secondary fs-6"> / <%= J.toPersianDigits(stats.modules) %></span></div><div class="label">ماژول فعال</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-info"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-stars"></i></div><div><div class="value"><%= J.toPersianDigits(stats.featuresEnabled) %><span class="text-secondary fs-6"> / <%= J.toPersianDigits(stats.features) %></span></div><div class="label">قابلیت فعال</div></div></div></div></div>
+  <div class="col-12 col-md-6">
+    <div class="card h-100"><div class="card-body fs-7">
+      <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1 text-brand"></i>چگونه ماژول جدید فعال کنم؟</div>
+      <%= note || 'روی «درخواست فعال‌سازی» کنار ماژول یا قابلیت موردنظر کلیک کنید. درخواست شما برای سازندهٔ سامانه ارسال می‌شود و پس از هماهنگی، بدون نیاز به نصب مجدد فعال خواهد شد.' %>
+      <% if (contact) { %><div class="mt-2 text-secondary"><i class="bi bi-headset me-1"></i><%= contact %></div><% } %>
+    </div></div>
+  </div>
+</div>
+<% if (history.length) { %>
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0"><i class="bi bi-bag-plus me-1"></i>درخواست‌های اخیر</h6><span class="text-secondary fs-7"><%= J.toPersianDigits(history.length) %> مورد</span></div>
+  <div class="table-responsive"><table class="table table-sm table-hover mb-0 fs-7 align-middle"><thead><tr><th>درخواست</th><th>تاریخ</th><th>وضعیت</th><th>پاسخ سازنده</th></tr></thead><tbody>
+    <% history.forEach(function (h) { %><tr><td><%= h.subject %></td><td class="text-nowrap"><%= J.formatDateTime(h.created_at) %></td><td><span class="badge badge-soft-<%= STATUS_COLOR[h.status] || 'secondary' %>"><%= STATUSES[h.status] || h.status %></span></td><td><%= h.reply || '—' %></td></tr><% }); %>
+  </tbody></table></div>
+</div>
+<% } %>
+<form method="post" action="/support/request" class="card mb-3">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <div class="fw-bold mb-2"><i class="bi bi-lightbulb me-1 text-warning"></i>قابلیت موردنظرتان در فهرست نیست؟</div>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4"><label class="form-label" for="rq_title">عنوان قابلیت / نیاز</label><input class="form-control" name="title" id="rq_title" maxlength="200" placeholder="مثلاً: اتصال به سامانهٔ سناد" required></div>
+      <div class="col-md-6"><label class="form-label" for="rq_msg">توضیح کوتاه</label><input class="form-control" name="message" id="rq_msg" maxlength="2000"></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100"><i class="bi bi-send me-1"></i>ارسال درخواست</button></div>
+    </div>
+  </div>
+</form>
+<% categories.forEach(function (cat) { var mods = list.filter(function (m) { return (m.category || 'main') === cat.key; }); if (!mods.length) return; %>
+<h6 class="text-secondary mt-4 mb-2"><i class="bi <%= cat.icon %> me-1"></i><%= cat.title %></h6>
+<div class="row g-3">
+  <% mods.forEach(function (m) { var disabledFeats = m.features.filter(function (f) { return !f.enabled && !f.locked; }); %>
+  <div class="col-md-6 col-xl-4">
+    <div class="card module-card h-100 <%= m.enabled ? '' : 'disabled' %>">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
+          <div class="icon bg-brand-soft rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;font-size:1.3rem"><i class="bi <%= m.icon %>"></i></div>
+          <div class="flex-grow-1 mw-0">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+              <strong><%= m.name %></strong>
+              <% if (m.enabled) { %><span class="badge badge-soft-success"><i class="bi bi-check2 me-1"></i>فعال</span>
+              <% } else if (m.pending) { %><span class="badge badge-soft-warning"><i class="bi bi-hourglass-split me-1"></i>در انتظار بررسی</span>
+              <% } else { %><form method="post" action="/support/request" class="m-0" data-confirm="درخواست فعال‌سازی «<%= m.name %>» برای سازندهٔ سامانه ارسال شود؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="key" value="<%= m.key %>"><button class="btn btn-sm btn-outline-warning text-nowrap"><i class="bi bi-bag-plus me-1"></i>درخواست فعال‌سازی</button></form><% } %>
+            </div>
+            <div class="text-secondary fs-7 mt-1"><%= m.description %></div>
+          </div>
+        </div>
+        <% if (m.features.length) { %>
+        <a class="d-block fs-7 mt-3 text-brand" data-bs-toggle="collapse" href="#feat-<%= m.key %>"><i class="bi bi-chevron-down me-1"></i><%= J.toPersianDigits(m.features.length) %> قابلیت (<%= J.toPersianDigits(m.features.filter(function (f) { return f.enabled; }).length) %> فعال<% if (disabledFeats.length) { %>، <%= J.toPersianDigits(disabledFeats.length) %> قابل درخواست<% } %>)</a>
+        <div class="collapse mt-2" id="feat-<%= m.key %>">
+          <% m.features.forEach(function (f) { %>
+          <div class="feat">
+            <div class="mw-0"><div class="fs-7 fw-500"><%= f.name %></div><% if (f.description) { %><div class="text-secondary" style="font-size:.72rem"><%= f.description %></div><% } %></div>
+            <% if (f.enabled) { %><i class="bi bi-check-circle-fill text-success" title="فعال"></i>
+            <% } else if (f.pending) { %><i class="bi bi-hourglass-split text-warning" title="در انتظار بررسی سازنده"></i>
+            <% } else if (m.enabled) { %><form method="post" action="/support/request" class="m-0"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="key" value="<%= f.key %>"><button class="btn btn-sm btn-light text-warning py-0" title="درخواست فعال‌سازی این قابلیت" aria-label="درخواست فعال‌سازی <%= f.name %>"><i class="bi bi-bag-plus"></i></button></form>
+            <% } else { %><i class="bi bi-dash-circle text-secondary" title="غیرفعال (ابتدا ماژول باید فعال شود)"></i><% } %>
+          </div>
+          <% }); %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+</div>
+<% }); %>

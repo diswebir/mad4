@@ -1,0 +1,24 @@
+<% const isEdit = !!log.id; const canMove = currentUser.role !== 'teacher'; const ov = function (k, d) { return old && old[k] != null ? old[k] : d; }; %>
+<%- include('partials/page-header', { title: title, icon: 'bi-journal-plus', breadcrumbs: [{ title: 'دفتر کلاسی', href: '/lessons' }, { title: title }] }) %>
+<form method="post" action="<%= isEdit ? '/lessons/' + log.id : '/lessons' %>" class="card" style="max-width:860px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body row g-3">
+    <% if (!isEdit) { %>
+    <div class="col-md-6"><label class="form-label required" for="f_class_subject_id">کلاس / درس</label><select class="form-select" name="class_subject_id" onchange="location.href='/lessons/new?class_subject_id='+this.value+'&date=<%= J.toJalali(log.date) %>&period=<%= log.period %>'" id="f_class_subject_id"><% subjects.forEach(function (c) { %><option value="<%= c.id %>" <%= cs && cs.id === c.id ? 'selected' : '' %>><%= c.subject_title %> — <%= c.class_title %><%= c.teacher_name && currentUser.role !== 'teacher' ? ' (' + c.teacher_name + ')' : '' %></option><% }); %></select><% if (!subjects.length) { %><div class="form-text text-danger">درسی به شما اختصاص داده نشده است.</div><% } %></div>
+    <% } else { %>
+    <div class="col-md-6"><label class="form-label">کلاس / درس</label><input class="form-control" value="<%= log.subject_title %> — <%= log.class_title %>" disabled></div>
+    <% } %>
+    <div class="col-md-3"><label class="form-label required" for="f_date">تاریخ</label><input class="form-control jdate" name="date" value="<%= J.toPersianDigits(J.toJalali(log.date)) %>" <%= isEdit && !canMove ? 'disabled' : '' %> required id="f_date"></div>
+    <div class="col-md-3"><label class="form-label required" for="f_period">زنگ</label><select class="form-select" name="period" <%= isEdit && !canMove ? 'disabled' : '' %> id="f_period"><% for (let p = 1; p <= Math.max(periods, log.period || 1); p++) { %><option value="<%= p %>" <%= Number(log.period) === p ? 'selected' : '' %>>زنگ <%= J.toPersianDigits(p) %></option><% } %></select></div>
+    <div class="col-md-12"><label class="form-label required" for="f_topic">موضوع تدریس</label><input class="form-control" name="topic" value="<%= ov('topic', log.topic || '') %>" required maxlength="200" placeholder="مثال: فصل ۳ — حل معادلهٔ درجه اول" id="f_topic"></div>
+    <% if (enabled('lessons.syllabus')) { %><div class="col-md-6"><label class="form-label" for="f_syllabus_item_id">سرفصل مرتبط</label><select class="form-select" name="syllabus_item_id" id="f_syllabus_item_id"><option value="">—</option><% syllabus.forEach(function (i) { %><option value="<%= i.id %>" <%= String(ov('syllabus_item_id', log.syllabus_item_id || '')) === String(i.id) ? 'selected' : '' %>><%= i.sort_order ? J.toPersianDigits(i.sort_order) + '. ' : '' %><%= i.title %></option><% }); %></select><% if (!syllabus.length) { %><div class="form-text">برای این درس سرفصلی تعریف نشده است<% if (currentUser.role === 'admin') { %> — <a href="/lessons/syllabus/new">تعریف سرفصل</a><% } %></div><% } %></div><% } %>
+    <div class="col-md-12"><label class="form-label" for="f_description">شرح فعالیت‌های کلاس</label><textarea class="form-control" name="description" rows="3" maxlength="2000" placeholder="روش تدریس، فعالیت گروهی، پرسش کلاسی، نکات مهم…" id="f_description"><%= ov('description', log.description || '') %></textarea></div>
+    <div class="col-md-12"><label class="form-label" for="f_homework">تکلیف داده‌شده</label><textarea class="form-control" name="homework" rows="2" maxlength="1000" placeholder="مثال: حل تمرین‌های صفحهٔ ۴۲ تا ۴۴" id="f_homework"><%= ov('homework', log.homework || '') %></textarea><div class="form-text">این متن در «درس‌های من» برای دانش‌آموز و ولی نمایش داده می‌شود<% if (enabled('homework.manage')) { %>؛ برای تکلیف با مهلت و ارسال پاسخ از <a href="/homework/new">ماژول تکالیف</a> استفاده کنید<% } %>.</div></div>
+  </div>
+  <div class="card-footer bg-transparent d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>ذخیره</button>
+    <% if (!isEdit) { %><button class="btn btn-outline-primary" name="another" value="1">ذخیره و ثبت جلسهٔ بعدی</button><% } %>
+    <a href="/lessons" class="btn btn-light">انصراف</a>
+    <% if (isEdit) { %><button type="button" class="btn btn-outline-danger ms-auto" data-post="/lessons/<%= log.id %>/delete" data-confirm="گزارش حذف شود؟"><i class="bi bi-trash me-1"></i>حذف</button><% } %>
+  </div>
+</form>

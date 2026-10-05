@@ -1,0 +1,13 @@
+<%- include('partials/page-header', { title: 'حضور و غیاب کارکنان', icon: 'bi-person-check', breadcrumbs: [{ title: 'حضور و غیاب', href: '/attendance' }, { title: 'کارکنان' }] }) %>
+<div class="card mb-3"><div class="card-body py-2"><%- include('_datenav', { date: date }) %></div></div>
+<form method="post" action="/attendance/staff" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="date" value="<%= date %>">
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>همکار</th><th>نقش</th><th>وضعیت</th><th style="width:120px">ورود</th><th style="width:120px">خروج</th><th>توضیح</th><th>این ماه</th></tr></thead>
+  <tbody><% staff.forEach(function (u) { var r = rows[u.id] || {}; var ms = monthStats[u.id] || {}; %>
+    <tr><td class="fw-semibold"><div class="d-flex align-items-center gap-2"><%- include('partials/avatar', { user: u, size: 30 }) %><%= u.name %></div></td><td class="fs-7"><%= utils.ROLES[u.role] %></td>
+      <td><select class="form-select form-select-sm" name="status_<%= u.id %>" aria-label="وضعیت"><% [['present', 'حاضر'], ['absent', 'غایب'], ['late', 'تأخیر'], ['leave', 'مرخصی'], ['mission', 'مأموریت']].forEach(function (o) { %><option value="<%= o[0] %>" <%= (r.status || 'present') === o[0] ? 'selected' : '' %>><%= o[1] %></option><% }); %></select></td>
+      <td><input type="time" class="form-control form-control-sm ltr" name="in_<%= u.id %>" value="<%= r.check_in || '' %>" aria-label="ساعت ورود"></td><td><input type="time" class="form-control form-control-sm ltr" name="out_<%= u.id %>" value="<%= r.check_out || '' %>" aria-label="ساعت خروج"></td>
+      <td><input class="form-control form-control-sm" name="note_<%= u.id %>" value="<%= r.note || '' %>" aria-label="یادداشت"></td>
+      <td class="fs-7 text-nowrap"><span class="text-success"><%= J.toPersianDigits(ms.present || 0) %></span> / <span class="text-danger"><%= J.toPersianDigits(ms.absent || 0) %></span> / <span class="text-warning"><%= J.toPersianDigits(ms.late || 0) %></span> / <span class="text-secondary"><%= J.toPersianDigits(ms.leave || 0) %></span></td></tr>
+  <% }); %></tbody></table></div>
+  <div class="card-footer bg-transparent d-flex justify-content-between align-items-center"><span class="fs-7 text-secondary">ستون «این ماه»: حاضر / غایب / تأخیر / مرخصی</span><button class="btn btn-primary px-4">ثبت</button></div>
+</form>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="<%= theme %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<meta name="robots" content="noindex, nofollow">
+<title><%= title ? title + ' | ' : '' %><%= company('company_short_name') || company('company_name') %></title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css?v=<%= appVersion %>">
+<% if (company('primary_color') && company('primary_color') !== '#7c6cf5') { var _rgb = (company('primary_color').replace('#','').match(/.{2}/g)||['7c','6c','f5']).map(function(h){return parseInt(h,16)}).join(','); %>
+<style>:root{--brand:<%= company('primary_color') %>;--brand-dark:<%= company('primary_color') %>;--brand-rgb:<%= _rgb %>;--brand-soft:rgba(<%= _rgb %>,.12)}</style>
+<% } %>
+<script>try{var t=localStorage.getItem('theme');if(t&&!<%= currentUser && currentUser.theme ? 'true' : 'false' %>)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
+<%- typeof style !== 'undefined' ? style : '' %>
+</head>
+<body>
+<% if (typeof impersonator !== 'undefined' && impersonator) { %>
+<div class="impersonate-bar"><i class="bi bi-person-badge me-1"></i>شما به‌عنوان «<%= currentUser.name %>» (<%= utils.ROLES[currentUser.role] %>) وارد شده‌اید (توسط <%= impersonator.name %>). <a href="#" data-post="/auth/impersonate/stop" class="text-dark text-decoration-underline">بازگشت به حساب خودم</a></div>
+<% } %>
+<div class="app">
+  <%- include('../partials/sidebar') %>
+  <div class="sidebar-backdrop"></div>
+  <div class="main">
+    <%- include('../partials/topbar') %>
+    <main class="content">
+      <% if (typeof diskWarning !== 'undefined' && diskWarning) { %><div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-hdd-fill"></i><div>فضای دیسک سرور رو به اتمام است (<%= diskWarning.message || '' %>). <a href="/system/info">جزئیات</a></div></div><% } %>
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </main>
+    <footer class="footer-app">
+      <span><%= company('company_name') %> — سامانهٔ منابع انسانی نسخهٔ <%= J.toPersianDigits(appVersion) %></span>
+      <span><%= J.formatLong(J.todayISO()) %></span>
+    </footer>
+  </div>
+</div>
+<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/jalali.js?v=<%= appVersion %>"></script>
+<script src="/assets/js/app.js?v=<%= appVersion %>"></script>
+<%- typeof script !== 'undefined' ? script : '' %>
+</body>
+</html>

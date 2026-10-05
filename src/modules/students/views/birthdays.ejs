@@ -1,0 +1,63 @@
+<%
+  var qs = function (patch) { return '/students/birthdays?' + new URLSearchParams(Object.assign({}, { range: range, m: jm, class_id: classId || '' }, patch)).toString(); };
+  var rangeTitles = { upcoming: '۳۰ روز آینده', week: 'این هفته و هفتهٔ آینده', month: 'ماه ' + J.MONTHS[jm - 1], all: 'همهٔ سال' };
+%>
+<%- include('partials/page-header', { title: 'تولد دانش‌آموزان', subtitle: rangeTitles[range] + ' — ' + J.toPersianDigits(stats.total) + ' نفر', icon: 'bi-cake2', breadcrumbs: [{ title: 'دانش‌آموزان', href: '/students' }, { title: 'تولدها' }], actions: [
+  ...(enabled('students.export') ? [{ href: qs({ export: 'xlsx' }), label: 'خروجی Excel', icon: 'bi-file-earmark-excel', class: 'btn-light' }, { href: qs({ export: 'csv' }), label: 'CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : []),
+  { print: true, label: 'چاپ', icon: 'bi-printer', class: 'btn-light' }
+] }) %>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card text-danger h-100"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-danger"><i class="bi bi-cake2"></i></div><div><div class="value"><%= J.toPersianDigits(stats.today) %></div><div class="label">تولد امروز</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-warning h-100"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-calendar-week"></i></div><div><div class="value"><%= J.toPersianDigits(stats.week) %></div><div class="label">تا ۷ روز آینده</div></div></div></div></div>
+  <div class="col-12 col-md-6"><div class="card h-100"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <div class="btn-group btn-group-sm" role="group" aria-label="بازه">
+      <% [['upcoming', '۳۰ روز آینده'], ['week', 'این هفته / هفتهٔ آینده'], ['month', 'ماهانه'], ['all', 'همهٔ سال']].forEach(function (r) { %><a class="btn <%= range === r[0] ? 'btn-primary' : 'btn-outline-primary' %>" href="<%= qs({ range: r[0] }) %>"><%= r[1] %></a><% }); %>
+    </div>
+    <form method="get" class="d-flex gap-2 ms-auto">
+      <input type="hidden" name="range" value="<%= range %>">
+      <% if (range === 'month') { %><select class="form-select form-select-sm" name="m" data-auto-submit aria-label="ماه"><% J.MONTHS.forEach(function (mn, i) { %><option value="<%= i + 1 %>" <%= jm === i + 1 ? 'selected' : '' %>><%= mn %></option><% }); %></select><% } %>
+      <select class="form-select form-select-sm" name="class_id" data-auto-submit aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= classId === c.id ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
+    </form>
+  </div></div></div>
+</div>
+
+<% if (!rows.length) { %>
+  <div class="card"><div class="card-body text-center text-muted py-5"><i class="bi bi-cake2 fs-1 d-block mb-2 opacity-50"></i>در این بازه تولدی ثبت نشده است.<div class="fs-7 mt-1">تاریخ تولد دانش‌آموزان در پروندهٔ آن‌ها (بخش مشخصات فردی) وارد می‌شود.</div></div></div>
+<% } else {
+  var groups = [];
+  if (range === 'week') { groups.push({ title: 'این هفته (' + J.formatDate(weeks.ranges.thisWeek.start) + ' تا ' + J.formatDate(weeks.ranges.thisWeek.end) + ')', rows: weeks.thisWeek }); groups.push({ title: 'هفتهٔ آینده (' + J.formatDate(weeks.ranges.nextWeek.start) + ' تا ' + J.formatDate(weeks.ranges.nextWeek.end) + ')', rows: weeks.nextWeek }); }
+  else groups.push({ title: null, rows: rows });
+  groups.forEach(function (g) { %>
+  <div class="card mb-3">
+    <% if (g.title) { %><div class="card-header fw-semibold"><i class="bi bi-calendar3 ms-1"></i><%= g.title %> <span class="badge text-bg-light"><%= J.toPersianDigits(g.rows.length) %></span></div><% } %>
+    <% if (!g.rows.length) { %><div class="card-body text-muted fs-7">تولدی در این هفته نیست.</div><% } else { %>
+    <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+      <thead><tr><th>دانش‌آموز</th><th>کلاس</th><th>تاریخ تولد</th><th>تولد بعدی</th><th>سن</th><th class="d-none d-md-table-cell">تماس اولیا</th><th class="text-end no-print">عملیات</th></tr></thead>
+      <tbody>
+      <% g.rows.forEach(function (s) { var b = s.bday; %>
+        <tr class="<%= b.days === 0 ? 'table-danger' : (b.days <= 3 ? 'table-warning' : '') %>">
+          <td><a href="/students/<%= s.id %>" class="d-flex align-items-center gap-2 fw-semibold"><%- include('partials/avatar', { user: { name: s.name, avatar: s.photo }, size: 32 }) %><span><%= s.name %><% if (b.days === 0) { %> <span class="badge text-bg-danger">🎂 امروز</span><% } %></span></a><div class="fs-7 text-muted ms-5"><%= J.toPersianDigits(s.student_number) %></div></td>
+          <td><% if (s.class_id) { %><a href="/academic/classes/<%= s.class_id %>"><%= s.class_title %></a><% } else { %><span class="text-muted">—</span><% } %></td>
+          <td><%= J.formatDate(s.birth_date) %></td>
+          <td><div><%= b.weekday %> <%= J.toPersianDigits(b.jd) %> <%= J.MONTHS[b.jm - 1] %></div><div class="fs-7 <%= b.days <= 3 ? 'text-danger fw-semibold' : 'text-muted' %>"><%= b.days === 0 ? 'امروز' : (b.days === 1 ? 'فردا' : J.toPersianDigits(b.days) + ' روز دیگر') %></div></td>
+          <td><span class="badge text-bg-light"><%= J.toPersianDigits(b.turning) %> ساله می‌شود</span></td>
+          <td class="d-none d-md-table-cell fs-7"><% var phones = [s.father_phone ? 'پدر: ' + J.toPersianDigits(s.father_phone) : null, s.mother_phone ? 'مادر: ' + J.toPersianDigits(s.mother_phone) : null].filter(Boolean); %><%= phones.join(' | ') || '—' %></td>
+          <td class="text-end no-print">
+            <form method="post" action="/students/birthdays/greet/<%= s.id %>" class="d-inline" data-confirm="پیام تبریک تولد با الگوهای تنظیم‌شده برای دانش‌آموز و اولیا ارسال شود؟">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <% if (!isTeacher && S.get('sms_enabled') === '1') { %><input type="hidden" name="sms" value="1"><% } %>
+              <button class="btn btn-sm btn-outline-danger" type="submit" title="ارسال تبریک"><i class="bi bi-balloon-heart"></i> تبریک</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table></div>
+    <% } %>
+  </div>
+<% }); } %>
+
+<% if (currentUser.role === 'admin') { %>
+<div class="text-muted fs-7 no-print"><i class="bi bi-gear ms-1"></i>الگوی پیام‌ها، زمان یادآوری و گیرندگان را در <a href="/system/settings?tab=birthdays">تنظیمات ← تولدها</a> و ساعت اجرای کار خودکار را در <a href="/system/jobs">کارهای زمان‌بندی‌شده</a> تنظیم کنید.</div>
+<% } %>
