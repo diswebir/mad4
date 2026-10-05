@@ -1,0 +1,24 @@
+<div class="card">
+  <div class="card-header"><h5><i class="bi bi-clipboard-check me-1 text-brand"></i>بررسی پیش‌نیازها</h5></div>
+  <div class="card-body">
+    <p>به ویزارد نصب خوش آمدید. این سامانه برای اجرا روی هاست‌های cPanel (Setup Node.js App / Passenger) و سرورهای معمولی طراحی شده است. ابتدا پیش‌نیازها بررسی می‌شوند:</p>
+    <table class="table table-sm">
+      <tbody>
+        <% reqs.forEach(function (r) { %>
+        <tr>
+          <td style="width:36px"><i class="bi <%= r.ok ? 'bi-check-circle-fill text-success' : (r.critical ? 'bi-x-circle-fill text-danger' : 'bi-exclamation-circle-fill text-warning') %>"></i></td>
+          <td><%= r.label %></td>
+          <td class="text-secondary ltr text-start"><%= r.value %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <div class="alert alert-light border mt-3 fs-7">
+      <strong>راهنما:</strong> اگر هاست شما MySQL دارد، استفاده از آن توصیه می‌شود. در غیر این صورت SQLite بدون هیچ تنظیمی کار می‌کند (در صورت نبود درایور بومی، به‌صورت خودکار از نسخهٔ WebAssembly استفاده می‌شود).
+    </div>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+    <span class="text-secondary fs-7"><%= canContinue ? 'همهٔ پیش‌نیازهای ضروری برقرار است.' : 'برخی پیش‌نیازهای ضروری برقرار نیست.' %></span>
+    <a href="/install/database" class="btn btn-primary <%= canContinue ? '' : 'disabled' %>">ادامه <i class="bi bi-arrow-left ms-1"></i></a>
+  </div>
+</div>

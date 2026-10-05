@@ -1,0 +1,7 @@
+<% (typeof flashMessages !== 'undefined' ? flashMessages : []).forEach(function (f) { %>
+<div class="alert alert-<%= f.type %> alert-dismissible fade show alert-auto d-flex align-items-center gap-2" role="alert">
+  <i class="bi <%= { success: 'bi-check-circle-fill', danger: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill' }[f.type] || 'bi-info-circle' %>"></i>
+  <div><%- f.message %></div>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+</div>
+<% }); %>

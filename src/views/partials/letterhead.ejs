@@ -1,0 +1,22 @@
+<%# سربرگ رسمی: lh (service.letterhead()), serial, date, attachment %>
+<div class="letterhead mb-3">
+  <div class="d-flex align-items-start justify-content-between">
+    <div class="text-center" style="width:26%">
+      <% if (lh.logo) { %><img src="/files/<%= lh.logo %>" alt="" style="max-height:72px;max-width:120px"><% } else { %><img src="/assets/img/favicon.svg" alt="" style="height:56px"><% } %>
+    </div>
+    <div class="text-center" style="width:48%">
+      <div class="fw-bold mb-1" style="font-size:.95rem">بسمه تعالی</div>
+      <% lh.header.forEach(function (line) { %><div class="fs-7"><%= line %></div><% }); %>
+      <% if (lh.district) { %><div class="fs-7"><%= lh.district %></div><% } %>
+      <div class="fw-bold mt-1"><%= lh.school %></div>
+    </div>
+    <div class="fs-7" style="width:26%">
+      <table class="table table-sm table-borderless mb-0 fs-7" style="width:auto;margin-right:auto"><tbody>
+        <tr><td class="text-secondary py-0 pe-0">شماره:</td><td class="py-0 fw-bold ltr text-end"><%= J.toPersianDigits(serial || '—') %></td></tr>
+        <tr><td class="text-secondary py-0 pe-0">تاریخ:</td><td class="py-0"><%= J.formatDate(date || J.todayISO()) %></td></tr>
+        <tr><td class="text-secondary py-0 pe-0">پیوست:</td><td class="py-0"><%= typeof attachment !== 'undefined' && attachment ? attachment : 'ندارد' %></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <hr class="mt-2 mb-0" style="border-top:2px solid #111;opacity:1">
+</div>

@@ -1,0 +1,23 @@
+<%- include('partials/page-header', { title: 'سمت‌ها و مجوزها', icon: 'bi-shield-check', subtitle: 'برای هر سمت سازمانی (معاون، دفتردار، حسابدار…) مجموعه‌ای از مجوزها تعریف کنید و به کاربران کارمند/معلم اختصاص دهید', breadcrumbs: [{ title: 'کاربران', href: '/users' }, { title: 'سمت‌ها' }], actions: [{ href: '/users/positions/matrix.csv', label: 'ماتریس CSV', icon: 'bi-filetype-csv', class: 'btn-outline-secondary' }, { href: '/users/positions/new', label: 'سمت جدید', icon: 'bi-plus-lg', class: 'btn-primary' }] }) %>
+<div class="row g-3">
+  <% rows.forEach(function (p) { %>
+  <div class="col-md-6 col-xl-4"><div class="card h-100">
+    <div class="card-header"><h6 class="mb-0"><i class="bi bi-person-badge me-1"></i><%= p.title %><% if (p.is_system) { %> <span class="badge text-bg-light fs-7 fw-normal">پیش‌فرض</span><% } %></h6><span class="badge text-bg-secondary"><%= J.toPersianDigits(counts[p.id] || 0) %> کاربر</span></div>
+    <div class="card-body">
+      <% if (p.description) { %><p class="text-muted fs-7"><%= p.description %></p><% } %>
+      <div class="d-flex flex-wrap gap-1"><% p.perms.slice(0, 12).forEach(function (k) { %><span class="badge badge-soft-info fw-normal"><%= LABELS[k] || k %></span><% }) %><% if (p.perms.length > 12) { %><span class="badge text-bg-light">+<%= J.toPersianDigits(p.perms.length - 12) %></span><% } %><% if (!p.perms.length) { %><span class="text-muted fs-7">بدون مجوز</span><% } %></div>
+    </div>
+    <div class="card-footer bg-transparent d-flex gap-2">
+      <a href="/users/positions/<%= p.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>ویرایش</a>
+      <a href="/users?position_id=<%= p.id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>کاربران</a>
+      <form method="post" action="/users/positions/<%= p.id %>/delete" class="ms-auto" onsubmit="return confirm('حذف سمت؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger" <%= counts[p.id] ? 'disabled' : '' %> aria-label="حذف" title="حذف"><i class="bi bi-trash"></i></button></form>
+    </div>
+  </div></div>
+  <% }) %>
+</div>
+<div class="card mt-3"><div class="card-header"><h6><i class="bi bi-table me-1"></i>ماتریس مجوزها</h6></div>
+  <div class="table-responsive"><table class="table table-sm table-bordered mb-0 fs-7"><thead class="table-light"><tr><th>مجوز</th><% rows.forEach(function (p) { %><th class="text-center text-nowrap"><%= p.title %></th><% }) %></tr></thead><tbody>
+  <% GROUPS.forEach(function (g) { %><tr class="table-secondary"><td colspan="<%= rows.length + 1 %>" class="fw-bold"><%= g.title %></td></tr>
+    <% g.items.forEach(function (it) { %><tr><td><%= it[1] %> <code class="text-muted">(<%= it[0] %>)</code></td><% rows.forEach(function (p) { %><td class="text-center"><%- p.perms.indexOf(it[0]) >= 0 ? '<i class="bi bi-check-lg text-success"></i>' : '' %></td><% }) %></tr><% }) %>
+  <% }) %>
+  </tbody></table></div></div>

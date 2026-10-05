@@ -1,0 +1,64 @@
+<%- include('partials/page-header', { title: 'امنیت کنسول سازنده', icon: 'bi-shield-lock', breadcrumbs: [{ title: 'کنسول سازنده', href: '/console' }, { title: 'امنیت' }], subtitle: 'رمز، ورود دومرحله‌ای، محدودیت IP و هشدارهای ورود کنسول. حساب سازنده برای سایر کاربران سامانه وجود ندارد و فقط از /console وارد می‌شود.' }) %>
+<% var fa = J.toPersianDigits; %>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0"><i class="bi bi-phone me-1"></i>ورود دومرحله‌ای (TOTP)</h6><% if (Number(me.totp_enabled)) { %><span class="badge badge-soft-success">فعال</span><% } else { %><span class="badge badge-soft-danger">غیرفعال</span><% } %></div>
+      <div class="card-body fs-7">
+        <% if (Number(me.totp_enabled)) { %>
+          <p>با هر ورود، علاوه بر رمز، کد ۶ رقمی برنامهٔ احراز هویت لازم است. کدهای پشتیبان باقی‌مانده: <strong><%= fa(codesLeft) %></strong><% if (codesLeft <= 2) { %> <span class="text-danger">(کم است — کدهای جدید بسازید)</span><% } %></p>
+          <div class="d-flex flex-wrap gap-2">
+            <form method="post" action="/console/security/2fa/codes" class="d-flex gap-2" data-confirm="کدهای پشتیبان قبلی باطل و کدهای جدید ساخته شوند؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm ltr" type="password" name="password" placeholder="رمز کنسول" required aria-label="رمز کنسول" style="max-width:170px"><button class="btn btn-sm btn-outline-primary text-nowrap"><i class="bi bi-arrow-repeat me-1"></i>کدهای پشتیبان جدید</button></form>
+            <form method="post" action="/console/security/2fa/disable" class="d-flex gap-2" data-confirm="ورود دومرحله‌ای غیرفعال شود؟ امنیت کنسول کاهش می‌یابد."><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm ltr" type="password" name="password" placeholder="رمز کنسول" required aria-label="رمز کنسول برای غیرفعال‌سازی" style="max-width:170px"><button class="btn btn-sm btn-outline-danger text-nowrap"><i class="bi bi-x-circle me-1"></i>غیرفعال‌سازی</button></form>
+          </div>
+        <% } else { %>
+          <p>با فعال‌سازی، ورود به کنسول نیازمند کد ۶ رقمی برنامهٔ احراز هویت گوشی (Google Authenticator، Microsoft Authenticator، Aegis و…) خواهد بود. <strong>اکیداً توصیه می‌شود.</strong></p>
+          <a href="/console/security/2fa" class="btn btn-dark btn-sm"><i class="bi bi-qr-code me-1"></i>فعال‌سازی با QR</a>
+        <% } %>
+      </div>
+    </div>
+    <form method="post" action="/console/security/password" class="card mb-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-key me-1"></i>تغییر رمز کنسول <span class="text-secondary fs-7">(<span class="ltr d-inline-block"><%= me.username %></span>)</span></h6></div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-12"><label class="form-label" for="cur">رمز فعلی</label><input class="form-control ltr" type="password" name="current" id="cur" required autocomplete="current-password"></div>
+          <div class="col-md-6"><label class="form-label" for="np">رمز جدید (حداقل ۱۰ کاراکتر)</label><input class="form-control ltr" type="password" name="password" id="np" required minlength="10" autocomplete="new-password"></div>
+          <div class="col-md-6"><label class="form-label" for="np2">تکرار رمز جدید</label><input class="form-control ltr" type="password" name="password2" id="np2" required minlength="10" autocomplete="new-password"></div>
+        </div>
+        <button class="btn btn-primary btn-sm mt-3"><i class="bi bi-check2 me-1"></i>تغییر رمز</button>
+      </div>
+    </form>
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-people me-1"></i>حساب‌های سازنده</h6></div>
+      <div class="table-responsive"><table class="table table-sm mb-0 fs-7 align-middle"><thead><tr><th>نام کاربری</th><th>نام</th><th>۲FA</th><th>آخرین ورود</th><th>وضعیت</th></tr></thead><tbody>
+        <% supers.forEach(function (u) { %><tr><td class="ltr text-start"><%= u.username %></td><td><%= u.name %></td><td><%= Number(u.totp_enabled) ? '✓' : '—' %></td><td><%= u.last_login_at ? J.formatDateTime(u.last_login_at) : '—' %></td><td><%= u.status === 'active' ? 'فعال' : 'غیرفعال' %></td></tr><% }); %>
+      </tbody></table></div>
+      <div class="card-body fs-7 text-secondary pt-2">ساخت/حذف حساب سازنده فقط از خط فرمان سرور: <code class="ltr d-inline-block">node scripts/superadmin.js create &lt;user&gt; &lt;password&gt;</code> — راهنما: docs/SUPERADMIN.md</div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <form method="post" action="/console/security/settings" class="card mb-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-sliders me-1"></i>تنظیمات کنسول و پشتیبانی</h6></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label" for="ips">IPهای مجاز ورود به کنسول</label><textarea class="form-control ltr" name="superadmin_allow_ips" id="ips" rows="3" placeholder="5.112.10.20&#10;185.3."><%= s.superadmin_allow_ips || '' %></textarea><div class="form-text">هر خط یک IP یا پیشوند (با نقطهٔ پایانی). خالی = بدون محدودیت. IP فعلی شما: <code class="ltr d-inline-block"><%= myIp %></code>. از نشانی‌های غیرمجاز، صفحهٔ ورود کنسول «۴۰۴» است.</div></div>
+          <div class="col-md-7"><label class="form-label" for="ae">ایمیل هشدار ورود</label><input class="form-control ltr" type="email" name="superadmin_alert_email" id="ae" value="<%= s.superadmin_alert_email || '' %>" placeholder="vendor@example.com"><div class="form-text">هر ورود موفق/ناموفق به کنسول، تغییر رمز و گزارش‌های جدید ایمیل می‌شود (نیازمند تنظیم SMTP در زبانهٔ ایمیل).</div></div>
+          <div class="col-md-5"><label class="form-label" for="sh">مدت اعتبار نشست کنسول (ساعت)</label><input class="form-control ltr" type="number" min="1" max="72" name="superadmin_session_hours" id="sh" value="<%= s.superadmin_session_hours || '12' %>"></div>
+          <div class="col-md-8"><label class="form-label" for="ct">متن تماس با پشتیبانی</label><input class="form-control" name="support_contact_text" id="ct" maxlength="500" value="<%= s.support_contact_text || '' %>" placeholder="مثلاً: پشتیبانی فنی: ۰۹۱۲۰۰۰۰۰۰۰ (شنبه تا چهارشنبه ۹ تا ۱۷)"><div class="form-text">زیر فرم «گزارش خطا» و صفحهٔ ماژول‌های مدیر نمایش داده می‌شود.</div></div>
+          <div class="col-md-4"><label class="form-label" for="mx">سقف گزارش هر کاربر در ساعت</label><input class="form-control ltr" type="number" min="1" max="100" name="support_max_per_hour" id="mx" value="<%= s.support_max_per_hour || '10' %>"></div>
+          <div class="col-12"><label class="form-label" for="mn">توضیح صفحهٔ «ماژول‌های سامانه» برای مدیر</label><textarea class="form-control" name="module_request_note" id="mn" rows="2" maxlength="1000" placeholder="مثلاً: فعال‌سازی هر ماژول پس از هماهنگی و تسویه انجام می‌شود."><%= s.module_request_note || '' %></textarea></div>
+        </div>
+        <button class="btn btn-primary btn-sm mt-3"><i class="bi bi-check2 me-1"></i>ذخیرهٔ تنظیمات</button>
+      </div>
+    </form>
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-door-open me-1"></i>ورودهای کنسول (۲۵ مورد آخر)</h6></div>
+      <div class="table-responsive"><table class="table table-sm table-hover mb-0 fs-7 align-middle"><thead><tr><th></th><th>نام کاربری</th><th>IP</th><th>مرورگر</th><th>زمان</th></tr></thead><tbody>
+        <% if (!logins.length) { %><tr><td colspan="5" class="text-center text-secondary py-3">موردی نیست</td></tr><% } %>
+        <% logins.forEach(function (l) { %><tr><td><i class="bi <%= Number(l.success) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' %>"></i></td><td class="ltr text-start"><%= l.username %></td><td class="ltr text-start"><%= l.ip %></td><td class="text-truncate ltr text-start" style="max-width:200px" title="<%= l.user_agent %>"><%= l.user_agent %></td><td class="text-nowrap"><%= J.formatDateTime(l.created_at) %></td></tr><% }); %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>

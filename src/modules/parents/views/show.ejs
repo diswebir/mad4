@@ -1,0 +1,42 @@
+<%- include('partials/page-header', { title: p.name, icon: 'bi-person-badge', breadcrumbs: [{ title: 'اولیا', href: '/parents' }, { title: p.name }], actions: [] }) %>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-person-lines-fill me-1"></i>مشخصات</h6></div><div class="card-body">
+      <form method="post" action="/parents/<%= p.id %>" class="row g-2"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="col-12"><label class="form-label required" for="f_name">نام و نام خانوادگی</label><input class="form-control" name="name" value="<%= p.name %>" required id="f_name"></div>
+        <div class="col-6"><label class="form-label required" for="f_phone">موبایل</label><input class="form-control" name="phone" value="<%= p.phone || '' %>" dir="ltr" required id="f_phone"></div>
+        <div class="col-6"><label class="form-label" for="f_national_id">کد ملی</label><input class="form-control" name="national_id" value="<%= p.national_id || '' %>" dir="ltr" id="f_national_id"></div>
+        <div class="col-6"><label class="form-label" for="f_relation">نسبت</label><select class="form-select" name="relation" id="f_relation"><% Object.entries(RELATIONS).forEach(function (r) { %><option value="<%= r[0] %>" <%= p.relation === r[0] ? 'selected' : '' %>><%= r[1] %></option><% }) %></select></div>
+        <div class="col-6"><label class="form-label" for="f_job">شغل</label><input class="form-control" name="job" value="<%= p.job || '' %>" id="f_job"></div>
+        <div class="col-6"><label class="form-label" for="f_education">تحصیلات</label><input class="form-control" name="education" value="<%= p.education || '' %>" id="f_education"></div>
+        <div class="col-12"><label class="form-label" for="f_address">نشانی</label><input class="form-control" name="address" value="<%= p.address || '' %>" id="f_address"></div>
+        <div class="col-12"><label class="form-label" for="f_notes">یادداشت</label><textarea class="form-control" name="notes" rows="2" id="f_notes"><%= p.notes || '' %></textarea></div>
+        <div class="col-12"><button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>ذخیره</button></div>
+      </form></div></div>
+    <div class="card mb-3"><div class="card-header"><h6><i class="bi bi-key me-1"></i>حساب کاربری</h6></div><div class="card-body">
+      <dl class="row mb-2 fs-7"><dt class="col-5">نام کاربری</dt><dd class="col-7" dir="ltr"><%= p.username || '—' %></dd><dt class="col-5">وضعیت</dt><dd class="col-7"><span class="badge text-bg-<%= p.user_status === 'active' ? 'success' : 'secondary' %>"><%= p.user_status === 'active' ? 'فعال' : 'غیرفعال' %></span></dd><dt class="col-5">تعداد ورود</dt><dd class="col-7"><%= J.toPersianDigits(p.login_count || 0) %></dd><dt class="col-5">آخرین ورود</dt><dd class="col-7"><%= p.last_login_at ? J.formatDateTime(p.last_login_at) : 'هرگز' %></dd></dl>
+      <div class="d-flex flex-wrap gap-2">
+        <form method="post" action="/parents/<%= p.id %>/status" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="<%= p.user_status === 'active' ? 'inactive' : 'active' %>"><button class="btn btn-sm btn-outline-<%= p.user_status === 'active' ? 'warning' : 'success' %>"><i class="bi bi-power me-1"></i><%= p.user_status === 'active' ? 'غیرفعال‌سازی' : 'فعال‌سازی' %></button></form>
+        <form method="post" action="/parents/<%= p.id %>/reset-password" class="d-inline-flex gap-1" onsubmit="return confirm('رمز عبور بازنشانی شود؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm" name="password" placeholder="رمز جدید (خالی = تصادفی)" dir="ltr" style="width:170px"><label class="btn btn-sm btn-outline-secondary"><input type="checkbox" name="send_sms" value="1" class="form-check-input me-1" aria-label="ارسال پیامک">پیامک</label><button class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>بازنشانی رمز</button></form>
+        <form method="post" action="/parents/<%= p.id %>/delete" class="d-inline ms-auto" onsubmit="return confirm('حذف کامل حساب ولی و همهٔ پیوندها؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>حذف</button></form>
+      </div>
+      <% if (logins.length) { %><hr><div class="fs-7 text-muted mb-1">آخرین ورودها</div><ul class="list-unstyled fs-7 mb-0"><% logins.forEach(function (l) { %><li><i class="bi bi-<%= l.success ? 'check-circle text-success' : 'x-circle text-danger' %> me-1"></i><%= J.formatDateTime(l.created_at) %> <span class="text-muted" dir="ltr"><%= l.ip || '' %></span></li><% }) %></ul><% } %>
+    </div></div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card table-card mb-3"><div class="card-header"><h6><i class="bi bi-people me-1"></i>فرزندان</h6></div>
+      <div class="table-responsive"><table class="table mb-0"><thead><tr><th>دانش‌آموز</th><th>کلاس</th><th>نسبت</th><th>وضعیت</th><th></th></tr></thead><tbody>
+      <% if (!kids.length) { %><tr><td colspan="5" class="text-center text-muted py-3">هنوز دانش‌آموزی پیوند نخورده</td></tr><% } %>
+      <% kids.forEach(function (k) { %><tr><td><a href="/students/<%= k.id %>?tab=parents"><%= k.first_name %> <%= k.last_name %></a> <span class="text-muted fs-7"><%= J.toPersianDigits(k.student_number) %></span></td><td><%= k.class_title || '—' %></td><td><%= RELATIONS[k.relation] || k.relation %><%= k.is_primary ? ' (اصلی)' : '' %></td><td><%= utils.STUDENT_STATUS[k.status] || k.status %></td><td><form method="post" action="/parents/<%= p.id %>/unlink/<%= k.id %>?back=/parents/<%= p.id %>" onsubmit="return confirm('حذف پیوند؟')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-danger" aria-label="بستن" title="بستن"><i class="bi bi-x-lg"></i></button></form></td></tr><% }) %>
+      </tbody></table></div>
+      <div class="card-body border-top">
+        <% if (candidates.length) { %><div class="alert alert-info fs-7 py-2"><i class="bi bi-lightbulb me-1"></i>دانش‌آموزان با همین شمارهٔ موبایل/کد ملی در پرونده: <% candidates.forEach(function (c) { %><form method="post" action="/parents/<%= p.id %>/attach" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="student_id" value="<%= c.id %>"><button class="btn btn-sm btn-link p-0 me-2"><%= c.first_name %> <%= c.last_name %> (<%= c.class_title || '—' %>) <i class="bi bi-plus-circle"></i></button></form><% }) %></div><% } %>
+        <form method="post" action="/parents/<%= p.id %>/attach" class="row g-2 align-items-end"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-7"><label class="form-label" for="f_student_id">پیوند دانش‌آموز دیگر</label><select class="form-select form-select-sm" name="student_id" required id="f_student_id"><option value="">انتخاب…</option><% students.forEach(function (s) { %><option value="<%= s.id %>"><%= s.first_name %> <%= s.last_name %> — <%= s.class_title || '—' %> (<%= s.student_number %>)</option><% }) %></select></div>
+          <div class="col-md-3"><label class="form-label" for="f_relation">نسبت</label><select class="form-select form-select-sm" name="relation" id="f_relation"><% Object.entries(RELATIONS).forEach(function (r) { %><option value="<%= r[0] %>" <%= p.relation === r[0] ? 'selected' : '' %>><%= r[1] %></option><% }) %></select></div>
+          <div class="col-md-2"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-link-45deg me-1"></i>پیوند</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

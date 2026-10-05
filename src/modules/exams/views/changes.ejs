@@ -1,0 +1,25 @@
+<%- include('partials/page-header', { title: 'تاریخچهٔ تغییر نمرات', subtitle: 'هر تغییر در نمرهٔ ثبت‌شده (به‌ویژه پس از نهایی شدن نوبت) با مقدار قبلی/جدید، کاربر و دلیل نگهداری می‌شود', icon: 'bi-clock-history', breadcrumbs: [{ title: 'آزمون‌ها', href: '/exams' }, { title: 'تاریخچهٔ تغییرات' }] }) %>
+<div class="card table-card">
+  <div class="card-header flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      <input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="نام دانش‌آموز، آزمون یا دلیل" style="width:220px">
+      <select class="form-select form-select-sm w-auto" name="term_id" aria-label="نوبت"><option value="">همهٔ نوبت‌ها</option><% terms.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.term_id) === String(t.id) ? 'selected' : '' %>><%= t.title %> (<%= t.year_title %>)<%= Number(t.is_locked) ? ' 🔒' : '' %></option><% }); %></select>
+      <select class="form-select form-select-sm w-auto" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
+    </form>
+    <span class="fs-7 text-secondary"><%= J.toPersianDigits(total) %> تغییر</span>
+  </div>
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7"><thead><tr><th>زمان</th><th>آزمون</th><th>دانش‌آموز</th><th>قبلی</th><th>جدید</th><th>دلیل</th><th>توسط</th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="7"><%- include('partials/empty', { message: 'تغییری ثبت نشده است' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { var old = r.old_descriptive ? (utils.DESCRIPTIVE_GRADES[r.old_descriptive] || r.old_descriptive) : (r.old_score != null ? J.toPersianDigits(Number(r.old_score)) : '—'); var nw = r.new_descriptive ? (utils.DESCRIPTIVE_GRADES[r.new_descriptive] || r.new_descriptive) : (r.new_score != null ? J.toPersianDigits(Number(r.new_score)) : '—'); %>
+    <tr><td class="text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><a href="/exams/<%= r.exam_id %>/history" class="fw-500"><%= r.exam_title %></a><div class="text-secondary"><%= r.subject_title %> · <%= r.class_title %><%= r.term_title ? ' · ' + r.term_title : '' %><% if (Number(r.term_locked)) { %> <i class="bi bi-lock-fill text-warning" title="نوبت نهایی‌شده"></i><% } %></div></td>
+      <td><a href="/students/<%= r.student_id %>" class="text-body"><%= r.first_name %> <%= r.last_name %></a></td>
+      <td><span class="badge badge-soft-secondary"><%= old %></span></td>
+      <td><span class="badge <%= r.new_score == null && !r.new_descriptive ? 'badge-soft-danger' : 'badge-soft-primary' %>"><%= nw %></span></td>
+      <td><%= r.reason || '—' %></td>
+      <td><%= r.changer_name || '—' %></td></tr>
+  <% }); %>
+  </tbody></table></div>
+  <% if (pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: { page: page, pages: pages } }) %></div><% } %>
+</div>

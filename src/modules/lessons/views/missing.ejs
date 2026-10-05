@@ -1,0 +1,27 @@
+<%- include('partials/page-header', { title: 'جلسات ثبت‌نشده', subtitle: 'مقایسهٔ برنامهٔ هفتگی با گزارش‌های تدریس ثبت‌شده (روزهای کاری، بدون تعطیلات)', icon: 'bi-exclamation-circle', breadcrumbs: [{ title: 'دفتر کلاسی', href: '/lessons' }, { title: 'جلسات ثبت‌نشده' }] }) %>
+<div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
+  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="from" value="<%= J.toPersianDigits(from) %>" placeholder="از"></div>
+  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="to" value="<%= J.toPersianDigits(to) %>" placeholder="تا"></div>
+  <% if (!isTeacher) { %><div class="col-md-3"><select class="form-select form-select-sm" name="teacher_id" aria-label="معلم"><option value="">همهٔ معلمان</option><% teachers.forEach(function (t) { %><option value="<%= t.id %>" <%= String(f.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.name %></option><% }); %></select></div><% } %>
+  <div class="col-md-2"><select class="form-select form-select-sm" name="class_id" aria-label="کلاس"><option value="">همهٔ کلاس‌ها</option><% classes.forEach(function (c) { %><option value="<%= c.id %>" <%= String(f.class_id) === String(c.id) ? 'selected' : '' %>><%= c.title %></option><% }); %></select></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
+</form></div></div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-primary"><i class="bi bi-calendar3"></i></div><div><div class="fs-7 text-secondary">جلسات برنامه</div><div class="fw-bold fs-5"><%= J.toPersianDigits(sessions.length) %></div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-check2-circle"></i></div><div><div class="fs-7 text-secondary">ثبت‌شده</div><div class="fw-bold fs-5"><%= J.toPersianDigits(sessions.length - missing.length) %></div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-danger"><i class="bi bi-exclamation-circle"></i></div><div><div class="fs-7 text-secondary">ثبت‌نشده</div><div class="fw-bold fs-5"><%= J.toPersianDigits(missing.length) %></div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-percent"></i></div><div><div class="fs-7 text-secondary">نرخ ثبت</div><div class="fw-bold fs-5"><%= J.toPersianDigits(sessions.length ? Math.round((sessions.length - missing.length) / sessions.length * 100) : 100) %>٪</div></div></div></div></div>
+</div>
+<div class="row g-3">
+  <% if (!isTeacher) { %><div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-person-badge me-1"></i>به تفکیک معلم</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle fs-7"><thead><tr><th>معلم</th><th>ثبت‌نشده</th><th>نرخ</th></tr></thead><tbody>
+      <% if (!teacherRows.length) { %><tr><td colspan="3" class="text-center text-secondary py-3">جلسه‌ای در بازه وجود ندارد</td></tr><% } %>
+      <% teacherRows.forEach(function (t) { %><tr><td><a href="/lessons/missing?from=<%= from %>&to=<%= to %>&teacher_id=<%= t.teacher_id %>"><%= t.name %></a><% if (t.classes.length && t.missing) { %><div class="text-secondary"><%= t.classes.join('، ') %></div><% } %></td><td><%= t.missing ? '<span class="badge text-bg-danger">' + J.toPersianDigits(t.missing) + '</span>' : '<span class="badge text-bg-success">۰</span>' %> <span class="text-secondary">/ <%= J.toPersianDigits(t.total) %></span></td><td><%= J.toPersianDigits(t.percent) %>٪</td></tr><% }); %>
+    </tbody></table></div></div></div><% } %>
+  <div class="<%= isTeacher ? 'col-12' : 'col-lg-8' %>"><div class="card h-100"><div class="card-header"><i class="bi bi-list-ul me-1"></i>فهرست جلسات بدون گزارش</div>
+    <div class="table-responsive"><table class="table table-hover table-sm mb-0 align-middle"><thead><tr><th>تاریخ</th><th>زنگ</th><th>کلاس</th><th>درس</th><% if (!isTeacher) { %><th>معلم</th><% } %><th></th></tr></thead><tbody>
+      <% if (!missing.length) { %><tr><td colspan="6"><%- include('partials/empty', { message: 'همهٔ جلسات این بازه گزارش دارند' }) %></td></tr><% } %>
+      <% missing.slice(0, 300).forEach(function (s) { %><tr><td class="text-nowrap"><%= J.formatDate(s.date) %> <span class="fs-7 text-secondary"><%= J.weekdayName(s.date) %></span></td><td><%= J.toPersianDigits(s.period) %></td><td><%= s.class_title %></td><td><%= s.subject_title %></td><% if (!isTeacher) { %><td class="fs-7"><%= s.teacher_name || '—' %></td><% } %><td class="actions"><a href="/lessons/new?class_subject_id=<%= s.class_subject_id %>&date=<%= J.toJalali(s.date) %>&period=<%= s.period %>" class="btn btn-sm btn-light" title="ثبت گزارش"><i class="bi bi-plus-lg"></i></a></td></tr><% }); %>
+      <% if (missing.length > 300) { %><tr><td colspan="6" class="text-center text-secondary fs-7">… و <%= J.toPersianDigits(missing.length - 300) %> مورد دیگر (بازه را کوچک‌تر کنید)</td></tr><% } %>
+    </tbody></table></div></div></div>
+</div>

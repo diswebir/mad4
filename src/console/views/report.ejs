@@ -1,0 +1,39 @@
+<%- include('partials/page-header', { title: 'گزارش #' + J.toPersianDigits(row.id) + ' — ' + row.subject, icon: 'bi-bug', breadcrumbs: [{ title: 'کنسول سازنده', href: '/console' }, { title: 'گزارش‌های خطا', href: '/console/reports' }, { title: '#' + J.toPersianDigits(row.id) }], actions: [{ post: '/console/reports/' + row.id + '/delete', label: 'حذف', icon: 'bi-trash', class: 'btn-outline-danger', confirm: 'این گزارش حذف شود؟' }] }) %>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0"><span class="badge badge-soft-<%= row.kind === 'bug' ? 'danger' : row.kind === 'suggestion' ? 'info' : 'secondary' %> me-1"><%= KINDS[row.kind] || row.kind %></span><%= row.subject %></h6><span class="badge badge-soft-<%= STATUS_COLOR[row.status] || 'secondary' %>"><%= STATUSES[row.status] || row.status %></span></div>
+      <div class="card-body">
+        <div class="mb-3" style="white-space:pre-wrap"><%= row.message %></div>
+        <% if (row.image) { %><div class="mb-3"><a href="/files/<%= row.image %>" target="_blank" rel="noopener"><img src="/files/<%= row.image %>" alt="تصویر پیوست گزارش" class="img-fluid rounded border" style="max-height:420px"></a><div class="form-text">برای مشاهده در اندازهٔ کامل روی تصویر کلیک کنید.</div></div><% } %>
+        <dl class="row fs-7 mb-0">
+          <dt class="col-sm-3 text-secondary">کاربر</dt><dd class="col-sm-9"><%= row.user_name || '—' %> (<%= utils.ROLES[row.role] || row.role %>)<% if (row.user_username) { %> · <span class="ltr d-inline-block"><%= row.user_username %></span><% } %><% if (row.user_id && row.user_role && !Number(row.is_super)) { %> · <a href="#" data-post="/auth/impersonate/<%= row.user_id %>"><i class="bi bi-box-arrow-in-left me-1"></i>ورود به پنل این کاربر</a><% } %></dd>
+          <dt class="col-sm-3 text-secondary">صفحه</dt><dd class="col-sm-9 ltr text-start"><% if (row.page_url) { %><a href="<%= row.page_url %>" target="_blank" rel="noopener"><%= row.page_url %></a><% } else { %>—<% } %></dd>
+          <dt class="col-sm-3 text-secondary">مرورگر</dt><dd class="col-sm-9 ltr text-start text-break"><%= row.user_agent || '—' %></dd>
+          <dt class="col-sm-3 text-secondary">نمایشگر / نسخه</dt><dd class="col-sm-9 ltr text-start"><%= row.screen || '—' %> · v<%= row.app_version || '' %></dd>
+          <dt class="col-sm-3 text-secondary">زمان ثبت</dt><dd class="col-sm-9"><%= J.formatDateTime(row.created_at) %><% if (row.updated_at && row.updated_at !== row.created_at) { %> · آخرین تغییر <%= J.formatDateTime(row.updated_at) %><% } %><% if (row.handler_name) { %> · بررسی: <%= row.handler_name %><% } %></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <form method="post" action="/console/reports/<%= row.id %>" class="card mb-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-reply me-1"></i>پاسخ و وضعیت</h6></div>
+      <div class="card-body">
+        <div class="mb-3"><label class="form-label" for="st">وضعیت</label><select class="form-select" name="status" id="st"><% Object.keys(STATUSES).forEach(function (k) { %><option value="<%= k %>" <%= row.status === k ? 'selected' : '' %>><%= STATUSES[k] %></option><% }); %></select></div>
+        <div class="mb-3"><label class="form-label" for="rp">پاسخ به کاربر <span class="text-secondary fs-7">(به‌صورت اعلان برای کاربر ارسال می‌شود)</span></label><textarea class="form-control" name="reply" id="rp" rows="4" maxlength="4000"><%= row.reply || '' %></textarea><% if (row.replied_at) { %><div class="form-text">آخرین پاسخ: <%= J.formatDateTime(row.replied_at) %></div><% } %></div>
+        <div class="mb-3"><label class="form-label" for="nt">یادداشت داخلی <span class="text-secondary fs-7">(فقط سازنده می‌بیند)</span></label><textarea class="form-control" name="note" id="nt" rows="3" maxlength="4000"><%= row.note || '' %></textarea></div>
+        <button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>ذخیره</button>
+      </div>
+    </form>
+    <% if (others.length) { %>
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>سایر گزارش‌های این کاربر</h6></div>
+      <ul class="list-group list-group-flush fs-7">
+        <% others.forEach(function (o) { %><li class="list-group-item d-flex justify-content-between align-items-center"><a href="/console/reports/<%= o.id %>"><%= o.subject %></a><span class="badge badge-soft-<%= STATUS_COLOR[o.status] || 'secondary' %>"><%= STATUSES[o.status] || o.status %></span></li><% }); %>
+      </ul>
+    </div>
+    <% } %>
+  </div>
+</div>

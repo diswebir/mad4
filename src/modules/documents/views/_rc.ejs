@@ -1,0 +1,24 @@
+<%# جدول کارنامهٔ رسمی از روی snapshot: data %>
+<div class="d-flex justify-content-between flex-wrap fs-7 border rounded p-2 mb-2">
+  <div><span class="text-secondary">نام و نام خانوادگی:</span> <strong><%= data.student.name %></strong></div>
+  <div><span class="text-secondary">نام پدر:</span> <%= data.student.father || '—' %></div>
+  <div><span class="text-secondary">شمارهٔ دانش‌آموزی:</span> <span class="ltr d-inline-block"><%= J.toPersianDigits(data.student.student_number || '') %></span></div>
+  <div><span class="text-secondary">کد ملی:</span> <span class="ltr d-inline-block"><%= J.toPersianDigits(data.student.national_id || '') %></span></div>
+  <div><span class="text-secondary">پایه / کلاس:</span> <%= data.student.grade || '—' %> / <%= data.student.class || '—' %></div>
+</div>
+<table class="table table-bordered table-sm mb-2" style="font-size:12.5px">
+  <thead><tr><th style="width:36px">#</th><th>درس</th><th class="text-center" style="width:70px">ساعت</th><th class="text-center" style="width:110px"><%= data.descriptive ? 'ارزشیابی' : 'نمره (از ۲۰)' %></th><th class="text-center" style="width:90px">میانگین کلاس</th><th class="text-center" style="width:90px">وضعیت</th></tr></thead>
+  <tbody>
+  <% data.subjects.forEach(function (sb, i) { %>
+    <tr><td class="text-center"><%= J.toPersianDigits(i + 1) %></td><td><%= sb.title %></td><td class="text-center"><%= J.toPersianDigits(sb.hours || '') %></td>
+      <td class="text-center fw-bold"><% if (data.descriptive) { %><%= sb.desc ? (utils.DESCRIPTIVE_GRADES[sb.desc] || '') : '—' %><% } else { %><%= sb.score != null ? J.toPersianDigits(sb.score) : '—' %><% } %></td>
+      <td class="text-center"><%= sb.classAvg != null ? J.toPersianDigits(sb.classAvg) : '—' %></td>
+      <td class="text-center"><% if (!data.descriptive && sb.score != null) { %><%= sb.score >= data.pass ? 'قبول' : 'نیاز به جبران' %><% } else { %>—<% } %></td></tr>
+  <% }); %>
+  </tbody>
+  <% if (!data.descriptive) { %><tfoot><tr class="table-light fw-bold"><td colspan="3">معدل</td><td class="text-center"><%= data.gpa != null ? J.toPersianDigits(data.gpa) : '—' %></td><td class="text-center"><%= data.classAvg != null ? J.toPersianDigits(data.classAvg) : '—' %></td><td class="text-center">رتبه <%= data.rank != null ? J.toPersianDigits(data.rank) + ' از ' + J.toPersianDigits(data.classSize) : '—' %></td></tr></tfoot><% } %>
+</table>
+<div class="row g-2 fs-7">
+  <% if (data.attendance) { var a = data.attendance; %><div class="col-md-6"><div class="border rounded p-2 h-100"><strong>حضور و غیاب نوبت:</strong> غیبت <%= J.toPersianDigits(a.absent || 0) %> · موجه <%= J.toPersianDigits(a.excused || 0) %> · تأخیر <%= J.toPersianDigits(a.late || 0) %> · مرخصی <%= J.toPersianDigits(a.leave || 0) %></div></div><% } %>
+  <div class="col-md-6"><div class="border rounded p-2 h-100"><strong>نظر معلم راهنما:</strong> <%= data.remark || '—' %></div></div>
+</div>

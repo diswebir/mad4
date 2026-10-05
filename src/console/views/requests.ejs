@@ -1,0 +1,34 @@
+<%- include('partials/page-header', { title: 'درخواست‌های فعال‌سازی ماژول', icon: 'bi-bag-plus', breadcrumbs: [{ title: 'کنسول سازنده', href: '/console' }, { title: 'درخواست‌های ماژول' }], subtitle: 'درخواست‌هایی که مدیر مدرسه از صفحهٔ «ماژول‌های سامانه» فرستاده است. با «فعال‌سازی» ماژول/قابلیت فوراً فعال می‌شود و به مدیر اطلاع داده می‌شود.', actions: [{ href: '/system/modules', label: 'صفحهٔ ماژول‌ها', icon: 'bi-grid-1x2' }, { href: query.all === '1' ? '/console/requests' : '/console/requests?all=1', label: query.all === '1' ? 'فقط باز' : 'نمایش همه', icon: 'bi-funnel' }] }) %>
+<div class="card table-card">
+  <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>#</th><th>درخواست</th><th>درخواست‌کننده</th><th>زمان</th><th>وضعیت</th><th>اقدام</th></tr></thead><tbody>
+    <% if (!rows.length) { %><tr><td colspan="6" class="text-center text-secondary py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>درخواستی وجود ندارد</td></tr><% } %>
+    <% rows.forEach(function (r) { %>
+    <tr>
+      <td class="text-secondary fs-7"><%= J.toPersianDigits(r.id) %></td>
+      <td><div class="fw-500"><%= r.subject %></div><div class="text-secondary fs-7"><%= r.message %></div><% if (r.module_key) { %><code class="fs-7"><%= r.module_key %></code><% if (r.enabled) { %> <span class="badge badge-soft-success">هم‌اکنون فعال</span><% } %><% if (r.deps.length) { %> <span class="badge badge-soft-warning" title="وابستگی‌های غیرفعال همراه فعال می‌شوند">وابسته به: <%= r.deps.join('، ') %></span><% } %><% } %><% if (r.reply) { %><div class="fs-7 mt-1 bg-light rounded p-2"><i class="bi bi-reply me-1 text-brand"></i><%= r.reply %></div><% } %></td>
+      <td class="fs-7"><%= r.user_name || '—' %><div class="text-secondary"><%= utils.ROLES[r.role] || r.role %></div></td>
+      <td class="fs-7 text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><span class="badge badge-soft-<%= STATUS_COLOR[r.status] || 'secondary' %>"><%= STATUSES[r.status] || r.status %></span></td>
+      <td class="text-nowrap">
+        <% if (['new', 'seen', 'in_progress'].includes(r.status)) { %>
+          <% if (r.module_key && !r.enabled) { %><form method="post" action="/console/requests/<%= r.id %>/enable" class="d-inline" data-confirm="«<%= r.subject %>» فعال شود و به درخواست‌کننده اطلاع داده شود؟"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-success"><i class="bi bi-toggle-on me-1"></i>فعال‌سازی</button></form><% } %>
+          <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#rq-<%= r.id %>" aria-expanded="false" aria-controls="rq-<%= r.id %>" title="پاسخ / بستن"><i class="bi bi-reply"></i></button>
+        <% } else { %>
+          <a href="/console/reports/<%= r.id %>" class="btn btn-sm btn-light" title="جزئیات"><i class="bi bi-eye"></i></a>
+        <% } %>
+      </td>
+    </tr>
+    <% if (['new', 'seen', 'in_progress'].includes(r.status)) { %>
+    <tr class="collapse" id="rq-<%= r.id %>"><td colspan="6" class="bg-light">
+      <form method="post" action="/console/reports/<%= r.id %>" class="row g-2 align-items-end">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="/console/requests">
+        <div class="col-md-2"><label class="form-label fs-7" for="rqs-<%= r.id %>">وضعیت</label><select class="form-select form-select-sm" name="status" id="rqs-<%= r.id %>"><% ['in_progress', 'resolved', 'closed'].forEach(function (k) { %><option value="<%= k %>"><%= STATUSES[k] %></option><% }); %></select></div>
+        <div class="col-md-8"><label class="form-label fs-7" for="rqr-<%= r.id %>">پاسخ به مدیر (اعلان می‌شود)</label><input class="form-control form-control-sm" name="reply" id="rqr-<%= r.id %>" maxlength="2000" placeholder="مثلاً: پس از تسویه فعال می‌شود / در این نسخه پشتیبانی نمی‌شود"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">ثبت</button></div>
+      </form>
+    </td></tr>
+    <% } %>
+    <% }); %>
+  </tbody></table></div>
+  <%- include('partials/pagination', { result: result }) %>
+</div>

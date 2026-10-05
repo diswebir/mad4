@@ -1,0 +1,13 @@
+<div class="card border-0 shadow-sm" style="border-top:4px solid #7c3aed !important">
+  <form method="post" action="/console/login/2fa" class="card-body" data-no-lock autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="d-flex align-items-center gap-2 mb-3"><span class="badge console-badge rounded-pill px-3 py-2"><i class="bi bi-shield-check me-1"></i>تأیید دومرحله‌ای</span></div>
+    <p class="text-secondary fs-7">کد ۶ رقمی برنامهٔ احراز هویت (Google Authenticator و مانند آن) یا یکی از کدهای پشتیبان را وارد کنید.</p>
+    <div class="mb-3">
+      <label class="form-label" for="c_code">کد تأیید</label>
+      <input class="form-control totp-code" name="code" required autofocus autocomplete="one-time-code" inputmode="numeric" maxlength="12" id="c_code" data-digits>
+    </div>
+    <button class="btn btn-dark w-100 py-2"><i class="bi bi-check2-circle me-1"></i>تأیید و ورود</button>
+    <div class="text-center mt-3"><a href="/console/login" class="fs-7 text-secondary"><i class="bi bi-arrow-right me-1"></i>بازگشت</a></div>
+  </form>
+</div>

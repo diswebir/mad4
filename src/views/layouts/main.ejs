@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="<%= theme %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<meta name="robots" content="noindex, nofollow">
+<title><%= title ? title + ' | ' : '' %><%= school('school_name') %></title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<% if (enabled('system.pwa')) { %><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="<%= school('primary_color') || '#2563eb' %>"><link rel="apple-touch-icon" href="/pwa/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="<%= school('school_name') %>"><meta name="mobile-web-app-capable" content="yes"><% } %>
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css?v=<%= appVersion %>">
+<% if (school('primary_color') && school('primary_color') !== '#2563eb') { %>
+<style>:root{--brand:<%= school('primary_color') %>;--brand-dark:<%= school('primary_color') %>;--brand-rgb:<%= utils.escapeHtml((school('primary_color').replace('#','').match(/.{2}/g)||['25','63','eb']).map(h=>parseInt(h,16)).join(',')) %>;--brand-soft:rgba(<%= (school('primary_color').replace('#','').match(/.{2}/g)||['25','63','eb']).map(h=>parseInt(h,16)).join(',') %>,.12)}</style>
+<% } %>
+<script>try{var t=localStorage.getItem('theme');if(t&&!<%= currentUser && currentUser.theme ? 'true' : 'false' %>)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
+<%- typeof style !== 'undefined' ? style : '' %>
+</head>
+<body<%= enabled('search.live') ? ' data-live-search' : '' %>>
+<% if (typeof impersonator !== 'undefined' && impersonator) { %>
+<div class="impersonate-bar"><i class="bi bi-person-badge me-1"></i>شما به‌عنوان «<%= currentUser.name %>» (<%= utils.ROLES[currentUser.role] %>) وارد شده‌اید<% if (!impersonator.is_super) { %> (توسط <%= impersonator.name %>)<% } %>. <a href="#" data-post="/auth/impersonate/stop" class="text-dark text-decoration-underline"><%= impersonator.is_super ? 'بازگشت به کنسول سازنده' : 'بازگشت به حساب خودم' %></a></div>
+<% } %>
+<div class="app">
+  <%- include('../partials/sidebar') %>
+  <div class="sidebar-backdrop"></div>
+  <div class="main">
+    <%- include('../partials/topbar') %>
+    <main class="content">
+      <%- include('../partials/admin-banners') %>
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </main>
+    <footer class="footer-app">
+      <span><%= school('school_name') %> — سامانه مدیریت مدرسه نسخه <%= J.toPersianDigits(appVersion) %></span>
+      <span><%= J.formatLong(J.todayISO()) %></span>
+    </footer>
+  </div>
+</div>
+<% if (currentUser && !isSuper && enabled('support') && enabled('support.widget')) { %><%- include('../partials/support-widget') %><% } %>
+<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/jalali.js?v=<%= appVersion %>"></script>
+<script src="/assets/js/app.js?v=<%= appVersion %>"></script>
+<% if (enabled('system.pwa')) { %><script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__pwaPrompt = e; document.querySelectorAll('[data-pwa-install]').forEach(function (el) { el.classList.remove('d-none'); }); });
+document.addEventListener('click', function (e) { var b = e.target.closest('[data-pwa-install]'); if (!b || !window.__pwaPrompt) return; e.preventDefault(); window.__pwaPrompt.prompt(); window.__pwaPrompt = null; b.classList.add('d-none'); });</script><% } %>
+<%- typeof script !== 'undefined' ? script : '' %>
+</body>
+</html>

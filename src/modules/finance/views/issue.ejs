@@ -1,0 +1,10 @@
+<%- include('partials/page-header', { title: 'صدور گروهی صورت‌حساب', subtitle: fee.title + ' — ' + utils.money(fee.amount, unit), icon: 'bi-receipt', breadcrumbs: [{ title: 'امور مالی', href: '/finance' }, { title: 'شهریه و هزینه‌ها', href: '/finance/fees' }, { title: 'صدور گروهی' }] }) %>
+<div class="row justify-content-center"><div class="col-lg-7"><form method="post" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <% if (existingCount) { %><div class="alert alert-info py-2 fs-7">قبلاً برای <%= J.toPersianDigits(existingCount) %> دانش‌آموز صورت‌حساب این هزینه صادر شده؛ برای آن‌ها تکراری صادر نمی‌شود.</div><% } %>
+    <label class="form-label">کلاس‌ها</label>
+    <div class="row g-2 mb-3"><% classes.forEach(function (c) { %><div class="col-md-6"><label class="form-check border rounded p-2 ps-5"><input class="form-check-input" type="checkbox" name="class_ids" value="<%= c.id %>" checked aria-label="شناسه‌های کلاس‌ها"> <%= c.title %> <span class="fs-7 text-secondary"><%= c.grade_title || '' %></span></label></div><% }); if (!classes.length) { %><div class="text-secondary">کلاسی مطابق این هزینه یافت نشد.</div><% } %></div>
+    <% if (enabled('finance.discount')) { %><div class="row"><div class="col-md-5"><label class="form-label" for="f_discount">تخفیف عمومی (<%= unit %>)</label><input class="form-control ltr" name="discount" value="0" id="f_discount"></div></div><% } %>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-between"><a href="/finance/fees" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4"><i class="bi bi-receipt me-1"></i>صدور صورت‌حساب‌ها</button></div>
+</form></div></div>

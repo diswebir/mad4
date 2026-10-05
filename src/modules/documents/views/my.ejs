@@ -1,0 +1,7 @@
+<%- include('partials/page-header', { title: 'گواهی‌های من', subtitle: me ? me.first_name + ' ' + me.last_name : '', icon: 'bi-file-earmark-ruled' }) %>
+<div class="card table-card">
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7"><thead><tr><th>شماره</th><th>نوع</th><th>عنوان</th><th>تاریخ صدور</th><th>وضعیت</th><th></th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="6"><%- include('partials/empty', { message: 'سندی برای شما صادر نشده است. برای دریافت گواهی اشتغال به تحصیل به دفتر مدرسه مراجعه کنید یا تیکت بزنید.' }) %></td></tr><% } %>
+  <% rows.forEach(function (d) { %><tr><td class="ltr text-end fw-bold"><%= J.toPersianDigits(d.serial) %></td><td><%= (TYPES[d.type] || {}).title || d.type %></td><td><%= d.title %></td><td><%= J.formatDate(d.issued_at) %></td><td><%- d.status === 'revoked' ? '<span class="badge text-bg-danger">باطل</span>' : '<span class="badge badge-soft-success">معتبر</span>' %></td><td><a href="/documents/<%= d.id %>" target="_blank" class="btn btn-sm btn-light"><i class="bi bi-printer me-1"></i>مشاهده / چاپ</a></td></tr><% }); %>
+  </tbody></table></div>
+</div>

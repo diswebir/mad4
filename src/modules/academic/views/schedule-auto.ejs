@@ -1,0 +1,76 @@
+<%- include('partials/page-header', { title: 'تولید خودکار برنامهٔ هفتگی', icon: 'bi-magic', breadcrumbs: [{ title: 'برنامه هفتگی', href: '/academic/schedule' }, { title: 'تولید خودکار' }], actions: [{ href: '/academic/schedule', label: 'برنامه‌ها', icon: 'bi-table', class: 'btn-light' }] }) %>
+<% if (report) { %>
+<div class="alert alert-<%= report.unplaced.length ? 'warning' : 'success' %>">
+  <div class="fw-semibold"><i class="bi bi-check2-circle ms-1"></i><%= J.toPersianDigits(report.n) %> زنگ برای <%= J.toPersianDigits(report.classes) %> کلاس ثبت شد<%= report.mode === 'replace' ? ' (برنامه‌های قبلی جایگزین شدند)' : report.kept ? ' و ' + J.toPersianDigits(report.kept) + ' زنگ قبلی حفظ شد' : '' %>. ساعت‌های خالی معلمان: <%= J.toPersianDigits(report.gaps) %></div>
+  <% if (report.unplaced.length) { %><div class="fs-7 mt-2"><%= J.toPersianDigits(report.unplaced.length) %> درس کامل جا نشد:</div><ul class="fs-7 mb-0"><% report.unplaced.forEach(function (u) { %><li><a href="/academic/schedule/class/<%= u.class_id %>"><%= u.class_title %></a> — <%= u.title %><%= u.teacher_name ? ' (' + u.teacher_name + ')' : '' %>: <%= J.toPersianDigits(u.missing) %> زنگ — <span class="text-secondary"><%= u.reason %></span></li><% }); %></ul><% } %>
+</div>
+<% } %>
+<% if (preview) { var r = preview.result; %>
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary-subtle"><h6 class="mb-0"><i class="bi bi-eye me-1"></i>پیش‌نمایش نتیجه — هنوز ثبت نشده است</h6></div>
+  <div class="card-body">
+    <div class="row g-3 text-center mb-3">
+      <div class="col-6 col-md-3"><div class="fs-3 fw-bold text-primary"><%= J.toPersianDigits(r.plan.length) %></div><div class="fs-7 text-secondary">زنگ جدید</div></div>
+      <div class="col-6 col-md-3"><div class="fs-3 fw-bold"><%= J.toPersianDigits(r.kept) %></div><div class="fs-7 text-secondary">زنگ حفظ‌شده</div></div>
+      <div class="col-6 col-md-3"><div class="fs-3 fw-bold text-<%= r.unplaced.length ? 'danger' : 'success' %>"><%= J.toPersianDigits(r.unplaced.reduce(function (a, u) { return a + u.missing; }, 0)) %></div><div class="fs-7 text-secondary">زنگ جانشده</div></div>
+      <div class="col-6 col-md-3"><div class="fs-3 fw-bold"><%= J.toPersianDigits(r.gaps) %></div><div class="fs-7 text-secondary">ساعت خالی معلمان (بین زنگ‌ها)</div></div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm fs-7 align-middle"><thead><tr><th>کلاس</th><th>زنگ جدید</th><th>دروس جانشده</th></tr></thead><tbody>
+      <% preview.ids.forEach(function (id) { var c = cov.classes.filter(function (x) { return x.class_id === id; })[0]; var un = r.unplaced.filter(function (u) { return u.class_id === id; }); %>
+      <tr><td><a href="/academic/schedule/class/<%= id %>"><%= c ? c.title : id %></a></td><td><%= J.toPersianDigits(preview.perClass[id] || 0) %></td><td><% if (!un.length) { %><span class="text-success"><i class="bi bi-check2"></i> کامل</span><% } else { %><%= un.map(function (u) { return u.title + (u.teacher_name ? ' (' + u.teacher_name + ')' : '') + ' ' + J.toPersianDigits(u.missing) + ' زنگ — ' + u.reason; }).join('؛ ') %><% } %></td></tr>
+      <% }); %>
+    </tbody></table></div>
+    <form method="post" action="/academic/schedule/auto" class="d-flex gap-2 flex-wrap align-items-center">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="apply" value="1"><input type="hidden" name="mode" value="<%= opts.mode %>"><input type="hidden" name="max_per_day" value="<%= opts.max_per_day %>"><input type="hidden" name="allow_double" value="<%= opts.allow_double %>"><input type="hidden" name="seed" value="<%= preview.seed %>">
+      <% preview.ids.forEach(function (id) { %><input type="hidden" name="class_ids[]" value="<%= id %>"><% }); %>
+      <button class="btn btn-success" data-confirm="<%= opts.mode === 'replace' ? 'برنامهٔ فعلی کلاس‌های انتخاب‌شده پاک و جایگزین می‌شود. ادامه؟' : 'زنگ‌های جدید به برنامه افزوده شود؟' %>"><i class="bi bi-check2-all ms-1"></i>ثبت این برنامه</button>
+      <span class="fs-7 text-secondary">یا گزینه‌ها را تغییر دهید و دوباره پیش‌نمایش بگیرید (هر بار نتیجهٔ متفاوتی تولید می‌شود).</span>
+    </form>
+  </div>
+</div>
+<% } %>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <form method="post" action="/academic/schedule/auto" class="card">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h6><i class="bi bi-sliders me-1"></i>گزینه‌ها</h6></div>
+      <div class="card-body">
+        <div class="mb-3"><label class="form-label">محدوده</label>
+          <div class="form-check"><input class="form-check-input" type="radio" name="scope" value="all" id="scopeAll" <%= selected.length && selected.length !== cov.classes.length ? '' : 'checked' %>><label class="form-check-label" for="scopeAll">همهٔ کلاس‌های سال جاری (<%= J.toPersianDigits(cov.classes.length) %> کلاس)</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="scope" value="some" id="scopeSome" <%= selected.length && selected.length !== cov.classes.length ? 'checked' : '' %>><label class="form-check-label" for="scopeSome">کلاس‌های انتخابی</label></div>
+          <div id="classPick" class="border rounded p-2 mt-2" style="max-height:220px;overflow:auto;<%= selected.length && selected.length !== cov.classes.length ? '' : 'display:none' %>">
+            <% cov.classes.forEach(function (c) { %><div class="form-check"><input class="form-check-input" type="checkbox" name="class_ids[]" value="<%= c.class_id %>" id="cls<%= c.class_id %>" <%= selected.includes(c.class_id) ? 'checked' : '' %>><label class="form-check-label" for="cls<%= c.class_id %>"><%= c.title %> <span class="text-secondary fs-7">(<%= J.toPersianDigits(c.placed) %>/<%= J.toPersianDigits(c.need) %>)</span></label></div><% }); %>
+          </div>
+        </div>
+        <div class="mb-3"><label class="form-label">حالت</label>
+          <div class="form-check"><input class="form-check-input" type="radio" name="mode" value="fill" id="mFill" <%= opts.mode === 'fill' ? 'checked' : '' %>><label class="form-check-label" for="mFill">حفظ زنگ‌های فعلی و تکمیل خانه‌های خالی</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="mode" value="replace" id="mReplace" <%= opts.mode === 'replace' ? 'checked' : '' %>><label class="form-check-label" for="mReplace">پاک‌کردن برنامهٔ کلاس‌های هدف و چیدن از نو</label></div></div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label" for="maxDay">حداکثر زنگ یک درس در روز</label><select class="form-select form-select-sm" name="max_per_day" id="maxDay"><% [1, 2, 3].forEach(function (n) { %><option value="<%= n %>" <%= Number(opts.max_per_day) === n ? 'selected' : '' %>><%= J.toPersianDigits(n) %></option><% }); %></select></div>
+          <div class="col-6"><label class="form-label" for="dbl">زنگ دوتایی پشت‌سرهم</label><select class="form-select form-select-sm" name="allow_double" id="dbl"><option value="1" <%= opts.allow_double === '1' ? 'selected' : '' %>>مجاز</option><option value="0" <%= opts.allow_double === '0' ? 'selected' : '' %>>غیرمجاز</option></select></div>
+        </div>
+        <button class="btn btn-primary w-100"><i class="bi bi-eye ms-1"></i>پیش‌نمایش برنامه</button>
+        <div class="fs-7 text-secondary mt-2">قواعد: بدون تداخل معلمان در کل مدرسه، رعایت ساعات در دسترس‌نبودن، پخش هر درس در روزهای مختلف، چسباندن زنگ‌های معلم به هم برای کاهش ساعت خالی. دروس بدون معلم چیده نمی‌شوند.</div>
+      </div>
+    </form>
+  </div>
+  <div class="col-lg-8">
+    <div class="card table-card">
+      <div class="card-header"><h6><i class="bi bi-pie-chart me-1"></i>پوشش برنامهٔ کلاس‌ها</h6><span class="fs-7 text-secondary">ظرفیت هر کلاس: <%= J.toPersianDigits(cov.capacity) %> زنگ در هفته</span></div>
+      <div class="table-responsive"><table class="table table-hover align-middle mb-0 fs-7"><thead><tr><th>کلاس</th><th>پایه</th><th style="width:220px">پوشش ساعات</th><th>کسری</th><th></th></tr></thead><tbody>
+        <% cov.classes.forEach(function (c) { var color = c.pct >= 100 ? 'success' : c.pct >= 60 ? 'warning' : 'danger'; %>
+        <tr><td class="fw-semibold"><%= c.title %></td><td><%= c.grade_title || '' %></td>
+          <td><div class="d-flex justify-content-between"><span><%= J.toPersianDigits(c.placed) %> / <%= J.toPersianDigits(c.need) %></span><span class="text-<%= color %>"><%= J.toPersianDigits(c.pct) %>٪</span></div><div class="progress" style="height:6px"><div class="progress-bar bg-<%= color %>" style="width:<%= Math.min(100, c.pct) %>%"></div></div><% if (c.need > c.capacity) { %><div class="text-danger">ساعات دروس (<%= J.toPersianDigits(c.need) %>) بیش از ظرفیت هفته است</div><% } %></td>
+          <td><% if (!c.missing.length) { %><span class="text-success"><i class="bi bi-check2"></i> کامل</span><% } else { %><%= c.missing.map(function (m) { return m.title + ' (' + J.toPersianDigits(m.missing) + ')'; }).join('، ') %><% } %><% if (c.no_teacher.length) { %><div class="text-danger">بدون معلم: <%= c.no_teacher.join('، ') %></div><% } %></td>
+          <td class="text-end"><a href="/academic/schedule/class/<%= c.class_id %>" class="btn btn-sm btn-light" aria-label="برنامه" title="برنامه"><i class="bi bi-table"></i></a></td></tr>
+        <% }); if (!cov.classes.length) { %><tr><td colspan="5"><%- include('partials/empty', { message: 'کلاسی برای سال جاری تعریف نشده است' }) %></td></tr><% } %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var pick = document.getElementById('classPick');
+  document.querySelectorAll('input[name=scope]').forEach(function (r) { r.addEventListener('change', function () { pick.style.display = document.getElementById('scopeSome').checked ? '' : 'none'; }); });
+});
+</script>

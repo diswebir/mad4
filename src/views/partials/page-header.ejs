@@ -1,0 +1,22 @@
+<div class="page-header">
+  <div>
+    <h1><% if (typeof icon !== 'undefined' && icon) { %><i class="bi <%= icon %>"></i><% } %><%= title %></h1>
+    <% if (typeof subtitle !== 'undefined' && subtitle) { %><div class="text-secondary fs-7 mt-1"><%- subtitle %></div><% } %>
+    <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/dashboard">خانه</a></li>
+      <% breadcrumbs.forEach(function (b) { %><li class="breadcrumb-item<%= b.href ? '' : ' active' %>"><% if (b.href) { %><a href="<%= b.href %>"><%= b.title %></a><% } else { %><%= b.title %><% } %></li><% }); %>
+    </ol></nav>
+    <% } %>
+  </div>
+  <% if (typeof actions !== 'undefined' && actions && actions.length) { %>
+  <div class="page-actions d-flex gap-2 flex-wrap">
+    <% actions.forEach(function (a) { %>
+      <% if (a.post) { %><a href="#" data-post="<%= a.post %>" <% if (a.confirm) { %>data-confirm="<%= a.confirm %>"<% } %> <% if (a.params) { %>data-params="<%= JSON.stringify(a.params) %>"<% } %> class="btn <%= a.class || 'btn-outline-secondary' %>"><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></a>
+      <% } else if (a.print) { %><button type="button" class="btn <%= a.class || 'btn-outline-secondary' %>" data-print><i class="bi bi-printer me-1"></i><%= a.label || 'چاپ' %></button>
+      <% } else if (a.modal) { %><button type="button" class="btn <%= a.class || 'btn-outline-secondary' %>" data-bs-toggle="modal" data-bs-target="<%= a.modal %>"><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></button>
+      <% } else { %><a href="<%= a.href %>" class="btn <%= a.class || 'btn-outline-secondary' %>" <%- a.target ? 'target="' + a.target + '"' : '' %>><% if (a.icon) { %><i class="bi <%= a.icon %> me-1"></i><% } %><%= a.label %></a><% } %>
+    <% }); %>
+  </div>
+  <% } %>
+</div>

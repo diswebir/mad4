@@ -1,0 +1,24 @@
+<%- include('partials/page-header', { title: 'حضور و غیاب', icon: 'bi-clipboard-check', breadcrumbs: [{ title: 'حضور و غیاب' }], actions: [
+  ...(enabled('attendance.daily_report') && !isTeacher ? [{ href: '/attendance/report/daily?date=' + date, label: 'گزارش روزانه', icon: 'bi-file-earmark-text', class: 'btn-light' }] : []),
+  ...(enabled('attendance.monthly_report') ? [{ href: '/attendance/report/monthly', label: 'دفتر ماهانه', icon: 'bi-calendar3', class: 'btn-light' }] : []),
+  ...(enabled('attendance.alerts') ? [{ href: '/attendance/alerts', label: 'هشدارها', icon: 'bi-exclamation-triangle', class: 'btn-light' }] : []),
+  ...(enabled('attendance.export') ? [{ href: '/attendance/export?to=' + date, label: 'CSV', icon: 'bi-filetype-csv', class: 'btn-light' }] : [])
+] }) %>
+<div class="card mb-3"><div class="card-body py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <%- include('_datenav', { date: date }) %>
+  <% if (enabled('attendance.dashboard_stats') && summary.total) { %><div class="d-flex gap-2 fs-7"><span class="badge badge-soft-success py-2">حاضر <%= J.toPersianDigits(summary.present) %></span><span class="badge badge-soft-danger py-2">غایب <%= J.toPersianDigits(summary.absent) %></span><span class="badge badge-soft-warning py-2">تأخیر <%= J.toPersianDigits(summary.late) %></span><span class="badge badge-soft-primary py-2">نرخ حضور <%= J.toPersianDigits(Math.round(summary.present / summary.total * 100)) %>٪</span></div><% } %>
+</div></div>
+<% if (holiday) { %><div class="alert alert-danger py-2"><i class="bi bi-calendar-x me-1"></i>این روز <b>تعطیل رسمی</b> است (<%= holiday %>)؛ ثبت حضور و غیاب برای معلمان بسته است.</div><% } else if (!isSchoolDay) { %><div class="alert alert-warning py-2"><i class="bi bi-info-circle me-1"></i>این روز جزو روزهای کاری مدرسه نیست.</div><% } %>
+<div class="row g-3"><% classes.forEach(function (c) { var st = byClass[c.id]; var daily = st && st.daily; var subs = mySubjects.filter(function (m) { return m.class_id === c.id; }); %>
+  <div class="col-md-6 col-xl-4"><div class="card h-100 <%= daily ? 'border-success-subtle' : '' %>"><div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2"><div><h6 class="mb-0"><a href="/academic/classes/<%= c.id %>"><%= c.title %></a></h6><div class="fs-7 text-secondary"><%= c.grade_title %> · <%= J.toPersianDigits(c.cnt) %> نفر<%= c.teacher_name ? ' · ' + c.teacher_name : '' %></div></div>
+      <% if (daily) { %><span class="badge badge-soft-success"><i class="bi bi-check2 me-1"></i>ثبت شده</span><% } else { %><span class="badge badge-soft-secondary">ثبت نشده</span><% } %></div>
+    <% if (daily) { %><div class="fs-7 mb-2"><span class="text-danger">غایب: <%= J.toPersianDigits(daily.absent || 0) %></span> · <span class="text-warning">تأخیر: <%= J.toPersianDigits(daily.late || 0) %></span> · حاضر: <%= J.toPersianDigits(Number(daily.c) - Number(daily.absent || 0)) %></div><% } %>
+    <% if (st && st.sessions.length) { %><div class="fs-7 text-secondary mb-2"><i class="bi bi-layers me-1"></i><%= J.toPersianDigits(st.sessions.length) %> زنگ ثبت شده</div><% } %>
+    <div class="d-flex flex-wrap gap-1">
+      <% if (enabled('attendance.daily') && (!isTeacher || (currentUser.role === 'teacher'))) { %><a href="/attendance/take?class_id=<%= c.id %>&date=<%= date %>" class="btn btn-sm <%= daily ? 'btn-light' : 'btn-success' %>"><i class="bi bi-clipboard-check me-1"></i><%= daily ? 'ویرایش روزانه' : 'ثبت روزانه' %></a><% } %>
+      <% if (enabled('attendance.per_subject')) { subs.forEach(function (m) { var slot = todaySlots.find(function (s) { return s.class_subject_id === m.id; }); %><a href="/attendance/take?class_id=<%= c.id %>&class_subject_id=<%= m.id %>&date=<%= date %><%= slot ? '&period=' + slot.period : '' %>" class="btn btn-sm btn-outline-primary"><%= m.title %><%= slot ? ' (زنگ ' + J.toPersianDigits(slot.period) + ')' : '' %></a><% }); } %>
+      <% if (enabled('attendance.class_report')) { %><a href="/attendance/report/class/<%= c.id %>" class="btn btn-sm btn-light" title="گزارش"><i class="bi bi-graph-up"></i></a><% } %>
+    </div>
+  </div></div></div>
+<% }); if (!classes.length) { %><div class="col-12"><%- include('partials/empty', { message: 'کلاسی برای شما تعریف نشده است' }) %></div><% } %></div>

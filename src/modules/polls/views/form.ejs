@@ -1,0 +1,14 @@
+<%- include('partials/page-header', { title: 'نظرسنجی جدید', icon: 'bi-bar-chart-steps', breadcrumbs: [{ title: 'نظرسنجی', href: '/polls' }, { title: 'جدید' }] }) %>
+<div class="row justify-content-center"><div class="col-lg-8"><form method="post" action="/polls" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body"><div class="row g-3">
+    <div class="col-12"><label class="form-label required" for="f_question">سؤال</label><input class="form-control" name="question" required maxlength="300" id="f_question"></div>
+    <div class="col-12"><label class="form-label" for="f_description">توضیح</label><textarea class="form-control" name="description" rows="2" id="f_description"></textarea></div>
+    <div class="col-12"><label class="form-label required" for="f_options">گزینه‌ها</label><div id="opts"><% for (var i = 0; i < 3; i++) { %><input class="form-control mb-2" name="options" placeholder="گزینهٔ <%= J.toPersianDigits(i + 1) %>" <%= i < 2 ? 'required' : '' %> id="f_options"><% } %></div><button type="button" class="btn btn-sm btn-light" id="addOpt"><i class="bi bi-plus"></i> گزینهٔ بیشتر</button></div>
+    <% if (isStaff) { %><div class="col-md-4"><label class="form-label">مخاطب</label><select class="form-select" name="audience" id="aud" aria-label="مخاطب"><% Object.entries(AUD).forEach(function (a) { %><option value="<%= a[0] %>"><%= a[1] %></option><% }); %></select></div><% } else { %><input type="hidden" name="audience" value="class"><% } %>
+    <div class="col-md-4" id="classBox"><label class="form-label" for="f_class_id">کلاس</label><select class="form-select" name="class_id" id="f_class_id"><% classes.forEach(function (c) { %><option value="<%= c.value %>"><%= c.label %></option><% }); %></select></div>
+    <div class="col-md-4"><label class="form-label" for="f_ends_at">مهلت (اختیاری)</label><input class="form-control jdate" name="ends_at" id="f_ends_at"></div>
+    <% if (enabled('polls.multiple')) { %><div class="col-12"><label class="form-check"><input type="checkbox" class="form-check-input" name="multiple" value="1"> امکان انتخاب چند گزینه</label></div><% } %>
+  </div></div>
+  <div class="card-footer bg-transparent d-flex justify-content-between"><a href="/polls" class="btn btn-light">انصراف</a><button class="btn btn-primary px-4">ایجاد نظرسنجی</button></div>
+</form></div></div>
+<script>(function(){var n=3;document.getElementById('addOpt').addEventListener('click',function(){n++;var i=document.createElement('input');i.className='form-control mb-2';i.name='options';i.placeholder='گزینهٔ '+n;document.getElementById('opts').appendChild(i);});var a=document.getElementById('aud'),b=document.getElementById('classBox');function u(){if(a)b.style.display=a.value==='class'?'':'none';}if(a){a.addEventListener('change',u);u();}})();</script>

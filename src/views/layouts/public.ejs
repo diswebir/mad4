@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<title><%= title %> | <%= school('school_name') %></title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/assets/css/app.css?v=<%= appVersion %>">
+<style>.public-wrap { min-height: 100vh; background: linear-gradient(180deg, rgba(var(--brand-rgb), .08), transparent 320px); } .public-card { max-width: <%= typeof wide !== 'undefined' && wide ? '960px' : '640px' %>; margin: 0 auto; }</style>
+</head>
+<body>
+<div class="public-wrap py-4 px-3">
+  <div class="public-card">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <% if (school('school_logo')) { %><img src="/files/<%= school('school_logo') %>" alt="" style="height:56px" class="rounded-3"><% } else { %><div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-brand text-white" style="width:56px;height:56px"><i class="bi bi-mortarboard fs-3"></i></div><% } %>
+      <div><h4 class="mb-0"><%= school('school_name') %></h4><div class="text-secondary fs-7"><%= school('school_slogan') || 'سامانه مدیریت مدرسه' %></div></div>
+      <a href="/auth/login" class="btn btn-light btn-sm ms-auto"><i class="bi bi-box-arrow-in-left me-1"></i>ورود به سامانه</a>
+    </div>
+    <%- include('../partials/flash') %>
+    <%- body %>
+    <p class="text-center text-secondary fs-7 mt-4"><%= school('school_name') %> · <%= J.formatLong(J.todayISO()) %></p>
+  </div>
+</div>
+<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/jalali.js?v=<%= appVersion %>"></script>
+<script src="/assets/js/app.js?v=<%= appVersion %>"></script>
+</body>
+</html>

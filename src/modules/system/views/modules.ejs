@@ -1,0 +1,43 @@
+<%- include('partials/page-header', { title: 'ماژول‌ها و قابلیت‌ها', icon: 'bi-grid-1x2', breadcrumbs: [{ title: 'ماژول‌ها' }], actions: [{ post: '/system/modules/bulk', params: { action: 'enable' }, label: 'فعال‌سازی همه', icon: 'bi-toggle-on', class: 'btn-outline-success' }] }) %>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card text-primary"><div class="card-body d-flex align-items-center gap-3"><div class="icon bg-brand-soft"><i class="bi bi-puzzle"></i></div><div><div class="value"><%= J.toPersianDigits(stats.modules) %></div><div class="label">ماژول</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-success"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-success"><i class="bi bi-toggle-on"></i></div><div><div class="value" id="modEnabled"><%= J.toPersianDigits(stats.modulesEnabled) %></div><div class="label">ماژول فعال</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-info"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-info"><i class="bi bi-stars"></i></div><div><div class="value"><%= J.toPersianDigits(stats.features) %></div><div class="label">قابلیت</div></div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card text-warning"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-warning"><i class="bi bi-check2-circle"></i></div><div><div class="value" id="featEnabled"><%= J.toPersianDigits(stats.featuresEnabled) %></div><div class="label">قابلیت فعال</div></div></div></div></div>
+</div>
+<div class="alert alert-light border fs-7"><i class="bi bi-info-circle me-1"></i>با غیرفعال‌کردن یک ماژول، منوی آن پنهان و مسیرهای آن مسدود می‌شود؛ داده‌ها حذف نمی‌شوند. قابلیت‌های داخل هر ماژول نیز به‌صورت جداگانه قابل تنظیم‌اند. ماژول‌های «هسته» همیشه فعال‌اند.</div>
+<% categories.forEach(function (cat) { var mods = list.filter(function (m) { return (m.category || 'main') === cat.key; }); if (!mods.length) return; %>
+<h6 class="text-secondary mt-4 mb-2"><i class="bi <%= cat.icon %> me-1"></i><%= cat.title %></h6>
+<div class="row g-3">
+  <% mods.forEach(function (m) { %>
+  <div class="col-md-6 col-xl-4">
+    <div class="card module-card h-100 <%= m.enabled ? '' : 'disabled' %>">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
+          <div class="icon bg-brand-soft rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;font-size:1.3rem"><i class="bi <%= m.icon %>"></i></div>
+          <div class="flex-grow-1 mw-0">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+              <strong><%= m.name %></strong>
+              <% if (m.core) { %><span class="badge badge-soft-secondary">هسته</span><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="فعال‌سازی ماژول <%= m.name %>" data-module-toggle="<%= m.key %>" <%= m.enabled ? 'checked' : '' %>></div><% } %>
+            </div>
+            <div class="text-secondary fs-7 mt-1"><%= m.description %></div>
+            <% if (m.dependencies.length) { %><div class="fs-7 text-secondary mt-1"><i class="bi bi-link-45deg"></i> وابسته به: <%= m.dependencies.join('، ') %></div><% } %>
+          </div>
+        </div>
+        <% if (m.features.length) { %>
+        <a class="d-block fs-7 mt-3 text-brand" data-bs-toggle="collapse" href="#feat-<%= m.key %>"><i class="bi bi-chevron-down me-1"></i><%= J.toPersianDigits(m.features.length) %> قابلیت (<%= J.toPersianDigits(m.features.filter(function (f) { return f.enabled; }).length) %> فعال)</a>
+        <div class="collapse mt-2" id="feat-<%= m.key %>">
+          <% m.features.forEach(function (f) { %>
+          <div class="feat">
+            <div class="mw-0"><div class="fs-7 fw-500"><%= f.name %></div><% if (f.description) { %><div class="text-secondary" style="font-size:.72rem"><%= f.description %></div><% } %></div>
+            <% if (f.locked) { %><i class="bi bi-lock-fill text-secondary" title="همیشه فعال"></i><% } else { %><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" aria-label="فعال‌سازی قابلیت <%= f.name %>" data-module-toggle="<%= f.fullKey %>" <%= f.enabled ? 'checked' : '' %> <%= m.enabled ? '' : 'disabled' %>></div><% } %>
+          </div>
+          <% }); %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+</div>
+<% }); %>

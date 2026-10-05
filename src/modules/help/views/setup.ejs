@@ -1,0 +1,25 @@
+<%- include('partials/page-header', { title: 'راه‌اندازی اولیهٔ مدرسه', icon: 'bi-check2-square', subtitle: 'وضعیت زندهٔ گام‌های راه‌اندازی — با تکمیل هر مورد، خودکار تیک می‌خورد', breadcrumbs: [{ title: 'راهنما', href: '/help' }, { title: 'راه‌اندازی اولیه' }], actions: [
+  { href: '/help?topic=start', label: 'راهنمای شروع کار', icon: 'bi-book', class: 'btn-outline-secondary' },
+  dismissed ? { post: '/help/setup/dismiss', label: 'نمایش دوباره در داشبورد', icon: 'bi-eye', class: 'btn-outline-primary', params: { state: '0' } } : { post: '/help/setup/dismiss', label: 'پنهان‌کردن از داشبورد', icon: 'bi-eye-slash', class: 'btn-outline-secondary', params: { state: '1' } }
+] }) %>
+<div class="card mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <div><span class="fs-5 fw-bold"><%= J.toPersianDigits(percent) %>٪</span> <span class="text-secondary">تکمیل شده — <%= J.toPersianDigits(done) %> از <%= J.toPersianDigits(total) %> مورد</span></div>
+    <% if (requiredLeft === 0) { %><span class="badge text-bg-success fs-7"><i class="bi bi-check-circle me-1"></i>همهٔ موارد ضروری انجام شده است</span><% } else { %><span class="badge text-bg-warning fs-7"><%= J.toPersianDigits(requiredLeft) %> مورد ضروری باقی مانده</span><% } %>
+  </div>
+  <div class="progress" style="height:10px" role="progressbar" aria-valuenow="<%= percent %>" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar <%= percent === 100 ? 'bg-success' : '' %>" style="width:<%= percent %>%"></div></div>
+</div></div>
+<div class="card table-card">
+  <div class="list-group list-group-flush">
+    <% items.forEach(function (it) { %>
+      <div class="list-group-item d-flex align-items-start gap-3 <%= it.done ? 'opacity-75' : '' %>" data-check="<%= it.key %>" data-done="<%= it.done ? 1 : 0 %>">
+        <div class="pt-1"><% if (it.done) { %><i class="bi bi-check-circle-fill text-success fs-4"></i><% } else { %><i class="bi <%= it.required ? 'bi-exclamation-circle text-warning' : 'bi-circle text-secondary' %> fs-4"></i><% } %></div>
+        <div class="flex-grow-1">
+          <div class="fw-bold"><i class="bi <%= it.icon %> me-1 text-brand"></i><%= it.title %><% if (!it.required) { %> <span class="badge bg-light text-secondary fw-normal">اختیاری</span><% } %></div>
+          <div class="fs-7 text-secondary"><%= it.desc %></div>
+        </div>
+        <div class="pt-1"><a href="<%= it.href %>" class="btn btn-sm <%= it.done ? 'btn-light' : 'btn-outline-primary' %>"><%= it.done ? 'مشاهده' : 'انجام' %> <i class="bi bi-arrow-left"></i></a></div>
+      </div>
+    <% }); %>
+  </div>
+</div>

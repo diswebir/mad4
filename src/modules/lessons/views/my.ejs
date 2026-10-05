@@ -1,0 +1,19 @@
+<%- include('partials/page-header', { title: 'درس‌های من', subtitle: s ? 'آنچه در کلاس ' + (s.class_title || '') + ' تدریس شده و تکلیف هر جلسه' : '', icon: 'bi-journal-bookmark' }) %>
+<% if (!s) { %><div class="card"><div class="card-body"><%- include('partials/empty', { message: 'دانش‌آموزی به حساب شما متصل نیست.' }) %></div></div><% } else { %>
+<div class="card mb-3"><div class="card-body py-2"><form method="get" class="row g-2 align-items-center">
+  <% if (currentUser.role === 'parent') { %><input type="hidden" name="child" value="<%= s.id %>"><% } %>
+  <div class="col-md-3"><select class="form-select form-select-sm" name="subject_id" aria-label="درس"><option value="">همهٔ درس‌ها</option><% subjects.forEach(function (x) { %><option value="<%= x.id %>" <%= String(f.subject_id) === String(x.id) ? 'selected' : '' %>><%= x.title %></option><% }); %></select></div>
+  <div class="col-md-2"><input class="form-control form-control-sm jdate" name="from" value="<%= J.toPersianDigits(f.from) %>" placeholder="از تاریخ"></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-primary">نمایش</button></div>
+  <div class="col-md-5 fs-7 text-secondary text-md-end"><%= J.toPersianDigits(total) %> جلسه</div>
+</form></div></div>
+<% if (!dates.length) { %><div class="card"><div class="card-body"><%- include('partials/empty', { message: 'در این بازه گزارش تدریسی برای کلاس شما ثبت نشده است.' }) %></div></div><% } %>
+<% dates.forEach(function (d) { %>
+<div class="card mb-3"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-calendar3"></i><span class="fw-bold"><%= J.weekdayName(d) %> <%= J.formatDate(d) %></span><% if (d === J.todayISO()) { %><span class="badge text-bg-primary">امروز</span><% } %><span class="fs-7 text-secondary ms-auto"><%= J.toPersianDigits(byDate[d].length) %> جلسه</span></div>
+  <ul class="list-group list-group-flush">
+  <% byDate[d].slice().sort(function (a, b) { return a.period - b.period; }).forEach(function (r) { %>
+    <li class="list-group-item"><div class="d-flex gap-2 align-items-start"><span class="badge text-bg-light text-secondary">زنگ <%= J.toPersianDigits(r.period) %></span><div class="flex-grow-1"><div><span class="fw-semibold"><%= r.subject_title %></span><span class="text-secondary fs-7"> — <%= r.teacher_name || '' %></span></div><div><%= r.topic %></div><% if (r.description) { %><div class="fs-7 text-secondary"><%= r.description %></div><% } %><% if (r.homework) { %><div class="mt-1 fs-7"><span class="badge badge-soft-warning"><i class="bi bi-pencil-square me-1"></i>تکلیف</span> <%= r.homework %></div><% } %></div></div></li>
+  <% }); %>
+  </ul></div>
+<% }); %>
+<% } %>

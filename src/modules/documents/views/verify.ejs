@@ -1,0 +1,23 @@
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-1"><i class="bi bi-shield-check me-1"></i>استعلام اصالت سند</h5>
+    <p class="text-secondary fs-7 mb-3">کد استعلام چاپ‌شده در پایین سند (گواهی، نامه یا کارنامهٔ رسمی) را وارد کنید.</p>
+    <form method="get" action="/documents/verify" class="d-flex gap-2 mb-3"><input class="form-control ltr text-center" name="code" value="<%= code %>" placeholder="مثال: 3F9A1C27B0" maxlength="40" required autofocus style="letter-spacing:2px"><button class="btn btn-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button></form>
+    <% if (code && !doc) { %><div class="alert alert-danger py-2 mb-0"><i class="bi bi-x-circle me-1"></i>سندی با کد <strong class="ltr d-inline-block"><%= code %></strong> در سامانهٔ <%= school('school_name', '') %> یافت نشد. این سند معتبر نیست یا کد اشتباه وارد شده است.</div><% } %>
+    <% if (doc) { var t = TYPES[doc.type] || { title: doc.type }; %>
+      <div class="alert <%= doc.status === 'revoked' ? 'alert-danger' : 'alert-success' %> py-2">
+        <div class="fw-bold"><i class="bi <%= doc.status === 'revoked' ? 'bi-x-octagon' : 'bi-patch-check-fill' %> me-1"></i><%= doc.status === 'revoked' ? 'این سند باطل شده است' : 'سند معتبر است' %></div>
+      </div>
+      <table class="table table-sm fs-7 mb-0"><tbody>
+        <tr><td class="text-secondary" style="width:140px">نوع سند</td><td><%= t.title %></td></tr>
+        <tr><td class="text-secondary">شمارهٔ سند</td><td class="ltr text-end fw-bold" dir="rtl"><%= J.toPersianDigits(doc.serial) %></td></tr>
+        <tr><td class="text-secondary">عنوان</td><td><%= doc.title %></td></tr>
+        <% if (doc.student_id) { %><tr><td class="text-secondary">دانش‌آموز</td><td><%= doc.first_name %> <%= doc.last_name %></td></tr><% } %>
+        <tr><td class="text-secondary">تاریخ صدور</td><td><%= J.formatDate(doc.issued_at) %></td></tr>
+        <tr><td class="text-secondary">صادرکننده</td><td><%= school('school_name', '') %></td></tr>
+        <% if (doc.status === 'revoked') { %><tr><td class="text-secondary">تاریخ ابطال</td><td><%= J.formatDateTime(doc.revoked_at) %></td></tr><% } %>
+      </tbody></table>
+    <% } %>
+  </div>
+  <div class="card-footer bg-transparent text-center fs-7"><a href="/auth/login">ورود به سامانه</a></div>
+</div>

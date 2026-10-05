@@ -1,0 +1,24 @@
+<%- include('partials/page-header', { title: title, icon: 'bi-person-vcard', breadcrumbs: [{ title: 'دانش‌آموزان', href: '/students' }, { title: title }] }) %>
+<form method="post" action="<%= action %>" enctype="multipart/form-data" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <% if (isNew && enabled('students.user_account')) { %><div class="alert alert-info py-2 fs-7"><i class="bi bi-info-circle me-1"></i>با ثبت‌نام، حساب کاربری دانش‌آموز به‌صورت خودکار ساخته می‌شود: نام کاربری = شماره دانش‌آموزی، رمز = مقدار واردشده یا پیش‌فرض.</div><% } %>
+    <ul class="nav nav-pills mb-3 flex-wrap gap-1" id="secTabs"><% sections.forEach(function (sec, i) { %><li class="nav-item"><a class="nav-link py-1 px-2 fs-7 <%= i === 0 ? 'active' : '' %>" href="#sec<%= i %>" data-sec><i class="bi <%= sec.heading.icon %> me-1"></i><%= sec.heading.label %></a></li><% }); %></ul>
+    <% sections.forEach(function (sec, i) { %>
+    <div class="row g-3 mb-4" id="sec<%= i %>">
+      <%- include('partials/field', { field: sec.heading, row: row }) %>
+      <% sec.fields.forEach(function (field) { if (!isNew && field.name === 'password') field = Object.assign({}, field, { help: 'برای تغییر رمز حساب دانش‌آموز وارد کنید' }); %><%- include('partials/field', { field: field, row: row }) %><% }); %>
+    </div>
+    <% }); %>
+  </div>
+  <div class="card-footer bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a href="<%= isNew ? '/students' : '/students/' + row.id %>" class="btn btn-light">انصراف</a>
+    <div class="d-flex gap-2">
+      <% if (isNew) { %><button class="btn btn-outline-primary" name="_another" value="1">ثبت و افزودن بعدی</button><% } %>
+      <button class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><%= isNew ? 'ثبت‌نام' : 'ذخیره تغییرات' %></button>
+    </div>
+  </div>
+</form>
+<script>
+document.querySelectorAll('[data-sec]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); document.querySelectorAll('[data-sec]').forEach(function (x) { x.classList.remove('active'); }); a.classList.add('active'); var t = document.querySelector(a.getAttribute('href')); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }); });
+</script>

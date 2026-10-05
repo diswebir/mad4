@@ -1,0 +1,41 @@
+<%- include('partials/page-header', { title: 'تراکنش‌های آنلاین', icon: 'bi-credit-card', subtitle: 'پرداخت‌های درگاه زرین‌پال', breadcrumbs: [{ title: 'امور مالی', href: '/finance' }, { title: 'تراکنش‌های آنلاین' }], actions: [
+  { href: '/system/settings?tab=payment', label: 'تنظیمات درگاه', icon: 'bi-gear', class: 'btn-light' },
+  ...(configured ? [{ post: '/finance/online/reconcile', label: 'استعلام تراکنش‌های در انتظار', icon: 'bi-arrow-repeat', class: 'btn-primary' }] : [])
+] }) %>
+<% if (!enabledGw) { %><div class="alert alert-warning"><i class="bi bi-exclamation-triangle ms-1"></i>درگاه پرداخت غیرفعال است. برای فعال‌سازی به <a href="/system/settings?tab=payment">تنظیمات ← درگاه پرداخت</a> بروید.</div>
+<% } else if (!configured) { %><div class="alert alert-danger"><i class="bi bi-x-circle ms-1"></i>مرچنت‌کد زرین‌پال نامعتبر یا خالی است؛ تا تکمیل تنظیمات، دکمهٔ پرداخت آنلاین به کاربران نمایش داده نمی‌شود.</div>
+<% } else if (sandbox) { %><div class="alert alert-info"><i class="bi bi-info-circle ms-1"></i>درگاه در <strong>حالت آزمایشی</strong> است؛ پرداخت‌ها واقعی نیستند. (<span class="ltr d-inline-block"><%= baseUrl %></span>)</div><% } %>
+
+<div class="row g-3 mb-3">
+  <% [['paid', 'success', 'bi-check-circle'], ['pending', 'warning', 'bi-hourglass-split'], ['failed', 'danger', 'bi-x-circle'], ['expired', 'secondary', 'bi-clock-history']].forEach(function (c) { var st = stats[c[0]] || { count: 0, sum: 0 }; %>
+  <div class="col-6 col-xl-3"><a href="/finance/online?status=<%= c[0] %>" class="card stat-card text-<%= c[1] %> d-block text-reset"><div class="card-body d-flex align-items-center gap-3"><div class="icon badge-soft-<%= c[1] %>"><i class="bi <%= c[2] %>"></i></div><div><div class="value"><%= J.toPersianDigits(st.count) %></div><div class="label"><%= STATUSES[c[0]] %> — <%= utils.money(st.sum, unit) %></div></div></div></a></div>
+  <% }); %>
+</div>
+
+<div class="card table-card">
+  <div class="card-header flex-wrap gap-2">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      <input class="form-control form-control-sm" name="q" value="<%= f.q %>" placeholder="کد پیگیری، اتوریتی، شماره یا نام خانوادگی" style="width:260px">
+      <select class="form-select form-select-sm w-auto" name="status" aria-label="وضعیت"><option value="">همهٔ وضعیت‌ها</option><% Object.keys(STATUSES).forEach(function (k) { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= STATUSES[k] %></option><% }); %></select>
+      <button class="btn btn-sm btn-outline-primary" aria-label="جستجو" title="جستجو"><i class="bi bi-search"></i></button>
+    </form>
+    <span class="fs-7 text-secondary"><%= J.toPersianDigits(total) %> تراکنش</span>
+  </div>
+  <div class="table-responsive"><table class="table table-hover mb-0 fs-7 align-middle"><thead><tr><th>#</th><th>زمان</th><th>دانش‌آموز</th><th>صورت‌حساب</th><th>مبلغ</th><th>کد پیگیری</th><th>کارت</th><th>وضعیت</th><th class="text-end">عملیات</th></tr></thead><tbody>
+  <% if (!rows.length) { %><tr><td colspan="9"><%- include('partials/empty', { message: 'هنوز تراکنش آنلاینی ثبت نشده است', icon: 'bi-credit-card' }) %></td></tr><% } %>
+  <% rows.forEach(function (r) { var badge = { paid: 'text-bg-success', pending: 'text-bg-warning', failed: 'text-bg-danger', cancelled: 'text-bg-secondary', expired: 'text-bg-light' }[r.status] || 'text-bg-light'; %>
+    <tr>
+      <td class="text-secondary"><%= J.toPersianDigits(r.id) %></td>
+      <td class="text-nowrap"><%= J.formatDateTime(r.created_at) %></td>
+      <td><% if (r.student_id) { %><a href="/students/<%= r.student_id %>"><%= r.first_name %> <%= r.last_name %></a><div class="text-secondary"><%= J.toPersianDigits(r.student_number || '') %></div><% } else { %>—<% } %></td>
+      <td><% if (r.invoice_id) { %><a href="/finance/invoices/<%= r.invoice_id %>" class="ltr d-inline-block"><%= J.toPersianDigits(r.invoice_number || r.invoice_id) %></a><div class="text-secondary truncate" style="max-width:180px"><%= r.invoice_title || '' %></div><% } %></td>
+      <td class="fw-semibold"><%= utils.money(r.amount, false) %></td>
+      <td class="ltr text-end"><%= r.ref_id ? J.toPersianDigits(r.ref_id) : '—' %><% if (r.authority) { %><div class="text-secondary truncate" style="max-width:140px" title="<%= r.authority %>"><%= r.authority.slice(-12) %></div><% } %></td>
+      <td class="ltr text-end"><%= r.card_pan || '—' %></td>
+      <td><span class="badge <%= badge %>"><%= STATUSES[r.status] || r.status %></span><% if (r.error) { %><div class="text-danger truncate" style="max-width:200px" title="<%= r.error %>"><%= r.error %></div><% } %></td>
+      <td class="text-end text-nowrap"><% if (r.status !== 'paid' && r.authority && can('finance.manage', 'finance.payments')) { %><form method="post" action="/finance/online/<%= r.id %>/verify" class="d-inline" data-confirm="وضعیت این تراکنش از درگاه استعلام شود؟ در صورت تأیید، پرداخت ثبت می‌شود."><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-outline-primary" title="استعلام و تأیید"><i class="bi bi-arrow-repeat"></i></button></form><% } %></td>
+    </tr>
+  <% }); %>
+  </tbody></table></div>
+  <% if (pages > 1) { %><div class="card-footer"><%- include('partials/pagination', { result: { page: page, pages: pages } }) %></div><% } %>
+</div>
