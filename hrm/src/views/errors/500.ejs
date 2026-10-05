@@ -1,7 +1,0 @@
-<div class="empty-state py-5">
-  <i class="bi bi-bug"></i>
-  <h4>خطایی رخ داد</h4>
-  <p class="text-secondary"><%= typeof message !== 'undefined' ? message : 'خطای داخلی سرور' %></p>
-  <% if (typeof stack !== 'undefined' && stack) { %><pre class="text-start ltr bg-dark text-light p-3 rounded small" style="max-height:300px;overflow:auto"><%= stack %></pre><% } %>
-  <a href="javascript:history.back()" class="btn btn-light">بازگشت</a> <a href="/dashboard" class="btn btn-primary">داشبورد</a>
-</div>
